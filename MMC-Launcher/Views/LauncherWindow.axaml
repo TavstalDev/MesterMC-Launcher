@@ -1,0 +1,188 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Tavstal.MesterMC.Launcher.Views.Models"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="665"
+        x:Class="Tavstal.MesterMC.Launcher.Views.LauncherWindow"
+        x:DataType="vm:LauncherViewModel"
+        Title="MMC Launcher"
+        Width="1280"
+        Height="665"
+        CanResize="False"
+        ShowInTaskbar="True"
+        SystemDecorations="None"
+        ExtendClientAreaToDecorationsHint="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        Icon="avares://MMC-Launcher/Assets/icons/icon.png">
+        <Grid>
+                <!-- Background Image -->
+                <Image Source="avares://MMC-Launcher/Assets/screens/mmc-launcher-bg.png" 
+                       Stretch="Fill" 
+                       VerticalAlignment="Stretch" 
+                       HorizontalAlignment="Stretch"/>
+                
+                <!-- Logo -->
+                <Image Source="avares://MMC-Launcher/Assets/logos/mmc-logo.png" 
+                       Height="120" 
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Top"
+                       Margin="0,0,30,0"
+                       />
+                
+                <!-- Character Image -->
+                <Image Source="avares://MMC-Launcher/Assets/full.png" 
+                       Height="250" 
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Bottom"
+                       Margin="0,0,125,50"
+                       Opacity="1"
+                       />
+
+                <!-- Close Button -->
+                <Button Classes="ExitButton" Height="35"
+                        HorizontalAlignment="Right" 
+                        VerticalAlignment="Top"
+                        Margin="0,30,10,0"
+                        Background="Transparent"
+                        Command="{Binding CloseWindowCommand}">
+                        <Image />
+                </Button>
+                
+                <!-- #region Left Side Panel -->
+                <Grid  RowDefinitions="*, *, *, *"
+                            HorizontalAlignment="Left" 
+                            Height="574" 
+                            Width="400"
+                            RowSpacing="5"
+                            Margin="0,-4.5,0,0"
+                            Background="Transparent">
+                        <!-- Facebook Button -->
+                        <HyperlinkButton Grid.Row="0" Classes="FacebookButton" NavigateUri="https://www.facebook.com/mestermc.hu">
+                                <Image />
+                        </HyperlinkButton>
+                        
+                        <!-- Server List & Help Button -->
+                        <Grid Grid.Row="1" ColumnDefinitions="*, *" ColumnSpacing="2">
+                                <!-- ServerList Button -->
+                                <HyperlinkButton Grid.Column="0" Classes="ServerListButton" NavigateUri="https://mestermc.hu/szerverek">
+                                        <Image />
+                                </HyperlinkButton> 
+                                
+                                <!-- Help Button -->
+                                <HyperlinkButton Grid.Column="1" Classes="HelpButton" NavigateUri="mailto:info@mestermc.hu">
+                                        <Image />
+                                </HyperlinkButton> 
+                        </Grid>
+                        
+                        <!-- Banyakozpont Button -->
+                        <HyperlinkButton Grid.Row="2" Classes="BanyakozpontButton" NavigateUri="https://banyakozpont.mestermc.hu">
+                                <Image />
+                        </HyperlinkButton>
+                        
+                        <!-- Banyaszerme Button -->
+                        <HyperlinkButton Grid.Row="3" Classes="BanyaszermeButton" NavigateUri="https://mestermc.hu/banyaszerme">
+                                <Image />
+                        </HyperlinkButton>
+                </Grid>
+                <!-- #endregion -->
+                
+                <!-- #region News Panel -->
+                <Grid Height="571"
+                      Margin="405,-4.5,315,0"
+                      Background="Transparent">
+                        <!-- News Title -->
+                        <StackPanel Margin="25,40,0,0" Orientation="Horizontal">
+                                <TextBlock Foreground="#ffff00" 
+                                        FontSize="36" 
+                                        FontWeight="300"
+                                        Text="FRISS" />
+                                <TextBlock Foreground="White" 
+                                           FontSize="36" 
+                                           FontWeight="600"
+                                           Text=" HÍREINK" />
+                        </StackPanel>
+                        
+                        <!-- Pages -->
+                        <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="Auto, Auto" RowSpacing="5" ColumnSpacing="10" HorizontalAlignment="Right" Margin="0, -15, 25, 0">
+                                <!-- PrevPage Button -->
+                                <Button Grid.Row="0" Grid.Column="0" Classes="PrevPageButton" Height="35"
+                                        HorizontalAlignment="Right" 
+                                        VerticalAlignment="Top"
+                                        Background="Transparent">
+                                        <Image />
+                                </Button>
+                                <!-- NextPage Button -->
+                                <Button Grid.Row="0" Grid.Column="1" Classes="NextPageButton" Height="35"
+                                        HorizontalAlignment="Right" 
+                                        VerticalAlignment="Top"
+                                        Background="Transparent">
+                                        <Image />
+                                </Button>
+                                <!-- Page Text -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" 
+                                           Foreground="#727170" 
+                                           FontWeight="600"
+                                           HorizontalAlignment="Center"
+                                           Text="1 / 5" />
+                        </Grid>
+                        
+                        <!-- News Content -->
+                        <Grid RowDefinitions="Auto, Auto, *"
+                                    Margin="25,115,25,50"
+                                    VerticalAlignment="Top"
+                                    Height="400"
+                                    RowSpacing="8"
+                                    >
+                                <!-- Content Title -->
+                                <TextBlock Foreground="#ffb400" FontWeight="600" Text="Friss hírek betöltése..." />
+                        
+                                <!-- Content Banner -->
+                                <Image Grid.Row="1" Source="avares://MMC-Launcher/Assets/post_image_01.jpg" />
+                        
+                                <!-- Content Text -->
+                                <TextBlock Grid.Row="2" FontWeight="300" Foreground="White" TextWrapping="Wrap" Text="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." />
+                        </Grid>
+                        
+                </Grid>
+                <!-- #endregion -->
+                
+                <!-- #region Login Panel -->
+                <Grid Height="350"
+                      Width="285"
+                      HorizontalAlignment="Right"
+                      Margin="0,-4.5,29,0"
+                      Background="Transparent"
+                      RowDefinitions="Auto, Auto, Auto"
+                      RowSpacing="8">
+                        
+                        <!-- Username TextBox -->
+                        <TextBox Grid.Row="0" Height="30"
+                                 Width="230"
+                                 Margin="0"
+                                 VerticalAlignment="Top"
+                                 VerticalContentAlignment="Center"
+                                 Watermark="Felhasználónév"
+                                 CornerRadius="4"/>
+                        
+                        <!-- Password TextBox -->
+                        <TextBox Grid.Row="1" Height="30"
+                                 Width="230"
+                                 Margin="0"
+                                 VerticalAlignment="Top"
+                                 VerticalContentAlignment="Center"
+                                 Watermark="Jelszó"
+                                 CornerRadius="4"/>
+                        
+                        <!-- Login Button -->
+                        <Button Grid.Row="2" 
+                                Classes="LoginButton"
+                                Height="72"
+                                Margin="0, 5,0,0">
+                                <Image />
+                        </Button>
+                </Grid>
+                <!-- #endregion -->
+        </Grid>
+</Window>

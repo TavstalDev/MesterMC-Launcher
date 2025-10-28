@@ -1,0 +1,339 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- UPDATE WINDOW -->
+    
+    <!-- #region Close Button Style -->
+    <Style Selector="Button.CloseButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="Button.CloseButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="Button.CloseButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/close_normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="Button.CloseButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/close_over.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="Button.CloseButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/close_pressed.png" />
+    </Style>
+    <!-- #endregion Close Button Style -->
+    
+    <!-- #region Update Play Button Style -->
+    <Style Selector="Button.UpdatePlayButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="Button.UpdatePlayButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="Button.UpdatePlayButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/play-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="Button.UpdatePlayButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/play-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="Button.UpdatePlayButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/play-btn-active.png" />
+    </Style>
+    <!-- #endregion Update Play Button Style -->
+    
+    
+    <!-- LAUNCHER WINDOW -->
+    
+    <!-- #region Exit Button Style -->
+    <Style Selector="Button.ExitButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="Button.ExitButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="Button.ExitButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/exit-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="Button.ExitButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/exit-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="Button.ExitButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/exit-btn-active.png" />
+    </Style>
+    <!-- #endregion Exit Button Style -->
+    
+    
+    <!-- #region Facebook Button Style -->
+    <Style Selector="HyperlinkButton.FacebookButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="HyperlinkButton.FacebookButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="HyperlinkButton.FacebookButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/fb-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="HyperlinkButton.FacebookButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/fb-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="HyperlinkButton.FacebookButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/fb-btn-active.png" />
+    </Style>
+    <!-- #endregion Facebook Button Style -->
+    
+    <!-- #region Banyakozpont Button Style -->
+    <Style Selector="HyperlinkButton.BanyakozpontButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="HyperlinkButton.BanyakozpontButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="HyperlinkButton.BanyakozpontButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/banyakozpont-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="HyperlinkButton.BanyakozpontButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/banyakozpont-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="HyperlinkButton.BanyakozpontButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/banyakozpont-btn-active.png" />
+    </Style>
+    <!-- #endregion Banyakozpont Button Style -->
+    
+    <!-- #region Banyaszerme Button Style -->
+    <Style Selector="HyperlinkButton.BanyaszermeButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="HyperlinkButton.BanyaszermeButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="HyperlinkButton.BanyaszermeButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/banyaszerme-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="HyperlinkButton.BanyaszermeButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/banyaszerme-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="HyperlinkButton.BanyaszermeButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/banyaszerme-btn-active.png" />
+    </Style>
+    <!-- #endregion Banyaszerme Button Style -->
+    
+    <!-- #region ServerList Button Style -->
+    <Style Selector="HyperlinkButton.ServerListButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="HyperlinkButton.ServerListButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="HyperlinkButton.ServerListButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/szervereink-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="HyperlinkButton.ServerListButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/szervereink-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="HyperlinkButton.ServerListButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/szervereink-btn-active.png" />
+    </Style>
+    <!-- #endregion ServerList Button Style -->
+    
+    <!-- #region Help Button Style -->
+    <Style Selector="HyperlinkButton.HelpButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="HyperlinkButton.HelpButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="HyperlinkButton.HelpButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/segitseg-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="HyperlinkButton.HelpButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/segitseg-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="HyperlinkButton.HelpButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/segitseg-btn-active.png" />
+    </Style>
+    <!-- #endregion Help Button Style -->
+    
+    
+    <!-- #region Login Button Style -->
+    <Style Selector="Button.LoginButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="Button.LoginButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="Button.LoginButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/bejelentkezes-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="Button.LoginButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/bejelentkezes-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="Button.LoginButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/bejelentkezes-btn-active.png" />
+    </Style>
+    <!-- #endregion Login Button Style -->
+    
+    <!-- #region PrevPage Button Style -->
+    <Style Selector="Button.PrevPageButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="Button.PrevPageButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="Button.PrevPageButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/page-l-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="Button.PrevPageButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/page-l-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="Button.PrevPageButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/page-l-btn-active.png" />
+    </Style>
+    <!-- #endregion PrevPage Button Style -->
+    
+    <!-- #region NextPage Button Style -->
+    <Style Selector="Button.NextPageButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="Button.NextPageButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="Button.NextPageButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/page-r-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="Button.NextPageButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/page-r-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="Button.NextPageButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/page-r-btn-active.png" />
+    </Style>
+    <!-- #endregion NextPage Button Style -->
+</Styles>
