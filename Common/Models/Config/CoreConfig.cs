@@ -58,9 +58,9 @@ public class CoreConfig
     public CoreConfig()
     {
         Launcher = new LauncherConfig();
-        Java = new JavaConfig()
+        Java = new JavaConfig
         {
-            JvmArguments = Instance.GetDefaultJVMArgs()
+            JvmArguments = "-XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=16M -Djava.net.preferIPv4Stack=true"
         };
         Minecraft = new MinecraftConfig();
         Misc = new MiscConfig();
