@@ -1,11 +1,7 @@
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
-namespace Tavstal.MesterMC.Launcher.Helpers;
+namespace Tavstal.KonkordLauncher.Common.Helpers;
 
 /// <summary>
 /// Provides helper methods for loading images from various sources, such as local resources or web URLs.

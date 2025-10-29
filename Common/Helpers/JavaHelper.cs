@@ -119,7 +119,7 @@ public static class JavaHelper
                 return false;
             }
 
-            string tempDir = Path.Combine(Path.GetTempPath(), "konkordlauncher_java");
+            string tempDir = Path.Combine(Path.GetTempPath(), "mmclauncher_java");
             try
             {
                 Directory.CreateDirectory(tempDir);

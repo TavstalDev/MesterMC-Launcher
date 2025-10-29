@@ -65,6 +65,7 @@
                              VerticalAlignment="Center"
                              IsIndeterminate="False" 
                              Background="White"
+                             Foreground="#ffa314"
                              Value="{Binding Progress}"/>
             </StackPanel>
         </Grid>

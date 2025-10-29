@@ -14,6 +14,7 @@ using Avalonia.Threading;
 using Newtonsoft.Json.Linq;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
+using Tavstal.KonkordLauncher.Common.Models;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
@@ -169,7 +170,14 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 _logger.Error("Failed to validate servers.dat");
             }
             
-            // 7. Start Main Window
+            // 7. Update cache refresh date
+            if (DateTime.Now > settings.CacheRefreshDate)
+            {
+                settings.CacheRefreshDate = DateTime.Now.AddDays(7);
+                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings);
+            }
+            
+            // 8. Start Main Window
             if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
             {
                 SetStatus("Nem sikerült elindítani a fő ablakot.");

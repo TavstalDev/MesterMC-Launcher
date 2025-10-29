@@ -3,8 +3,10 @@ using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Interactivity;
 using ReactiveUI;
-using Tavstal.MesterMC.Launcher.Helpers;
+using Tavstal.KonkordLauncher.Common.Helpers;
+using Tavstal.KonkordLauncher.Common.Models;
 using Tavstal.MesterMC.Launcher.Models;
 using Tavstal.MesterMC.Launcher.Views.Models;
 
@@ -32,6 +34,14 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                 return Task.CompletedTask;
             }).DisposeWith(disposables);
         });
+        
+        // Add initial news
+        DataContext.NewsItems.Add(new NewsModel("Friss hírek betöltése...", "Kérlek várj, amíg a hírek betöltődnek.", "avares://MMC-Launcher/Assets/news/banners/loading-news.png"));
+        DataContext.NewsItems.Add(new NewsModel("Hiba a hírek betöltése közben", "Sajnáljuk, de nem sikerült betölteni a híreket. Kérlek ellenőrizd az internetkapcsolatodat, vagy próbáld újra később.", "avares://MMC-Launcher/Assets/news/banners/loading-news.png"));
+        DataContext.NewsItems.Add(new NewsModel("Üdvözlünk a MesterMC Launcherben!", "Köszönjük, hogy a MesterMC Launchert választottad! Itt megtalálod a legfrissebb híreket, frissítéseket és eseményeket a MesterMC közösségből.", "avares://MMC-Launcher/Assets/news/banners/loading-news.png"));
+        
+        DataContext.SelectedNewsItem = DataContext.NewsItems[0];
+        DataContext.SelectedNewsIndex = 0;
         
         // Load logo based on holiday
         // TODO: Find holiday logos

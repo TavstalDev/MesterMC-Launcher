@@ -9,11 +9,10 @@
  */
 
 
-using System;
 using System.Reactive.Disposables;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Tavstal.MesterMC.Launcher.Models;
+namespace Tavstal.KonkordLauncher.Common.Models;
 
 public abstract class KonkordObservableObject : ObservableObject, IDisposable
 {

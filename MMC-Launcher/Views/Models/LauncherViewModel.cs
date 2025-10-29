@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -6,7 +7,6 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReactiveUI;
-using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
 using Tavstal.MesterMC.Launcher.Models;
@@ -16,21 +16,26 @@ namespace Tavstal.MesterMC.Launcher.Views.Models;
 public partial class LauncherViewModel : ObservableObject
 {
     [ObservableProperty] private Bitmap logoImage;
-    private ObservableCollection<NewsModel> newsItems = new ();
-
-    public ObservableCollection<NewsModel> NewsItems
-    {
-        get => newsItems;
-        set => SetProperty(ref newsItems, value);
-    }
+    public ObservableCollection<NewsModel> NewsItems = [];
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(NewsPageDisplay))] private int selectedNewsIndex;
+    [ObservableProperty] private NewsModel selectedNewsItem;
     
     [ObservableProperty] private string username;
     [ObservableProperty] private string password;
     [ObservableProperty] private bool offlineMode = true; // TODO: Set to false when online login is implemented
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] private ELoginStatus loginStatus;
     public bool isLoggingIn => LoginStatus != ELoginStatus.NONE;
+    public string NewsPageDisplay => $"{SelectedNewsIndex + 1} / {NewsItems.Count}";
     public Interaction<Unit, Unit> CloseWindowInteraction { get; } = new();
-    
+
+    public LauncherViewModel()
+    {
+        NewsItems.CollectionChanged += (s, e) => 
+        {
+            // 3. Manually notify that the property needs recalculation
+            OnPropertyChanged(nameof(NewsPageDisplay));
+        };
+    }
     
     [RelayCommand]
     public async Task Login()
@@ -48,6 +53,34 @@ public partial class LauncherViewModel : ObservableObject
     public async Task CloseWindow()
     {
         await CloseWindowInteraction.Handle(Unit.Default);
+    }
+    
+    [RelayCommand]
+    public async Task PreviousNews()
+    {
+        if (SelectedNewsIndex > 0)
+        {
+            SelectedNewsIndex--;
+        }
+        else
+        {
+            SelectedNewsIndex = NewsItems.Count - 1;
+        }
+
+        SelectedNewsItem = NewsItems[SelectedNewsIndex];
+        await Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    public async Task NextNews()
+    {
+        if (SelectedNewsIndex + 1 > NewsItems.Count - 1)
+            SelectedNewsIndex = 0;
+        else
+            SelectedNewsIndex++;
+        
+        SelectedNewsItem = NewsItems[SelectedNewsIndex];
+        await Task.CompletedTask;
     }
     
     private async Task PlayOffline()

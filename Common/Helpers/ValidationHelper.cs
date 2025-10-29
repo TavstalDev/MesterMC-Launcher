@@ -106,6 +106,7 @@ public static class ValidationHelper
                 };
                 await HttpHelper.DownloadFileAsync(MicrosoftEndpoints.MinecraftManifestUrl, settings.Launcher.GetVanillaManifestPath(), progress);
             }
+            
             if (await ManifestHelper.GetMinecraftManifestAsync(settings.Launcher.GetVanillaManifestPath()) == null)
                 _logger.Error("Failed to load Minecraft manifest");
 

@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
-using Tavstal.MesterMC.Launcher.Helpers;
+using Tavstal.KonkordLauncher.Common.Helpers;
 
 namespace Tavstal.MesterMC.Launcher.Models;
 

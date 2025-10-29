@@ -114,14 +114,16 @@
                                 <Button Grid.Row="0" Grid.Column="0" Classes="PrevPageButton" Height="35"
                                         HorizontalAlignment="Right" 
                                         VerticalAlignment="Top"
-                                        Background="Transparent">
+                                        Background="Transparent"
+                                        Command="{Binding PreviousNewsCommand}">
                                         <Image />
                                 </Button>
                                 <!-- NextPage Button -->
                                 <Button Grid.Row="0" Grid.Column="1" Classes="NextPageButton" Height="35"
                                         HorizontalAlignment="Right" 
                                         VerticalAlignment="Top"
-                                        Background="Transparent">
+                                        Background="Transparent"
+                                        Command="{Binding NextNewsCommand}">
                                         <Image />
                                 </Button>
                                 <!-- Page Text -->
@@ -129,7 +131,7 @@
                                            Foreground="#727170" 
                                            FontWeight="600"
                                            HorizontalAlignment="Center"
-                                           Text="1 / 5" />
+                                           Text="{Binding NewsPageDisplay}" />
                         </Grid>
                         
                         <!-- News Content -->
@@ -140,13 +142,13 @@
                                     RowSpacing="8"
                                     >
                                 <!-- Content Title -->
-                                <TextBlock Foreground="#ffb400" FontWeight="600" Text="Friss hírek betöltése..." />
+                                <TextBlock Foreground="#ffb400" FontWeight="600" Text="{Binding SelectedNewsItem.Title}" />
                         
                                 <!-- Content Banner -->
-                                <Image Grid.Row="1" Source="avares://MMC-Launcher/Assets/post_image_01.jpg" />
+                                <Image Grid.Row="1" Source="{Binding SelectedNewsItem.Banner}" />
                         
                                 <!-- Content Text -->
-                                <TextBlock Grid.Row="2" FontWeight="300" Foreground="White" TextWrapping="Wrap" Text="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." />
+                                <TextBlock Grid.Row="2" FontWeight="300" Foreground="White" TextWrapping="Wrap" Text="{Binding SelectedNewsItem.Content}" />
                         </Grid>
                         
                 </Grid>

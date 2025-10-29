@@ -9,11 +9,10 @@
  */
 
 
-using System;
 using Avalonia.Controls;
 using ReactiveUI.Avalonia;
 
-namespace Tavstal.MesterMC.Launcher.Models;
+namespace Tavstal.KonkordLauncher.Common.Models;
 
 public abstract class KonkordWindow<TViewModel> : ReactiveWindow<TViewModel> where TViewModel : class
 {
