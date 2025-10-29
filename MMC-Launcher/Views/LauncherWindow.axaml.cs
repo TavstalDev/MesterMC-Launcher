@@ -1,8 +1,6 @@
 using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Controls;
 using ReactiveUI;
 using Tavstal.MesterMC.Launcher.Models;
 using Tavstal.MesterMC.Launcher.Views.Models;

@@ -163,7 +163,13 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             var instance = App.createMinecraftInstance(this);
             await instance.Start(true); 
 
-            // 6. Start Main Window
+            // 6. Create servers.dat if not exists
+            if (!await ValidationHelper.ValidateServersAsync())
+            {
+                _logger.Error("Failed to validate servers.dat");
+            }
+            
+            // 7. Start Main Window
             if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
             {
                 SetStatus("Nem sikerült elindítani a fő ablakot.");

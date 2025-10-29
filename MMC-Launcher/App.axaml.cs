@@ -211,7 +211,7 @@ public partial class App : Application
             launcherSettings.Launcher.GetVanillaManifestPath(), 
             null, 
             nativeLibraries);
-        LauncherDetails launcherDetails = new LauncherDetails("MesterMC-Launcher", Version);
+        LauncherDetails launcherDetails = new LauncherDetails("MesterMC", Version);
         ClientDetails clientDetails = new ClientDetails("0", "teszt", GameHelper.GetOfflinePlayerUUID("teszt"), true); // Default details, it will be updated later in the process
         var resolution = new Resolution(
             launcherSettings.Minecraft.StartMaximized

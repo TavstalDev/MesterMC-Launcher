@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Tavstal.MesterMC.Launcher.Views.Models"
+        xmlns:models="clr-namespace:Tavstal.MesterMC.Launcher.Models"
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="665"
         x:Class="Tavstal.MesterMC.Launcher.Views.LauncherWindow"
         x:DataType="vm:LauncherViewModel"
@@ -16,6 +17,9 @@
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         Icon="avares://MMC-Launcher/Assets/icons/icon.png">
+        <Window.Resources>
+                <models:LoginStatusConverter x:Key="LoginConverter"/>
+        </Window.Resources>
         <Grid>
                 <!-- Background Image -->
                 <Image Source="avares://MMC-Launcher/Assets/screens/mmc-launcher-bg.png" 
@@ -154,34 +158,70 @@
                       HorizontalAlignment="Right"
                       Margin="0,-4.5,29,0"
                       Background="Transparent"
-                      RowDefinitions="Auto, Auto, Auto"
-                      RowSpacing="8">
+                      RowDefinitions="Auto, Auto, Auto, Auto"
+                      RowSpacing="8"
+                      IsVisible="{Binding !isLoggingIn}">
                         
                         <!-- Username TextBox -->
                         <TextBox Grid.Row="0" Height="30"
+                                 Classes="LoginBox"
                                  Width="230"
                                  Margin="0"
                                  VerticalAlignment="Top"
                                  VerticalContentAlignment="Center"
                                  Watermark="Felhasználónév"
-                                 CornerRadius="4"/>
+                                 CornerRadius="4"
+                                 Text="{Binding Username}"/>
                         
                         <!-- Password TextBox -->
                         <TextBox Grid.Row="1" Height="30"
+                                 Classes="LoginBox"
                                  Width="230"
                                  Margin="0"
                                  VerticalAlignment="Top"
                                  VerticalContentAlignment="Center"
                                  Watermark="Jelszó"
-                                 CornerRadius="4"/>
+                                 CornerRadius="4"
+                                 Text="{Binding Password}"
+                                 IsEnabled="{Binding !OfflineMode}"/>
+                        
+                        <!-- Offline Login CheckBox -->
+                        <CheckBox Grid.Row="2"
+                                  Classes="OfflineCheckBox"
+                                  Foreground="White"
+                                  FontSize="18"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Margin="30, 0, 30, 0"
+                                  Padding="0"
+                                  IsChecked="{Binding OfflineMode, Mode=TwoWay}">
+                               <Border Width="205">
+                                       <TextBlock Text="Offline mód" />
+                               </Border>
+                        </CheckBox>
                         
                         <!-- Login Button -->
-                        <Button Grid.Row="2" 
+                        <Button Grid.Row="3" 
                                 Classes="LoginButton"
                                 Height="72"
-                                Margin="0, 5,0,0">
+                                Margin="0, 5,0,0"
+                                Command="{Binding LoginCommand}">
                                 <Image />
                         </Button>
+                </Grid>
+                <!-- #endregion -->
+                
+                <!-- #region Login Panel -->
+                <Grid Height="350"
+                      Width="285"
+                      HorizontalAlignment="Right"
+                      Margin="0,-4.5,29,0"
+                      Background="Transparent"
+                      RowDefinitions="Auto"
+                      RowSpacing="8"
+                      IsVisible="{Binding isLoggingIn}">
+                        
+                        <Image Source="{Binding LoginStatus, Converter={StaticResource LoginConverter}}"/>
                 </Grid>
                 <!-- #endregion -->
         </Grid>

@@ -1,0 +1,37 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Offline CheckBox Style -->
+    <Style Selector="CheckBox.OfflineCheckBox">
+        <Setter Property="Margin" Value="0"/>
+    </Style>
+    
+    <Style Selector="CheckBox.OfflineCheckBox:unchecked /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="#ad8e46"/>
+        <Setter Property="Background" Value="#4d331c" />
+    </Style>
+    
+    <Style Selector="CheckBox.OfflineCheckBox:checked /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="#ffa314"/>
+        <Setter Property="Background" Value="#4d331c" />
+    </Style>
+    
+    <Style Selector="CheckBox.OfflineCheckBox:checked /template/ Path#CheckGlyph">
+        <Setter Property="Fill" Value="#ffa314" />
+    </Style>
+    
+    <Style Selector="CheckBox.OfflineCheckBox:pointerover /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="#ffcf61"/>
+        <Setter Property="Background" Value="#69472c" />
+    </Style>
+    
+    <Style Selector="CheckBox.OfflineCheckBox > Border">
+        <Setter Property="Background" Value="#4e341d" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    
+    <Style Selector="CheckBox.OfflineCheckBox > Border > TextBlock">
+        <Setter Property="Margin" Value="15,2" />
+    </Style>
+    <!-- End Offline CheckBox Style -->
+</Styles>

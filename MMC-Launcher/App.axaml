@@ -9,5 +9,7 @@
         
         <!--  Controls  -->
         <StyleInclude Source="Styles/Buttons.axaml"  />
+        <StyleInclude Source="Styles/Checkboxes.axaml" />
+        <StyleInclude Source="Styles/Textboxes.axaml" />
     </Application.Styles>
 </Application>

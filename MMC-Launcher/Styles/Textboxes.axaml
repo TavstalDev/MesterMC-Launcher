@@ -1,0 +1,16 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+        <Style Selector="TextBox.LoginBox">
+                
+        </Style>
+        
+        <Style Selector="TextBox.LoginBox:pointerover /template/ Border#PART_BorderElement">
+                <Setter Property="BorderBrush" Value="#ffcf61"/>
+        </Style>
+        
+        <Style Selector="TextBox.LoginBox:focus /template/ Border#PART_BorderElement">
+                <Setter Property="BorderBrush" Value="#ffa314"/>
+        </Style>
+        
+</Styles>
