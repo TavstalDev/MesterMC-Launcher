@@ -8,6 +8,7 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using NbtLib;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Endpoints;
@@ -113,6 +114,62 @@ public static class ValidationHelper
         catch (Exception ex)
         {
             _logger.Error("Failed to validate manifests:");
+            _logger.Error(ex.ToString());
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Validates the existence of the `servers.dat` file in the Minecraft data directory.
+    /// If the file does not exist, it creates a default `servers.dat` file with predefined server information.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains a boolean value:
+    /// true if the validation or creation is successful, otherwise false.
+    /// </returns>
+    public static async Task<bool> ValidateServersAsync()
+    {
+        try
+        {
+            // Retrieve the launcher settings asynchronously
+            var settings = await LauncherHelper.GetLauncherSettingsAsync();
+
+            // Construct the file path for the `servers.dat` file
+            string filePath = Path.Combine(settings.Launcher.MinecraftDataDirectoryPath, "servers.dat");
+
+            // If the file already exists, return true
+            if (File.Exists(filePath))
+                return true;
+
+            // Create the root NBT tag and the servers list tag
+            var root = new NbtCompoundTag();
+            var serversList = new NbtListTag(NbtTagType.Compound);
+
+            // Define a default server entry
+            var serverTag = new NbtCompoundTag
+            {
+                { "name", new NbtStringTag("MesterMC Hub") }, // Server name
+                { "ip", new NbtStringTag("play.mestermc.hu") }, // Server IP address
+                { "acceptTextures", new NbtIntTag(1) }, // Accept textures flag
+            };
+
+            // Add the server entry to the servers list
+            serversList.Add(serverTag);
+            root.Add("servers", serversList);
+
+            // Write the NBT data to the `servers.dat` file
+            await using var outputStream = new NbtWriter().CreateUncompressedNbtStream(root, "");
+            await using var fileStream = File.Create(filePath);
+            outputStream.Seek(0, SeekOrigin.Begin);
+            await outputStream.CopyToAsync(fileStream);
+
+            // Return true to indicate success
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Log the error and return false to indicate failure
+            _logger.Error("Failed to validate servers:");
             _logger.Error(ex.ToString());
             return false;
         }
