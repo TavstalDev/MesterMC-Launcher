@@ -92,6 +92,10 @@ public class MinecraftInstance
     /// <returns>A <see cref="Process"/> object representing the launched game, or null if the process fails.</returns>
     public async Task<Process?> Start(bool downloadOnly = false)
     {
+        _jvmArguments.Clear();
+        _gameArguments.Clear();
+        _jvmArgumentsBeforeClassPath.Clear();
+        _classPath = string.Empty;
         string tempDir = Path.Combine(Path.GetTempPath(), "mmclauncher_" + Path.GetRandomFileName());
         Directory.CreateDirectory(tempDir);
         Directory.CreateDirectory(VersionData.VersionDirectory);
