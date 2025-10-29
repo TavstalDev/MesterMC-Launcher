@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{7602597A-0590-4FE7-A100-50C82510269B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MMC-Updater", "MMC-Updater\MMC-Updater.csproj", "{150F7721-F42B-4407-9D79-C9B710E462A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{7602597A-0590-4FE7-A100-50C82510269B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7602597A-0590-4FE7-A100-50C82510269B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7602597A-0590-4FE7-A100-50C82510269B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{150F7721-F42B-4407-9D79-C9B710E462A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{150F7721-F42B-4407-9D79-C9B710E462A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{150F7721-F42B-4407-9D79-C9B710E462A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{150F7721-F42B-4407-9D79-C9B710E462A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

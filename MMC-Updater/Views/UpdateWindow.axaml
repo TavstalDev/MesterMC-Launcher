@@ -1,0 +1,73 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="clr-namespace:Tavstal.MesterMC.Updater.Views.Models"
+        mc:Ignorable="d" d:DesignWidth="1150" d:DesignHeight="665"
+        x:Class="Tavstal.MesterMC.Updater.Views.UpdateWindow"
+        x:DataType="models:UpdateViewModel"
+        Title="MMC Updater"
+        Width="1150"
+        Height="665"
+        CanResize="False"
+        ShowInTaskbar="True"
+        SystemDecorations="None"
+        ExtendClientAreaToDecorationsHint="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        Icon="avares://MMC-Updater/Assets/icons/favicon.png">
+    <Grid>
+        <!-- Background Image -->
+        <Image Source="avares://MMC-Updater/Assets/screens/screen-update.png" 
+               Stretch="Fill" 
+               VerticalAlignment="Stretch" 
+               HorizontalAlignment="Stretch"/>
+
+        <!-- Close Button -->
+        <Button Classes="CloseButton" Height="55"
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Top"
+                Margin="0,106,264,0"
+                Background="Transparent"
+                Command="{Binding CloseWindowCommand}">
+            <Image />
+        </Button>
+        
+        <TextBlock Margin="255, 200, 270, 25" 
+                   Foreground="White" 
+                   FontSize="24" 
+                   Text="Jó játékot kíván" 
+                   />
+        <TextBlock Margin="255, 230, 270, 25" 
+                   Foreground="White" 
+                   FontSize="24" 
+                   Text="a MesterMC csapata!" 
+        />
+        
+        <!-- Progress -->
+        <Grid Margin="175, 105, 270, 25">
+            <StackPanel VerticalAlignment="Bottom" 
+                        Orientation="Vertical" 
+                        Spacing="10"
+                        Margin="80,100, 80,95">
+                <!-- Progress Text -->
+                <TextBlock Text="{Binding ProgressText}"
+                           FontSize="16"
+                           TextAlignment="Center"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center"
+                           TextWrapping="Wrap"
+                           Foreground="White"/>
+        
+                <!-- Progress Bar -->
+                <ProgressBar Width="250" Height="20" 
+                             HorizontalAlignment="Left" 
+                             VerticalAlignment="Center"
+                             IsIndeterminate="False" 
+                             Background="White"
+                             Foreground="#ed4b54"
+                             Value="{Binding Progress}"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
