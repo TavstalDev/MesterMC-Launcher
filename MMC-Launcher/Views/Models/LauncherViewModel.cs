@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -15,13 +16,22 @@ namespace Tavstal.MesterMC.Launcher.Views.Models;
 public partial class LauncherViewModel : ObservableObject
 {
     [ObservableProperty] private Bitmap logoImage;
+    private ObservableCollection<NewsModel> newsItems = new ();
+
+    public ObservableCollection<NewsModel> NewsItems
+    {
+        get => newsItems;
+        set => SetProperty(ref newsItems, value);
+    }
+    
     [ObservableProperty] private string username;
     [ObservableProperty] private string password;
-    [ObservableProperty] private bool offlineMode;
+    [ObservableProperty] private bool offlineMode = true; // TODO: Set to false when online login is implemented
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] private ELoginStatus loginStatus;
     public bool isLoggingIn => LoginStatus != ELoginStatus.NONE;
     public Interaction<Unit, Unit> CloseWindowInteraction { get; } = new();
-
+    
+    
     [RelayCommand]
     public async Task Login()
     {

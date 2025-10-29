@@ -316,7 +316,7 @@ public class MinecraftInstance
             jvmArgs.Add(GameDetails.JvmArgs);
 
         // 1.16 offline mode fix
-        if (VersionData.MinecraftVersion.StartsWith("1.16") && _client.IsOffline)
+        if (_client.IsOffline)
         {
             jvmArgs.Add("-Dminecraft.api.auth.host=https://nope.invalid ");
             jvmArgs.Add("-Dminecraft.api.account.host=https://nope.invalid");

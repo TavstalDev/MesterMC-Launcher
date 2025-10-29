@@ -194,7 +194,8 @@
                                   VerticalAlignment="Center"
                                   Margin="30, 0, 30, 0"
                                   Padding="0"
-                                  IsChecked="{Binding OfflineMode, Mode=TwoWay}">
+                                  IsChecked="{Binding OfflineMode, Mode=TwoWay}"
+                                  IsEnabled="False">
                                <Border Width="205">
                                        <TextBlock Text="Offline mód" />
                                </Border>
@@ -211,7 +212,7 @@
                 </Grid>
                 <!-- #endregion -->
                 
-                <!-- #region Login Panel -->
+                <!-- #region Auth Feedback -->
                 <Grid Height="350"
                       Width="285"
                       HorizontalAlignment="Right"
