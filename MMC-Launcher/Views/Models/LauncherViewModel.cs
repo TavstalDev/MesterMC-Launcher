@@ -1,6 +1,7 @@
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReactiveUI;
@@ -13,6 +14,7 @@ namespace Tavstal.MesterMC.Launcher.Views.Models;
 
 public partial class LauncherViewModel : ObservableObject
 {
+    [ObservableProperty] private Bitmap logoImage;
     [ObservableProperty] private string username;
     [ObservableProperty] private string password;
     [ObservableProperty] private bool offlineMode;

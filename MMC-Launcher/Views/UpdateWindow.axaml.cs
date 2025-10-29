@@ -100,7 +100,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 progress.ProgressChanged += (_, prog) =>
                 {
                     SetStatus("Java " + javaVersion + " letöltése... " + prog.ToString("0.00") + "%");
-                    SetProgress(prog / 100);
+                    SetProgress(prog);
                 };
                 await JavaHelper.DownloadJavaVersionAsync(javaVersion, settings.Launcher.JavaDirectoryPath, progress);
                 wasJavaUpdated = true;

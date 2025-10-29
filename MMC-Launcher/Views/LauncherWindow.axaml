@@ -16,7 +16,7 @@
         ExtendClientAreaToDecorationsHint="False"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
-        Icon="avares://MMC-Launcher/Assets/icons/icon.png">
+        Icon="avares://MMC-Launcher/Assets/icons/favicon.png">
         <Window.Resources>
                 <models:LoginStatusConverter x:Key="LoginConverter"/>
         </Window.Resources>
@@ -28,7 +28,7 @@
                        HorizontalAlignment="Stretch"/>
                 
                 <!-- Logo -->
-                <Image Source="avares://MMC-Launcher/Assets/logos/mmc-logo.png" 
+                <Image Source="{Binding LogoImage}" 
                        Height="120" 
                        HorizontalAlignment="Right"
                        VerticalAlignment="Top"
