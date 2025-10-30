@@ -31,6 +31,16 @@
                 <Setter Property="BorderBrush" Value="#ddd"/>
                 <Setter Property="Opacity" Value="0.8"/>
         </Style>
+        
+        <Style Selector="TextBox.LoginBox:disabled /template/ TextBlock#PART_Watermark">
+                <Setter Property="Foreground" Value="#111"/>
+        </Style>
+        
+        <Style Selector="TextBox.LoginBox:disabled /template/ Border#PART_BorderElement">
+                <Setter Property="Background" Value="#eeeeee"/>
+                <Setter Property="BorderBrush" Value="#ddd"/>
+                <Setter Property="Opacity" Value="0.8"/>
+        </Style>
 
         <!-- Pointer Over -->
         <Style Selector="TextBox.LoginBox:pointerover /template/ TextBlock#PART_Watermark">

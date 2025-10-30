@@ -33,5 +33,9 @@
     <Style Selector="CheckBox.OfflineCheckBox > Border > TextBlock">
         <Setter Property="Margin" Value="15,2" />
     </Style>
+    
+    <Style Selector="CheckBox.OfflineCheckBox:disabled > Border > TextBlock">
+        <Setter Property="Foreground" Value="#999" />
+    </Style>
     <!-- End Offline CheckBox Style -->
 </Styles>
