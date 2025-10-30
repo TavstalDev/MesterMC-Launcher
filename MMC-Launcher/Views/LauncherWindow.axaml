@@ -1,232 +1,321 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="clr-namespace:Tavstal.MesterMC.Launcher.Views.Models"
-        xmlns:models="clr-namespace:Tavstal.MesterMC.Launcher.Models"
-        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="665"
-        x:Class="Tavstal.MesterMC.Launcher.Views.LauncherWindow"
-        x:DataType="vm:LauncherViewModel"
-        Title="MMC Launcher"
-        Width="1280"
-        Height="665"
-        CanResize="False"
-        ShowInTaskbar="True"
-        SystemDecorations="None"
-        ExtendClientAreaToDecorationsHint="False"
-        Background="Transparent"
-        TransparencyLevelHint="Transparent"
-        Icon="avares://MMC-Launcher/Assets/icons/favicon.png">
-        <Window.Resources>
-                <models:LoginStatusConverter x:Key="LoginConverter"/>
-        </Window.Resources>
-        <Grid>
-                <!-- Background Image -->
-                <Image Source="avares://MMC-Launcher/Assets/screens/mmc-launcher-bg.png" 
-                       Stretch="Fill" 
-                       VerticalAlignment="Stretch" 
-                       HorizontalAlignment="Stretch"/>
-                
-                <!-- Logo -->
-                <Image Source="{Binding LogoImage}" 
-                       Height="120" 
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Top"
-                       Margin="0,0,30,0"
-                       />
-                
-                <!-- Character Image -->
-                <Image Source="avares://MMC-Launcher/Assets/full.png" 
-                       Height="250" 
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Bottom"
-                       Margin="0,0,125,50"
-                       Opacity="1"
-                       />
+<Window
+    x:Class="Tavstal.MesterMC.Launcher.Views.LauncherWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:Tavstal.MesterMC.Launcher.Models"
+    xmlns:vm="clr-namespace:Tavstal.MesterMC.Launcher.Views.Models"
+    Title="MMC Launcher"
+    Width="1280"
+    Height="665"
+    d:DesignHeight="665"
+    d:DesignWidth="1280"
+    x:DataType="vm:LauncherViewModel"
+    Background="Transparent"
+    CanResize="False"
+    ExtendClientAreaToDecorationsHint="False"
+    Icon="avares://MMC-Launcher/Assets/icons/favicon.png"
+    ShowInTaskbar="True"
+    SystemDecorations="None"
+    TransparencyLevelHint="Transparent"
+    mc:Ignorable="d">
+    <Window.Resources>
+        <models:LoginStatusConverter x:Key="LoginConverter" />
+    </Window.Resources>
 
-                <!-- Close Button -->
-                <Button Classes="ExitButton" Height="35"
-                        HorizontalAlignment="Right" 
-                        VerticalAlignment="Top"
-                        Margin="0,30,10,0"
-                        Background="Transparent"
-                        Command="{Binding CloseWindowCommand}">
+    <Viewbox x:Name="RootViewbox" Stretch="Uniform">
+        <Grid Width="1280" Height="665">
+            <!--  Background Image  -->
+            <Image
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Source="avares://MMC-Launcher/Assets/screens/mmc-launcher-bg.png"
+                Stretch="Fill" />
+
+            <!--  Logo  -->
+            <Image
+                Height="120"
+                Margin="0,0,30,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Source="avares://MMC-Launcher/Assets/logos/mmc-logo.png" />
+
+            <!--  Character Image  -->
+            <Image
+                Height="250"
+                Margin="0,0,125,50"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Opacity="1"
+                Source="avares://MMC-Launcher/Assets/full.png" />
+
+            <!--#region Left Side Panel-->
+            <Grid
+                Width="400"
+                Height="574"
+                Margin="0,-4.5,0,0"
+                HorizontalAlignment="Left"
+                Background="Transparent"
+                RowDefinitions="*, *, *, *"
+                RowSpacing="5">
+                <!--  Facebook Button  -->
+                <HyperlinkButton
+                    Grid.Row="0"
+                    Classes="FacebookButton"
+                    NavigateUri="https://www.facebook.com/mestermc.hu">
+                    <Image />
+                </HyperlinkButton>
+
+                <!--  Server List & Help Button  -->
+                <Grid
+                    Grid.Row="1"
+                    ColumnDefinitions="*, *"
+                    ColumnSpacing="2">
+                    <!--  ServerList Button  -->
+                    <HyperlinkButton
+                        Grid.Column="0"
+                        Classes="ServerListButton"
+                        NavigateUri="https://mestermc.hu/szerverek">
                         <Image />
+                    </HyperlinkButton>
+
+                    <!--  Help Button  -->
+                    <HyperlinkButton
+                        Grid.Column="1"
+                        Classes="HelpButton"
+                        NavigateUri="mailto:info@mestermc.hu">
+                        <Image />
+                    </HyperlinkButton>
+                </Grid>
+
+                <!--  Banyakozpont Button  -->
+                <HyperlinkButton
+                    Grid.Row="2"
+                    Classes="BanyakozpontButton"
+                    NavigateUri="https://banyakozpont.mestermc.hu">
+                    <Image />
+                </HyperlinkButton>
+
+                <!--  Banyaszerme Button  -->
+                <HyperlinkButton
+                    Grid.Row="3"
+                    Classes="BanyaszermeButton"
+                    NavigateUri="https://mestermc.hu/banyaszerme">
+                    <Image />
+                </HyperlinkButton>
+            </Grid>
+            <!--#endregion-->
+
+            <!--#region News Panel-->
+            <Grid
+                Height="571"
+                Margin="405,-4.5,315,0"
+                Background="Transparent"
+                PointerPressed="DragStart_PointerPressed">
+                <!--  News Title  -->
+                <StackPanel Margin="25,40,0,0" Orientation="Horizontal">
+                    <TextBlock
+                        FontSize="36"
+                        FontWeight="300"
+                        Foreground="#ffff00"
+                        Text="FRISS" />
+                    <TextBlock
+                        FontSize="36"
+                        FontWeight="600"
+                        Foreground="White"
+                        Text=" HÍREINK" />
+                </StackPanel>
+
+                <!--  Pages  -->
+                <Grid
+                    Margin="0,-15,25,0"
+                    HorizontalAlignment="Right"
+                    ColumnDefinitions="Auto, Auto"
+                    ColumnSpacing="10"
+                    RowDefinitions="Auto, Auto"
+                    RowSpacing="5">
+                    <!--  PrevPage Button  -->
+                    <Button
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Height="35"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Background="Transparent"
+                        Classes="PrevPageButton"
+                        Command="{Binding PreviousNewsCommand}">
+                        <Image />
+                    </Button>
+                    <!--  NextPage Button  -->
+                    <Button
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Height="35"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Background="Transparent"
+                        Classes="NextPageButton"
+                        Command="{Binding NextNewsCommand}">
+                        <Image />
+                    </Button>
+                    <!--  Page Text  -->
+                    <TextBlock
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        HorizontalAlignment="Center"
+                        FontWeight="600"
+                        Foreground="#727170"
+                        Text="{Binding NewsPageDisplay}" />
+                </Grid>
+
+                <!--  News Content  -->
+                <Grid
+                    Height="400"
+                    Margin="25,115,25,50"
+                    VerticalAlignment="Top"
+                    RowDefinitions="Auto, Auto, *"
+                    RowSpacing="8">
+                    <!--  Content Title  -->
+                    <TextBlock
+                        FontWeight="600"
+                        Foreground="#ffb400"
+                        Text="{Binding SelectedNewsItem.Title}" />
+
+                    <!--  Content Banner  -->
+                    <Image Grid.Row="1" Source="{Binding SelectedNewsItem.Banner}" />
+
+                    <!--  Content Text  -->
+                    <TextBlock
+                        Grid.Row="2"
+                        FontWeight="300"
+                        Foreground="White"
+                        Text="{Binding SelectedNewsItem.Content}"
+                        TextWrapping="Wrap" />
+                </Grid>
+
+            </Grid>
+            <!--#endregion-->
+
+            <!--#region Login Panel-->
+            <Grid
+                Width="285"
+                Height="350"
+                Margin="0,-4.5,29,0"
+                HorizontalAlignment="Right"
+                Background="Transparent"
+                IsVisible="{Binding !isLoggingIn}"
+                RowDefinitions="Auto, Auto, Auto, Auto"
+                RowSpacing="8">
+
+                <!--  Username TextBox  -->
+                <TextBox
+                    Grid.Row="0"
+                    Width="230"
+                    Height="30"
+                    Classes="LoginBox"
+                    Text="{Binding Username}"
+                    Watermark="Felhasználónév" />
+
+                <!--  Password TextBox  -->
+                <TextBox
+                    Grid.Row="1"
+                    Width="230"
+                    Height="30"
+                    Classes="LoginBox"
+                    IsEnabled="{Binding !OfflineMode}"
+                    Text="{Binding Password}"
+                    Watermark="Jelszó" />
+
+                <!--  Offline Login CheckBox  -->
+                <CheckBox
+                    Grid.Row="2"
+                    Margin="30,0,30,0"
+                    Padding="0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Classes="OfflineCheckBox"
+                    FontSize="18"
+                    FontWeight="500"
+                    Foreground="White"
+                    IsChecked="{Binding OfflineMode, Mode=TwoWay}">
+                    <Border Width="205">
+                        <TextBlock Text="Offline mód" />
+                    </Border>
+                </CheckBox>
+
+                <!--  Login Button  -->
+                <Button
+                    Grid.Row="3"
+                    Height="72"
+                    Margin="0,5,0,0"
+                    Classes="LoginButton"
+                    Command="{Binding LoginCommand}">
+                    <Image />
                 </Button>
-                
-                <!-- #region Left Side Panel -->
-                <Grid  RowDefinitions="*, *, *, *"
-                            HorizontalAlignment="Left" 
-                            Height="574" 
-                            Width="400"
-                            RowSpacing="5"
-                            Margin="0,-4.5,0,0"
-                            Background="Transparent">
-                        <!-- Facebook Button -->
-                        <HyperlinkButton Grid.Row="0" Classes="FacebookButton" NavigateUri="https://www.facebook.com/mestermc.hu">
-                                <Image />
-                        </HyperlinkButton>
-                        
-                        <!-- Server List & Help Button -->
-                        <Grid Grid.Row="1" ColumnDefinitions="*, *" ColumnSpacing="2">
-                                <!-- ServerList Button -->
-                                <HyperlinkButton Grid.Column="0" Classes="ServerListButton" NavigateUri="https://mestermc.hu/szerverek">
-                                        <Image />
-                                </HyperlinkButton> 
-                                
-                                <!-- Help Button -->
-                                <HyperlinkButton Grid.Column="1" Classes="HelpButton" NavigateUri="mailto:info@mestermc.hu">
-                                        <Image />
-                                </HyperlinkButton> 
-                        </Grid>
-                        
-                        <!-- Banyakozpont Button -->
-                        <HyperlinkButton Grid.Row="2" Classes="BanyakozpontButton" NavigateUri="https://banyakozpont.mestermc.hu">
-                                <Image />
-                        </HyperlinkButton>
-                        
-                        <!-- Banyaszerme Button -->
-                        <HyperlinkButton Grid.Row="3" Classes="BanyaszermeButton" NavigateUri="https://mestermc.hu/banyaszerme">
-                                <Image />
-                        </HyperlinkButton>
-                </Grid>
-                <!-- #endregion -->
-                
-                <!-- #region News Panel -->
-                <Grid Height="571"
-                      Margin="405,-4.5,315,0"
-                      Background="Transparent">
-                        <!-- News Title -->
-                        <StackPanel Margin="25,40,0,0" Orientation="Horizontal">
-                                <TextBlock Foreground="#ffff00" 
-                                        FontSize="36" 
-                                        FontWeight="300"
-                                        Text="FRISS" />
-                                <TextBlock Foreground="White" 
-                                           FontSize="36" 
-                                           FontWeight="600"
-                                           Text=" HÍREINK" />
-                        </StackPanel>
-                        
-                        <!-- Pages -->
-                        <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="Auto, Auto" RowSpacing="5" ColumnSpacing="10" HorizontalAlignment="Right" Margin="0, -15, 25, 0">
-                                <!-- PrevPage Button -->
-                                <Button Grid.Row="0" Grid.Column="0" Classes="PrevPageButton" Height="35"
-                                        HorizontalAlignment="Right" 
-                                        VerticalAlignment="Top"
-                                        Background="Transparent"
-                                        Command="{Binding PreviousNewsCommand}">
-                                        <Image />
-                                </Button>
-                                <!-- NextPage Button -->
-                                <Button Grid.Row="0" Grid.Column="1" Classes="NextPageButton" Height="35"
-                                        HorizontalAlignment="Right" 
-                                        VerticalAlignment="Top"
-                                        Background="Transparent"
-                                        Command="{Binding NextNewsCommand}">
-                                        <Image />
-                                </Button>
-                                <!-- Page Text -->
-                                <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" 
-                                           Foreground="#727170" 
-                                           FontWeight="600"
-                                           HorizontalAlignment="Center"
-                                           Text="{Binding NewsPageDisplay}" />
-                        </Grid>
-                        
-                        <!-- News Content -->
-                        <Grid RowDefinitions="Auto, Auto, *"
-                                    Margin="25,115,25,50"
-                                    VerticalAlignment="Top"
-                                    Height="400"
-                                    RowSpacing="8"
-                                    >
-                                <!-- Content Title -->
-                                <TextBlock Foreground="#ffb400" FontWeight="600" Text="{Binding SelectedNewsItem.Title}" />
-                        
-                                <!-- Content Banner -->
-                                <Image Grid.Row="1" Source="{Binding SelectedNewsItem.Banner}" />
-                        
-                                <!-- Content Text -->
-                                <TextBlock Grid.Row="2" FontWeight="300" Foreground="White" TextWrapping="Wrap" Text="{Binding SelectedNewsItem.Content}" />
-                        </Grid>
-                        
-                </Grid>
-                <!-- #endregion -->
-                
-                <!-- #region Login Panel -->
-                <Grid Height="350"
-                      Width="285"
-                      HorizontalAlignment="Right"
-                      Margin="0,-4.5,29,0"
-                      Background="Transparent"
-                      RowDefinitions="Auto, Auto, Auto, Auto"
-                      RowSpacing="8"
-                      IsVisible="{Binding !isLoggingIn}">
-                        
-                        <!-- Username TextBox -->
-                        <TextBox Grid.Row="0" Height="30"
-                                 Classes="LoginBox"
-                                 Width="230"
-                                 Margin="0"
-                                 VerticalAlignment="Top"
-                                 VerticalContentAlignment="Center"
-                                 Watermark="Felhasználónév"
-                                 CornerRadius="4"
-                                 Text="{Binding Username}"/>
-                        
-                        <!-- Password TextBox -->
-                        <TextBox Grid.Row="1" Height="30"
-                                 Classes="LoginBox"
-                                 Width="230"
-                                 Margin="0"
-                                 VerticalAlignment="Top"
-                                 VerticalContentAlignment="Center"
-                                 Watermark="Jelszó"
-                                 CornerRadius="4"
-                                 Text="{Binding Password}"
-                                 IsEnabled="{Binding !OfflineMode}"/>
-                        
-                        <!-- Offline Login CheckBox -->
-                        <CheckBox Grid.Row="2"
-                                  Classes="OfflineCheckBox"
-                                  Foreground="White"
-                                  FontSize="18"
-                                  FontWeight="500"
-                                  HorizontalAlignment="Left"
-                                  VerticalAlignment="Center"
-                                  Margin="30, 0, 30, 0"
-                                  Padding="0"
-                                  IsChecked="{Binding OfflineMode, Mode=TwoWay}"
-                                  IsEnabled="False">
-                               <Border Width="205">
-                                       <TextBlock Text="Offline mód" />
-                               </Border>
-                        </CheckBox>
-                        
-                        <!-- Login Button -->
-                        <Button Grid.Row="3" 
-                                Classes="LoginButton"
-                                Height="72"
-                                Margin="0, 5,0,0"
-                                Command="{Binding LoginCommand}">
-                                <Image />
-                        </Button>
-                </Grid>
-                <!-- #endregion -->
-                
-                <!-- #region Auth Feedback -->
-                <Grid Height="350"
-                      Width="285"
-                      HorizontalAlignment="Right"
-                      Margin="0,-4.5,29,0"
-                      Background="Transparent"
-                      RowDefinitions="Auto"
-                      RowSpacing="8"
-                      IsVisible="{Binding isLoggingIn}">
-                        
-                        <Image Source="{Binding LoginStatus, Converter={StaticResource LoginConverter}}"/>
-                </Grid>
-                <!-- #endregion -->
+            </Grid>
+            <!--#endregion-->
+
+            <!--#region Auth Feedback-->
+            <Grid
+                Width="285"
+                Height="350"
+                Margin="0,-4.5,29,0"
+                HorizontalAlignment="Right"
+                Background="Transparent"
+                IsVisible="{Binding isLoggingIn}"
+                RowDefinitions="Auto, Auto">
+
+                <!--  Status Image  -->
+                <Image
+                    Grid.Row="0"
+                    IsVisible="{Binding !isError}"
+                    Source="{Binding LoginStatus, Converter={StaticResource LoginConverter}}" />
+
+                <!--  Error Background Image  -->
+                <Image
+                    Grid.Row="0"
+                    Margin="20,-10,20,0"
+                    IsVisible="{Binding isError}"
+                    Source="avares://MMC-Launcher/Assets/zone/zone-error.png" />
+
+                <!--  Error TextBox  -->
+                <TextBlock
+                    Grid.Row="0"
+                    Width="230"
+                    MaxHeight="125"
+                    Margin="0"
+                    VerticalAlignment="Top"
+                    Foreground="Red"
+                    IsVisible="{Binding isError}"
+                    Text="{Binding ErrorMessage}"
+                    TextWrapping="Wrap" />
+
+                <!--  Back Button  -->
+                <Button
+                    Grid.Row="1"
+                    Height="72"
+                    Margin="20,-15,20,0"
+                    Classes="ErrorBackButton"
+                    Command="{Binding BackCommand}"
+                    IsVisible="{Binding isError}">
+                    <Image />
+                </Button>
+            </Grid>
+            <!--#endregion-->
+
+            <!--  Close Button  -->
+            <Button
+                Height="35"
+                Margin="0,30,10,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Background="Transparent"
+                Classes="ExitButton"
+                Command="{Binding CloseWindowCommand}">
+                <Image />
+            </Button>
         </Grid>
+    </Viewbox>
 </Window>
