@@ -236,7 +236,7 @@
                     Margin="30,0,30,0"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Left"
-                    ToolTip.Placement="Right">
+                    ToolTip.Placement="Left">
                      <ToolTip.Tip>
                         <StackPanel>
                             <TextBlock>Jelenleg csak az offline mód elérhető.</TextBlock>
