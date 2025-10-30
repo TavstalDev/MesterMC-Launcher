@@ -3,6 +3,7 @@ using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
@@ -35,6 +36,10 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             }).DisposeWith(disposables);
         });
         
+        // Set window size
+        //this.Width = (double)App.ScreenWidth * 0.7;
+        //this.Height = (double)App.ScreenHeight * 0.45;
+        
         // Add initial news
         DataContext.NewsItems.Add(new NewsModel("Friss hírek betöltése...", "Kérlek várj, amíg a hírek betöltődnek.", "avares://MMC-Launcher/Assets/news/banners/loading-news.png"));
         DataContext.NewsItems.Add(new NewsModel("Hiba a hírek betöltése közben", "Sajnáljuk, de nem sikerült betölteni a híreket. Kérlek ellenőrizd az internetkapcsolatodat, vagy próbáld újra később.", "avares://MMC-Launcher/Assets/news/banners/loading-news.png"));
@@ -42,36 +47,53 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         
         DataContext.SelectedNewsItem = DataContext.NewsItems[0];
         DataContext.SelectedNewsIndex = 0;
-        
-        // Load logo based on holiday
-        // TODO: Find holiday logos
-        DataContext.LogoImage = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/logos/mmc-logo.png"));
-        /*var date = DateTime.Now;
-        switch (date.Month)
+    }
+
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        FitToDisplay();
+    }
+
+    private void DragStart_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Start moving the window when left mouse button is pressed
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
-            // Easter
-            case 4:
-            {
-                
-                break;
-            }
-            // Halloween
-            case 10:
-            {
-                DataContext.LogoImage = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/logos/mmc-logo-halloween.png"));
-                break;
-            }
-            // Christmas
-            case 12:
-            {
-                
-                break;
-            }
-            default:
-            {
-                DataContext.LogoImage = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/logos/mmc-logo.png"));
-                break;
-            }
-        }*/
+            BeginMoveDrag(e);
+        }
+    }
+    
+    private void FitToDisplay()
+    {
+        double screenWidth = (double)App.ScreenWidth;
+        double screenHeight = (double)App.ScreenHeight;
+        
+        // Base design resolution
+        double baseWidth = 1280;
+        double baseHeight = 665;
+
+        // Calculate scale factor relative to screen
+        double scaleX = screenWidth / baseWidth;
+        double scaleY = screenHeight / baseHeight;
+
+        // Pick whichever fits better
+        double multiplier;
+        if (screenHeight >= 1920 && screenWidth >= 1080)
+            multiplier = 0.6;
+        else
+            multiplier = 0.47;
+        
+        double scale = Math.Min(scaleX, scaleY) * multiplier;
+
+        // Apply scaled window size
+        Width = baseWidth * scale;
+        Height = baseHeight * scale;
+
+        // Center window on screen
+        Position = new PixelPoint(
+            (int)((screenWidth - Width) / 2),
+            (int)((screenHeight - Height) / 2)
+        );
     }
 }
