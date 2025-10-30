@@ -336,4 +336,35 @@
         <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/page-r-btn-active.png" />
     </Style>
     <!-- #endregion NextPage Button Style -->
+    
+    <!-- #region ErrorBack Button Style -->
+    <Style Selector="Button.ErrorBackButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="Button.ErrorBackButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="Button.ErrorBackButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/back-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="Button.ErrorBackButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/back-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="Button.ErrorBackButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/back-btn-active.png" />
+    </Style>
+    <!-- #endregion ErrorBack Button Style -->
 </Styles>
