@@ -10,7 +10,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json.Linq;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
@@ -30,7 +32,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// Logger instance for the StartupWindow class.
     /// </summary>
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(UpdateWindow));
-
+    
     /// <summary>
     /// Delay in milliseconds for each validation step.
     /// </summary>
@@ -44,7 +46,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         // Attaches Avalonia Dev Tools for debugging purposes.
         this.AttachDevTools();
 #endif
-
+        
         DataContext ??= new UpdateViewModel();
         this.WhenActivated(disposables =>
         {
@@ -55,6 +57,32 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 return Task.CompletedTask;
             }).DisposeWith(disposables);
         });
+        
+        DateTime now = DateTime.Now;
+        switch (now.Month)
+        {
+            case 1:
+            case 2:
+            case 12:
+            {
+                DataContext.ScreenImage = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/screens/screen-update-2-winter.png"));
+                break;
+            }
+            case 3:
+            case 4:
+            case 5:
+            {
+                DataContext.ScreenImage = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/screens/screen-update-2-spring.png"));
+                break;
+            }
+            case 9:
+            case 10:
+            case 11:
+            {
+                DataContext.ScreenImage = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/screens/screen-update-2-fall.png"));
+                break;
+            }
+        }
     }
     
     protected override void OnLoaded(RoutedEventArgs e)
@@ -297,16 +325,20 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     }
 
     #region IProgressReporter Implementation
+
     /// <summary>
     /// Sets the progress value for the startup process.
     /// </summary>
     /// <param name="progress">The progress value, typically between 0.0 and 1.0.</param>
     public void SetProgress(double progress)
     {
-        if (DataContext == null)
-            return;
+        Dispatcher.UIThread.Invoke(() =>
+        {
+            if (DataContext == null)
+                return;
 
-        DataContext.Progress = progress;
+            DataContext.Progress = progress;
+        });
     }
 
     /// <summary>
@@ -315,10 +347,13 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// <param name="status">The status message to display.</param>
     public void SetStatus(string status)
     {
-        if (DataContext == null)
-            return;
+        Dispatcher.UIThread.Invoke(() =>
+        {
+            if (DataContext == null)
+                return;
 
-        DataContext.ProgressText = status;
+            DataContext.ProgressText = status;
+        });
     }
 
     /// <summary>
@@ -328,16 +363,20 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// <param name="args">Optional arguments for formatting the status message.</param>
     public void SetStatus(string status, params object[]? args)
     {
-        if (DataContext == null)
-            return;
-        
-        if (args == null || args.Length == 0)
+        Dispatcher.UIThread.Invoke(() =>
         {
-            DataContext.ProgressText = status;
-            return;
-        }
+            if (DataContext == null)
+                return;
 
-        DataContext.ProgressText = string.Format(status, args);
+            if (args == null || args.Length == 0)
+            {
+                DataContext.ProgressText = status;
+                return;
+            }
+
+            DataContext.ProgressText = string.Format(status, args);
+        });
     }
+
     #endregion 
 }

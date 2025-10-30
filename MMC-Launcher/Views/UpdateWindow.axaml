@@ -18,7 +18,7 @@
         Icon="avares://MMC-Launcher/Assets/icons/favicon.png">
     <Grid>
         <!-- Background Image -->
-        <Image Source="avares://MMC-Launcher/Assets/screens/screen-update-2.png" 
+        <Image Source="{Binding ScreenImage}" 
                Stretch="Fill" 
                VerticalAlignment="Stretch" 
                HorizontalAlignment="Stretch"/>
