@@ -192,6 +192,7 @@
                                   Classes="OfflineCheckBox"
                                   Foreground="White"
                                   FontSize="18"
+                                  FontWeight="500"
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Center"
                                   Margin="30, 0, 30, 0"
