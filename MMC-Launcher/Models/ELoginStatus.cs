@@ -6,4 +6,6 @@ public enum ELoginStatus
     LOGGING_IN = 1,
     SUCCESS = 2,
     LAUNCHING = 3,
+    ERROR = 4,
+    TFA = 5
 }
