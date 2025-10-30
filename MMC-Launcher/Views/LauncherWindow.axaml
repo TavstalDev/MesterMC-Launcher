@@ -225,25 +225,36 @@
                     Height="30"
                     Classes="LoginBox"
                     IsEnabled="{Binding !OfflineMode}"
+                    RevealPassword="False"
+                    PasswordChar="●"
                     Text="{Binding Password}"
                     Watermark="Jelszó" />
 
                 <!--  Offline Login CheckBox  -->
-                <CheckBox
+                <Border
                     Grid.Row="2"
                     Margin="30,0,30,0"
-                    Padding="0"
-                    HorizontalAlignment="Left"
                     VerticalAlignment="Center"
-                    Classes="OfflineCheckBox"
-                    FontSize="18"
-                    FontWeight="500"
-                    Foreground="White"
-                    IsChecked="{Binding OfflineMode, Mode=TwoWay}">
-                    <Border Width="205">
-                        <TextBlock Text="Offline mód" />
-                    </Border>
-                </CheckBox>
+                    HorizontalAlignment="Left"
+                    ToolTip.Placement="Right">
+                     <ToolTip.Tip>
+                        <StackPanel>
+                            <TextBlock>Jelenleg csak az offline mód elérhető.</TextBlock>
+                        </StackPanel>
+                    </ToolTip.Tip>
+
+                    <CheckBox
+                        Padding="0"
+                        Classes="OfflineCheckBox"
+                        FontSize="18"
+                        FontWeight="500"
+                        Foreground="White"
+                        IsChecked="{Binding OfflineMode, Mode=TwoWay}"
+                        IsEnabled="False">  <Border Width="205">
+                            <TextBlock Text="Offline mód" />
+                        </Border>
+                    </CheckBox>
+                </Border>
 
                 <!--  Login Button  -->
                 <Button

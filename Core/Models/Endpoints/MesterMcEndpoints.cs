@@ -14,4 +14,8 @@ public static class MesterMcEndpoints
     /// The URL for retrieving all releases of Konkord.
     /// </summary>
     public const string AllReleases = "https://api.github.com/repos/TavstalDev/MMC-Launcher/releases";
+    
+    public const string AuthEndpoint = "https://api.mestermc.hu/auth/login";
+    
+    public const string TfaEndpoint = "https://api.mestermc.hu/auth/2fa";
 }

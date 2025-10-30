@@ -80,7 +80,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         // Pick whichever fits better
         double multiplier;
         if (screenHeight >= 1920 && screenWidth >= 1080)
-            multiplier = 0.6;
+            multiplier = 0.65;
         else
             multiplier = 0.47;
         
