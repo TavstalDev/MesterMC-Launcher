@@ -12,6 +12,15 @@
     </PropertyGroup>
 
     <PropertyGroup>
+        <AssemblyTitle>MMC-Launcher</AssemblyTitle>
+        <Company>MesterMC</Company>
+        <Product>MesterMC Launcher</Product>
+        <Description>The official game launcher of MesterMC.</Description>
+        <Version>1.0.0.0</Version>
+        <FileVersion>1.0.0.0</FileVersion>
+    </PropertyGroup>
+
+    <PropertyGroup>
         <PublishSingleFile>true</PublishSingleFile>
         <SelfContained>true</SelfContained>
         <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
