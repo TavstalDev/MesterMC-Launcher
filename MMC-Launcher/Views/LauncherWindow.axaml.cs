@@ -79,13 +79,13 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         double scaleY = screenHeight / baseHeight;
 
         // Pick whichever fits better
-        double multiplier;
+        /*double multiplier;
         if (screenHeight >= 1080 && screenWidth >= 1920)
             multiplier = 0.6;
         else
-            multiplier = 0.47;
+            multiplier = 0.47;*/
         
-        double scale = Math.Min(scaleX, scaleY) * multiplier;
+        double scale = Math.Min(scaleX, scaleY) * 0.47;
 
         // Apply scaled window size
         Width = baseWidth * scale;

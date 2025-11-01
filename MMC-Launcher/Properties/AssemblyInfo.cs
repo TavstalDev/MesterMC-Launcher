@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("MMC-Launcher")]
-[assembly: AssemblyDescription("The official launcher for MesterMC server network.")]
+[assembly: AssemblyDescription("The official game launcher of MesterMC.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MesterMC")]
 [assembly: AssemblyProduct("MMC-Launcher")]
