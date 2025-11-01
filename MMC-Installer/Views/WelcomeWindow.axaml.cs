@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace MMC_Installer;
 
-public partial class MainWindow : Window
+public partial class WelcomeWindow : Window
 {
-    public MainWindow()
+    public WelcomeWindow()
     {
         InitializeComponent();
     }
