@@ -1,11 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <RootNamespace>Tavstal.MesterMC.Installer</RootNamespace>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <ApplicationIcon>Assets/icons/favicon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -42,12 +45,5 @@
         <DependentUpon>MainWindow.axaml</DependentUpon>
         <SubType>Code</SubType>
       </Compile>
-    </ItemGroup>
-
-
-    <ItemGroup>
-      <AvaloniaResource Include="Assets\icons\favicon.ico" />
-      <AvaloniaResource Include="Assets\icons\favicon.png" />
-      <AvaloniaResource Include="Assets\icons\icon.png" />
     </ItemGroup>
 </Project>

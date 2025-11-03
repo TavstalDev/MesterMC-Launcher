@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace MMC_Installer;
+namespace Tavstal.MesterMC.Installer.Views;
 
 public partial class WelcomeWindow : Window
 {

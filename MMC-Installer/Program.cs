@@ -1,7 +1,7 @@
-﻿using Avalonia;
-using System;
+﻿using System;
+using Avalonia;
 
-namespace MMC_Installer;
+namespace Tavstal.MesterMC.Installer;
 
 class Program
 {

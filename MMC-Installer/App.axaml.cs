@@ -1,8 +1,9 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Tavstal.MesterMC.Installer.Views;
 
-namespace MMC_Installer;
+namespace Tavstal.MesterMC.Installer;
 
 public partial class App : Application
 {
