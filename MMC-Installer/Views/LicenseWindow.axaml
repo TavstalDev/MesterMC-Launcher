@@ -1,0 +1,72 @@
+<Window
+    x:Class="Tavstal.MesterMC.Installer.Views.LicenseWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="MesterMC Telepítő - Licencszerződés"
+    Width="650"
+    Height="400"
+    d:DesignHeight="400"
+    d:DesignWidth="650"
+    Background="#F0F0F0"
+    CanResize="False"
+    Icon="avares://MMC-Installer/Assets/icons/favicon.png"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    <Grid RowDefinitions="Auto, *, Auto">
+        
+        <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="#CCCCCC" Background="#F0F0F0">
+            <Grid>
+                <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="20,10">
+                    <TextBlock Text="Licencszerződés"
+                               FontSize="16" FontWeight="SemiBold"
+                               Foreground="Black"/>
+                    
+                    <TextBlock Text="Kérlek olvasd át figyelmesen mielőtt folytatnád a telepítést."
+                               Foreground="Black"
+                               Margin="20, 0, 0, 0"/>
+                </StackPanel>
+                <Image Source="avares://MMC-Installer/Assets/icons/icon.png" Height="75" HorizontalAlignment="Right" />
+            </Grid>
+        </Border>
+        
+        <StackPanel Grid.Row="1" Margin="40, 15" Spacing="10" VerticalAlignment="Top">
+            
+            <TextBlock Text="Kérlek olvasd el az alábbi licencszerződést a MesterMC telepítéséhez mielőtt folytatnád a telepítést:"
+                       TextWrapping="Wrap"
+                       Margin="0"
+                       Foreground="Black"/>
+                
+            <ScrollViewer Height="155" VerticalScrollBarVisibility="Auto" Background="White" BorderBrush="#CCCCCC" BorderThickness="1">
+                <TextBlock TextWrapping="Wrap" Padding="10" Foreground="Black">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                </TextBlock>
+            </ScrollViewer>
+            
+            <CheckBox Content="Elfogadom a licencszerződést"
+                      Foreground="Black"/>
+        </StackPanel>
+
+        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="#CCCCCC" Padding="10" Background="#F0F0F0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                <Button Content="Vissza" 
+                Classes="DefaultBtn"
+                Width="80" 
+                Foreground="Black"
+                />
+                
+                <Button Content="Tovább" 
+                        Classes="DefaultBtn"
+                        Width="80" 
+                        Foreground="Black"
+                />
+                
+                <Button Classes="DefaultBtn" Content="Mégse" Width="80"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
