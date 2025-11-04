@@ -1,0 +1,708 @@
+<Window
+    x:Class="Tavstal.MesterMC.Installer.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:Tavstal.MesterMC.Installer.Views"
+    xmlns:converters="clr-namespace:Avalonia.Controls.Converters;assembly=Avalonia.Controls"
+    xmlns:views="clr-namespace:Tavstal.MesterMC.Installer.Views"
+    xmlns:models="clr-namespace:Tavstal.MesterMC.Installer.Models"
+    Title="MesterMC Telepítő - Üdvözlő"
+    Width="650"
+    Height="400"
+    d:DesignHeight="400"
+    d:DesignWidth="650"
+    x:DataType="views:MainViewModel"
+    Background="#F0F0F0"
+    CanResize="False"
+    Icon="avares://MMC-Installer/Assets/icons/favicon.png"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    <Window.Resources>
+        <converters:EnumToBoolConverter x:Key="VisibilityConverter" />
+    </Window.Resources>
+    <Grid>
+        <!--  Welcome, Window Content  -->
+        <Grid RowDefinitions="*, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EInstallerWindow.Welcome}}">
+
+            <Grid Grid.Row="0" ColumnDefinitions="183, *">
+                <!-- Banner -->
+                <Border
+                    Grid.Column="0"
+                    Background="#F0F0F0"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="0,0,0,0">
+                    <Image
+                        Margin="0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Source="avares://MMC-Installer/Assets/images/banner.png" />
+                </Border>
+
+                <!-- Content -->
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="25"
+                    VerticalAlignment="Top">
+
+                    <TextBlock
+                        Margin="0,0,0,25"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="Black"
+                        Text="Üdvözöl a MesterMC Indító telepítő varázsló"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,5"
+                        Foreground="Black"
+                        Text="A MesterMC Indító telepítő varázsló segít a MesterMC Indító számítógépre történő telepítésében."
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,50"
+                        Foreground="Black"
+                        Text="Kattints a Tovább gombra a folytatáshoz, vagy a Mégse gombra a telepítő varázsló bezárásához."
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        VerticalAlignment="Bottom"
+                        Foreground="#666"
+                        Text="Copyright © 2025 MesterMC" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="1"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EInstallerWindow.License}"
+                        Content="Tovább"
+                        Foreground="Black" />
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Command="{Binding CloseWindowCommand}"
+                        Content="Mégse" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  License Window Content  -->
+        <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EInstallerWindow.License}}">
+            <!-- Header -->
+            <Border
+                Grid.Row="0"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1">
+                <Grid>
+                    <StackPanel
+                        Margin="20,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Vertical">
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="Black"
+                            Text="Licencszerződés" />
+
+                        <TextBlock
+                            Margin="20,0,0,0"
+                            Foreground="Black"
+                            Text="Kérlek olvasd át figyelmesen mielőtt folytatnád a telepítést." />
+                    </StackPanel>
+                    <Image
+                        Height="60"
+                        HorizontalAlignment="Right"
+                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                </Grid>
+            </Border>
+
+            <!-- Content -->
+            <Grid
+                Grid.Row="1"
+                Margin="40,15"
+                VerticalAlignment="Top"
+                RowDefinitions="Auto, *, Auto"
+                RowSpacing="10">
+
+                <TextBlock
+                    Grid.Row="0"
+                    Margin="0"
+                    Foreground="Black"
+                    Text="Kérlek olvasd el az alábbi licencszerződést a MesterMC telepítéséhez mielőtt folytatnád a telepítést:"
+                    TextWrapping="Wrap" />
+
+                <ScrollViewer
+                    Grid.Row="1"
+                    Background="White"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="1"
+                    VerticalScrollBarVisibility="Auto">
+                    <TextBlock
+                        Padding="10"
+                        Foreground="Black"
+                        TextWrapping="Wrap">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                    </TextBlock>
+                </ScrollViewer>
+
+                <CheckBox
+                    Grid.Row="2"
+                    Content="Elfogadom a licencszerződést"
+                    Foreground="Black" />
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="2"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Vissza"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EInstallerWindow.Welcome}"/>
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Tovább"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EInstallerWindow.LocationSelect}"/>
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Mégse"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  Install Directory Window Content  -->
+        <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EInstallerWindow.LocationSelect}}">
+            <!-- Header -->
+            <Border
+                Grid.Row="0"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1">
+                <Grid>
+                    <StackPanel
+                        Margin="20,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Vertical">
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="Black"
+                            Text="Telepítési könyvtár" />
+
+                        <TextBlock
+                            Margin="20,0,0,0"
+                            Foreground="Black"
+                            Text="Hová szeretnéd telepíteni a MesterMC-t?" />
+                    </StackPanel>
+                    <Image
+                        Height="60"
+                        HorizontalAlignment="Right"
+                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                </Grid>
+            </Border>
+
+            <!-- Content -->
+            <Grid
+                Grid.Row="1"
+                Margin="40,15"
+                VerticalAlignment="Stretch"
+                RowDefinitions="Auto, Auto, *"
+                RowSpacing="10">
+
+                <TextBlock
+                    Grid.Row="0"
+                    Margin="0"
+                    Foreground="Black"
+                    Text="Kattins a 'Tallózás' gombra a telepítési könyvtár kiválasztásához vagy kattints a 'Tovább' gombra az alapértelmezett hely használatához:"
+                    TextWrapping="Wrap" />
+
+                <Grid
+                    Grid.Row="1"
+                    VerticalAlignment="Top"
+                    ColumnDefinitions="*, Auto"
+                    ColumnSpacing="10">
+                    <TextBox Grid.Column="0" Watermark="Telepítési könyvtár útvonal" />
+                    <Button
+                        Grid.Column="1"
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Tallózás"
+                        Foreground="Black" />
+                </Grid>
+
+                <TextBlock
+                    Grid.Row="2"
+                    Margin="0"
+                    VerticalAlignment="Bottom"
+                    Foreground="Black"
+                    Text="Legalább 500 MB szabad hely szükséges a telepítéshez."
+                    TextWrapping="Wrap" />
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="2"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Vissza"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EInstallerWindow.License}"/>
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Tovább"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EInstallerWindow.Shortcuts}"/>
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Mégse"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  Shortcuts Window Content  -->
+        <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EInstallerWindow.Shortcuts}}">
+            <!-- Header -->
+            <Border
+                Grid.Row="0"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1">
+                <Grid>
+                    <StackPanel
+                        Margin="20,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Vertical">
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="Black"
+                            Text="Gyorsindítók létrehozása" />
+
+                        <TextBlock
+                            Margin="20,0,0,0"
+                            Foreground="Black"
+                            Text="Milyen gyorsindítókat szeretnél létrehozni a MesterMC számára?" />
+                    </StackPanel>
+                    <Image
+                        Height="60"
+                        HorizontalAlignment="Right"
+                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                </Grid>
+            </Border>
+
+            <!-- Content -->
+            <Grid
+                Grid.Row="1"
+                Margin="40,15"
+                VerticalAlignment="Stretch"
+                RowDefinitions="Auto, Auto, Auto"
+                RowSpacing="0">
+
+                <TextBlock
+                    Grid.Row="0"
+                    Margin="0,0,0,5"
+                    Foreground="Black"
+                    Text="Válaszd ki, hogy milyen gyorsindítókat szeretnél létrehozni:"
+                    TextWrapping="Wrap" />
+
+                <CheckBox
+                    Grid.Row="1"
+                    Content="Asztali gyorsindító létrehozása"
+                    Foreground="Black" />
+
+                <Grid
+                    Grid.Row="2"
+                    RowDefinitions="Auto, Auto, Auto"
+                    RowSpacing="5">
+                    <CheckBox Content="Start menü gyorsindító létrehozása" Foreground="Black" />
+
+                    <TextBlock Grid.Row="1" Text="Ha szeretnéd megtudod változtatni a Start menü mappát." />
+
+                    <Grid
+                        Grid.Row="2"
+                        VerticalAlignment="Top"
+                        ColumnDefinitions="*, Auto"
+                        ColumnSpacing="10">
+                        <TextBox Grid.Column="0" Watermark="Start menü mappa útvonal" />
+                        <Button
+                            Grid.Column="1"
+                            Width="80"
+                            Classes="DefaultBtn"
+                            Content="Tallózás"
+                            Foreground="Black" />
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="2"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Vissza"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EInstallerWindow.LocationSelect}"/>
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Tovább"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EInstallerWindow.Review}"/>
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Mégse"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  Ready To Install Window Content  -->
+        <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EInstallerWindow.Review}}">
+            <!-- Header -->
+            <Border
+                Grid.Row="0"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1">
+                <Grid>
+                    <StackPanel
+                        Margin="20,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Vertical">
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="Black"
+                            Text="Készen áll a telepítésre" />
+
+                        <TextBlock
+                            Margin="20,0,0,0"
+                            Foreground="Black"
+                            Text="A MesterMC telepítője készen áll a telepítés megkezdésére." />
+                    </StackPanel>
+                    <Image
+                        Height="60"
+                        HorizontalAlignment="Right"
+                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                </Grid>
+            </Border>
+
+            <!-- Content -->
+            <Grid
+                Grid.Row="1"
+                Margin="40,15"
+                VerticalAlignment="Stretch"
+                RowDefinitions="Auto, *"
+                RowSpacing="10">
+
+                <TextBlock
+                    Grid.Row="0"
+                    Margin="0"
+                    Foreground="Black"
+                    Text="Kattints a 'Telepítés' gombra a telepítés megkezdéséhez, vagy a 'Vissza' gombra a beállítások módosításához."
+                    TextWrapping="Wrap" />
+
+                <ScrollViewer
+                    Grid.Row="1"
+                    Background="White"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="1"
+                    VerticalScrollBarVisibility="Auto">
+                    <TextBlock
+                        Padding="10"
+                        VerticalAlignment="Stretch"
+                        Foreground="Black"
+                        TextWrapping="Wrap">
+                        <Run Text="A telepítő könyvtár:" />
+                        <LineBreak />
+                        <Run Text="  C:\Program Files\MesterMC" />
+                        <LineBreak />
+                        <Run Text="Start menü könyvtár:" />
+                        <LineBreak />
+                        <Run Text="  C:\Program Files\MesterMC" />
+                        <LineBreak />
+                        <Run Text="Asztali indító létrehozása?" />
+                        <LineBreak />
+                        <Run Text="  Igen" />
+                        <LineBreak />
+                        <Run Text="Start menü indító létrehozása?" />
+                        <LineBreak />
+                        <Run Text="  Igen" />
+                        <LineBreak />
+                    </TextBlock>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="2"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Vissza"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EInstallerWindow.Shortcuts}"/>
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Telepítés"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EInstallerWindow.Installing}"/>
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Mégse"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  Install Window Content  -->
+        <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EInstallerWindow.Installing}}">
+            <!-- Header -->
+            <Border
+                Grid.Row="0"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1">
+                <Grid>
+                    <StackPanel
+                        Margin="20,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Vertical">
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="Black"
+                            Text="Telepítés" />
+
+                        <TextBlock
+                            Margin="20,0,0,0"
+                            Foreground="Black"
+                            Text="Kérlek várj, amíg a MesterMC telepítője dolgozik..." />
+                    </StackPanel>
+                    <Image
+                        Height="60"
+                        HorizontalAlignment="Right"
+                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                </Grid>
+            </Border>
+
+            <!-- Content -->
+            <Grid
+                Grid.Row="1"
+                Margin="40,15"
+                VerticalAlignment="Stretch"
+                RowDefinitions="Auto, *"
+                RowSpacing="10">
+
+                <TextBlock
+                    Grid.Row="0"
+                    Margin="0"
+                    Foreground="Black"
+                    Text="A telepítés folyamatban van. Kérlek várj, amíg a MesterMC telepítője befejezi a műveletet. Ez eltarthat néhány percig. Ne zárd be az ablakot, amíg a telepítés folyamatban van."
+                    TextWrapping="Wrap" />
+
+                <ScrollViewer
+                    Grid.Row="1"
+                    Background="White"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="1"
+                    VerticalScrollBarVisibility="Auto">
+                    <TextBlock
+                        Padding="10"
+                        VerticalAlignment="Stretch"
+                        Foreground="Black"
+                        TextWrapping="Wrap" />
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="2"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Mégse"
+                        IsEnabled="False"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  Finish Window Content  -->
+        <Grid RowDefinitions="*, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EInstallerWindow.Finished}}">
+            <Grid Grid.Row="0" ColumnDefinitions="183, *">
+                <!-- Banner -->
+                <Border
+                    Grid.Column="0"
+                    Background="#F0F0F0"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="0,0,0,0">
+                    <Image
+                        Margin="0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Source="avares://MMC-Installer/Assets/images/banner.png" />
+                </Border>
+
+                <!-- Content -->
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="25"
+                    VerticalAlignment="Top">
+
+                    <TextBlock
+                        Margin="0,0,0,25"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="Black"
+                        Text="A MesterMC Telepítése Befejeződött"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,10"
+                        Foreground="Black"
+                        Text="A telepítő varázsló sikeresen telepítette a MesterMC alkalmazást a számítógépére."
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,5"
+                        Foreground="Black"
+                        Text="Kilépéshez kattints a 'Befejez' gombra."
+                        TextWrapping="Wrap" />
+
+                    <CheckBox Content="MesterMC elindítása" Foreground="Black" />
+
+                    <CheckBox Content="MesterMC weboldal megnyitása" Foreground="Black" />
+
+                </StackPanel>
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="1"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Befejez"
+                        Foreground="Black"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
