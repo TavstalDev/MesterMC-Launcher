@@ -8,6 +8,9 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using Newtonsoft.Json.Linq;
+using Tavstal.KonkordLauncher.Core.Models.Fabric;
+using Tavstal.KonkordLauncher.Core.Models.ModLoaders;
 using Tavstal.KonkordLauncher.Core.Models.MojangApi;
 
 namespace Tavstal.KonkordLauncher.Core.Helpers;
@@ -40,5 +43,43 @@ public static class ManifestHelper
 
         _minecraftManifest = await JsonHelper.ReadJsonFileAsync<VersionManifest>(manifestPath);
         return _minecraftManifest;
+    }
+    
+    /// <summary>
+    /// Stores the Fabric mod loader manifests.
+    /// </summary>
+    private static List<IModManifest>? _fabricManifest;
+
+    /// <summary>
+    /// Retrieves the cached Fabric mod loader manifests.
+    /// </summary>
+    /// <returns>A list of <see cref="IModManifest"/> or null if not loaded.</returns>
+    public static List<IModManifest>? GetFabricManifest() => _fabricManifest;
+
+    /// <summary>
+    /// Asynchronously loads the Fabric mod loader manifests from the specified path.
+    /// </summary>
+    /// <param name="manifestPath">The file path to the Fabric manifest.</param>
+    /// <returns>A list of <see cref="IModManifest"/> or null if loading fails.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the loader section is missing in the JSON.</exception>
+    public static async Task<List<IModManifest>?> GetFabricManifestAsync(string manifestPath)
+    {
+        if (_fabricManifest != null)
+            return _fabricManifest;
+
+        var rawManifest = await File.ReadAllTextAsync(manifestPath);
+        JObject jObject = JObject.Parse(rawManifest);
+        var mappings = jObject["loader"] as JArray;
+        if (mappings == null)
+        {
+            throw new InvalidOperationException("Fabric manifest loader not found in the JSON.");
+        }
+        _fabricManifest = [];
+        foreach (var mapping in mappings)
+        {
+            _fabricManifest.Add(new FabricManifest(mapping.Value<string>("version")!));
+        }
+
+        return _fabricManifest;
     }
 }
