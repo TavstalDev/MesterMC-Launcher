@@ -1,5 +1,6 @@
 ﻿using System;
 using Avalonia;
+using ReactiveUI.Avalonia;
 
 namespace Tavstal.MesterMC.Installer;
 
@@ -17,5 +18,6 @@ class Program
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .LogToTrace();
+            .LogToTrace()
+            .UseReactiveUI();
 }
