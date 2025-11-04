@@ -192,8 +192,8 @@ public partial class App : Application
             launcherSettings.Java.MaxMemory, 
             launcherSettings.Java.JvmArguments, 
             "1.21.5", 
-            EMinecraftKind.VANILLA, 
-            null, 
+            EMinecraftKind.FABRIC, 
+            "0.17.3", 
             launcherSettings.Launcher.MinecraftDataDirectoryPath,
             launcherSettings.Misc.PreLaunchCommand, 
             wrapperCommand, 
@@ -209,7 +209,7 @@ public partial class App : Application
             launcherSettings.Launcher.LibrariesDirectoryPath,
             launcherSettings.Launcher.VersionsDirectoryPath, 
             launcherSettings.Launcher.GetVanillaManifestPath(), 
-            null, 
+            launcherSettings.Launcher.GetFabricManifestPath(), 
             nativeLibraries);
         LauncherDetails launcherDetails = new LauncherDetails("MesterMC", Version);
         ClientDetails clientDetails = new ClientDetails("0", "teszt", GameHelper.GetOfflinePlayerUUID("teszt"), true); // Default details, it will be updated later in the process
@@ -222,7 +222,7 @@ public partial class App : Application
                 : launcherSettings.Minecraft.WindowHeight
         );
 
-        _instance = new MinecraftInstance(gameDetails, pathDetails, launcherDetails, clientDetails, resolution, progressReporter);
+        _instance = new FabricInstance(gameDetails, pathDetails, launcherDetails, clientDetails, resolution, progressReporter);
         return _instance;
     }
     
