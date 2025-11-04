@@ -31,6 +31,8 @@
             <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
             <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
     </ItemGroup>
 
 
@@ -41,13 +43,14 @@
 
 
     <ItemGroup>
-      <Compile Update="Views\WelcomeWindow.axaml.cs">
+      <Compile Update="Views\MainWindow.axaml.cs">
         <DependentUpon>MainWindow.axaml</DependentUpon>
         <SubType>Code</SubType>
       </Compile>
-      <Compile Update="Views\LicenseWindow.axaml.cs">
-        <DependentUpon>LicenseWindow.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <ProjectReference Include="..\Common\Common.csproj" />
     </ItemGroup>
 </Project>
