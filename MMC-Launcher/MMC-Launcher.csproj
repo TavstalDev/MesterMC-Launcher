@@ -39,6 +39,7 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="9.0.10" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.10" />
         <PackageReference Include="NbtLib" Version="1.0.1" />
         <PackageReference Include="ReactiveUI.Avalonia" Version="11.3.8" />
     </ItemGroup>
@@ -46,12 +47,6 @@
     <ItemGroup>
         <AvaloniaResource Include="Assets\**" />
         <AvaloniaResource Include="Styles\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="Microsoft.Extensions.Hosting.Abstractions">
-        <HintPath>..\..\..\..\..\.nuget\packages\microsoft.extensions.hosting.abstractions\9.0.8\lib\net9.0\Microsoft.Extensions.Hosting.Abstractions.dll</HintPath>
-      </Reference>
     </ItemGroup>
 
     <ItemGroup>

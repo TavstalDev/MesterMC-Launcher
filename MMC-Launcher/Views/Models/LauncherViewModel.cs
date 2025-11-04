@@ -39,7 +39,7 @@ public partial class LauncherViewModel : ObservableObject
         };
     }
     
-    //#region Relay Commands
+    #region Relay Commands
     [RelayCommand]
     public async Task Login()
     {
@@ -149,7 +149,7 @@ public partial class LauncherViewModel : ObservableObject
         SelectedNewsItem = NewsItems[SelectedNewsIndex];
         await Task.CompletedTask;
     }
-    //#endregion
+    #endregion
     
     private async Task PlayAsync(string accessToken, string playerName)
     {
