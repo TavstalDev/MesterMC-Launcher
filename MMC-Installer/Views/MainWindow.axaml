@@ -172,7 +172,8 @@
                 <CheckBox
                     Grid.Row="2"
                     Content="Elfogadom a licencszerződést"
-                    Foreground="Black" />
+                    Foreground="Black"
+                    IsChecked="{Binding IsLicenseAccepted}"/>
             </Grid>
 
             <!-- Footer -->
@@ -199,6 +200,7 @@
                         Classes="DefaultBtn"
                         Content="Tovább"
                         Foreground="Black"
+                        IsEnabled="{Binding IsLicenseAccepted}"
                         Command="{Binding OpenWindowCommand}"
                         CommandParameter="{x:Static models:EInstallerWindow.LocationSelect}"/>
 

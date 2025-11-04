@@ -13,6 +13,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(MainViewModel));
     [ObservableProperty] private EInstallerWindow currentWindow;
+    [ObservableProperty] private bool isLicenseAccepted;
     public Interaction<Unit, Unit> CloseInteraction { get; } = new();
     
     [RelayCommand]
