@@ -14,6 +14,10 @@ public partial class MainViewModel : ObservableObject
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(MainViewModel));
     [ObservableProperty] private EInstallerWindow currentWindow;
     [ObservableProperty] private bool isLicenseAccepted;
+    [ObservableProperty] private string gameDirectory;
+    [ObservableProperty] private string startMenuDirectory;
+    [ObservableProperty] private bool createDesktopShortcut = true;
+    [ObservableProperty] private bool createStartMenuShortcut = false;
     public Interaction<Unit, Unit> CloseInteraction { get; } = new();
     
     [RelayCommand]
@@ -27,5 +31,17 @@ public partial class MainViewModel : ObservableObject
     private async Task CloseWindow()
     {
         await CloseInteraction.Handle(Unit.Default);
+    }
+    
+    [RelayCommand]
+    private async Task SelectGameDirectory()
+    {
+        
+    }
+    
+    [RelayCommand]
+    private async Task SelectStartMenuDirectory()
+    {
+        
     }
 }

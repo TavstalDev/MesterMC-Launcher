@@ -267,13 +267,14 @@
                     VerticalAlignment="Top"
                     ColumnDefinitions="*, Auto"
                     ColumnSpacing="10">
-                    <TextBox Grid.Column="0" Watermark="Telepítési könyvtár útvonal" />
+                    <TextBox Grid.Column="0" Watermark="Telepítési könyvtár útvonal" Text="{Binding GameDirectory}" />
                     <Button
                         Grid.Column="1"
                         Width="80"
                         Classes="DefaultBtn"
                         Content="Tallózás"
-                        Foreground="Black" />
+                        Foreground="Black"
+                        Command="{Binding SelectGameDirectoryCommand}"/>
                 </Grid>
 
                 <TextBlock
@@ -373,22 +374,25 @@
                 <CheckBox
                     Grid.Row="1"
                     Content="Asztali gyorsindító létrehozása"
-                    Foreground="Black" />
+                    Foreground="Black"
+                    IsChecked="{Binding CreateDesktopShortcut}"/>
 
                 <Grid
                     Grid.Row="2"
                     RowDefinitions="Auto, Auto, Auto"
                     RowSpacing="5">
-                    <CheckBox Content="Start menü gyorsindító létrehozása" Foreground="Black" />
+                    <CheckBox Content="Start menü gyorsindító létrehozása" Foreground="Black"
+                              IsChecked="{Binding CreateStartMenuShortcut}"/>
 
-                    <TextBlock Grid.Row="1" Text="Ha szeretnéd megtudod változtatni a Start menü mappát." />
+                    <TextBlock Grid.Row="1" Text="Ha szeretnéd megtudod változtatni a Start menü mappát." IsVisible="{Binding CreateStartMenuShortcut}" />
 
                     <Grid
                         Grid.Row="2"
                         VerticalAlignment="Top"
                         ColumnDefinitions="*, Auto"
-                        ColumnSpacing="10">
-                        <TextBox Grid.Column="0" Watermark="Start menü mappa útvonal" />
+                        ColumnSpacing="10"
+                        IsVisible="{Binding CreateStartMenuShortcut}">
+                        <TextBox Grid.Column="0" Watermark="Start menü mappa útvonal" Text="{Binding StartMenuDirectory}" />
                         <Button
                             Grid.Column="1"
                             Width="80"
