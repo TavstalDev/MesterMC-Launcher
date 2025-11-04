@@ -138,4 +138,9 @@ public class LauncherConfig
     {
         return Path.Combine(ManifestsDirectoryPath, "vanillaManifest.json");
     }
+    
+    public string GetFabricManifestPath()
+    {
+        return Path.Combine(ManifestsDirectoryPath, "fabricManifest.json");
+    }
 }

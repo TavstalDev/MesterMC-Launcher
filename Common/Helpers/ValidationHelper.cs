@@ -109,6 +109,19 @@ public static class ValidationHelper
             
             if (await ManifestHelper.GetMinecraftManifestAsync(settings.Launcher.GetVanillaManifestPath()) == null)
                 _logger.Error("Failed to load Minecraft manifest");
+            
+            // Fabric
+            if (!File.Exists(settings.Launcher.GetFabricManifestPath()) || refreshManifests)
+            {
+                Progress<double> progress = new Progress<double>();
+                progress.ProgressChanged += (_, e) =>
+                {
+                    progressReporter?.SetStatus("A {0} fabric manifest letöltése... {1}%", "fabric", e.ToString("0.00"));
+                };
+                await HttpHelper.DownloadFileAsync(FabricEndpoints.VersionManifestUrl, settings.Launcher.GetFabricManifestPath(), progress);
+            }
+            if (await ManifestHelper.GetFabricManifestAsync(settings.Launcher.GetFabricManifestPath()) == null)
+                _logger.Error("Failed to load Fabric manifest");
 
             return true;
         }
