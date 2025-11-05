@@ -212,7 +212,6 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         Close();
     }
     
-    
     #region IProgressReporter Implementation
     /// <summary>
     /// Sets the progress value for the startup process.
