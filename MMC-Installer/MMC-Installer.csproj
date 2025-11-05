@@ -33,6 +33,7 @@
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+        <PackageReference Include="securifybv.ShellLink" Version="0.1.0" />
     </ItemGroup>
 
 

@@ -252,7 +252,7 @@
                 Grid.Row="1"
                 Margin="40,15"
                 VerticalAlignment="Stretch"
-                RowDefinitions="Auto, Auto, *"
+                RowDefinitions="Auto, Auto, Auto, *"
                 RowSpacing="10">
 
                 <TextBlock
@@ -267,7 +267,10 @@
                     VerticalAlignment="Top"
                     ColumnDefinitions="*, Auto"
                     ColumnSpacing="10">
-                    <TextBox Grid.Column="0" Watermark="Telepítési könyvtár útvonal" Text="{Binding GameDirectory}" />
+                    <TextBox Grid.Column="0" 
+                             Watermark="Telepítési könyvtár útvonal" 
+                             Text="{Binding GameDirectory}"
+                             TextChanged="GameDirPath_OnTextChanged"/>
                     <Button
                         Grid.Column="1"
                         Width="80"
@@ -276,9 +279,18 @@
                         Foreground="Black"
                         Command="{Binding SelectGameDirectoryCommand}"/>
                 </Grid>
-
+                
                 <TextBlock
                     Grid.Row="2"
+                    Margin="0"
+                    VerticalAlignment="Top"
+                    Foreground="Red"
+                    Text="{Binding PathErrorMessage}"
+                    TextWrapping="Wrap"
+                    IsVisible="{Binding HasPathErrorMessage}"/>
+
+                <TextBlock
+                    Grid.Row="3"
                     Margin="0"
                     VerticalAlignment="Bottom"
                     Foreground="Black"
@@ -311,7 +323,8 @@
                         Content="Tovább"
                         Foreground="Black"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.Shortcuts}"/>
+                        CommandParameter="{x:Static models:EInstallerWindow.Shortcuts}"
+                        IsEnabled="{Binding !HasPathErrorMessage}"/>
 
                     <Button
                         Width="80"
@@ -379,7 +392,7 @@
 
                 <Grid
                     Grid.Row="2"
-                    RowDefinitions="Auto, Auto, Auto"
+                    RowDefinitions="Auto, Auto, Auto, Auto"
                     RowSpacing="5">
                     <CheckBox Content="Start menü gyorsindító létrehozása" Foreground="Black"
                               IsChecked="{Binding CreateStartMenuShortcut}"/>
@@ -392,7 +405,10 @@
                         ColumnDefinitions="*, Auto"
                         ColumnSpacing="10"
                         IsVisible="{Binding CreateStartMenuShortcut}">
-                        <TextBox Grid.Column="0" Watermark="Start menü mappa útvonal" Text="{Binding StartMenuDirectory}" />
+                        <TextBox Grid.Column="0" 
+                                 Watermark="Start menü mappa útvonal" 
+                                 Text="{Binding StartMenuDirectory}"
+                                 TextChanged="StartMenuPath_OnTextChanged"/>
                         <Button
                             Grid.Column="1"
                             Width="80"
@@ -400,6 +416,15 @@
                             Content="Tallózás"
                             Foreground="Black" />
                     </Grid>
+                    
+                    <TextBlock
+                        Grid.Row="3"
+                        Margin="0"
+                        VerticalAlignment="Top"
+                        Foreground="Red"
+                        Text="{Binding PathErrorMessage}"
+                        TextWrapping="Wrap"
+                        IsVisible="{Binding HasPathErrorMessage}"/>
                 </Grid>
             </Grid>
 
@@ -428,7 +453,8 @@
                         Content="Tovább"
                         Foreground="Black"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.Review}"/>
+                        CommandParameter="{x:Static models:EInstallerWindow.Review}"
+                        IsEnabled="{Binding !HasPathErrorMessage}"/>
 
                     <Button
                         Width="80"
@@ -498,24 +524,8 @@
                         Padding="10"
                         VerticalAlignment="Stretch"
                         Foreground="Black"
-                        TextWrapping="Wrap">
-                        <Run Text="A telepítő könyvtár:" />
-                        <LineBreak />
-                        <Run Text="  C:\Program Files\MesterMC" />
-                        <LineBreak />
-                        <Run Text="Start menü könyvtár:" />
-                        <LineBreak />
-                        <Run Text="  C:\Program Files\MesterMC" />
-                        <LineBreak />
-                        <Run Text="Asztali indító létrehozása?" />
-                        <LineBreak />
-                        <Run Text="  Igen" />
-                        <LineBreak />
-                        <Run Text="Start menü indító létrehozása?" />
-                        <LineBreak />
-                        <Run Text="  Igen" />
-                        <LineBreak />
-                    </TextBlock>
+                        TextWrapping="Wrap" 
+                        Text="{Binding ReviewText}"/>
                 </ScrollViewer>
             </Grid>
 
@@ -594,7 +604,7 @@
                 Grid.Row="1"
                 Margin="40,15"
                 VerticalAlignment="Stretch"
-                RowDefinitions="Auto, *"
+                RowDefinitions="Auto, Auto, Auto"
                 RowSpacing="10">
 
                 <TextBlock
@@ -604,18 +614,14 @@
                     Text="A telepítés folyamatban van. Kérlek várj, amíg a MesterMC telepítője befejezi a műveletet. Ez eltarthat néhány percig. Ne zárd be az ablakot, amíg a telepítés folyamatban van."
                     TextWrapping="Wrap" />
 
-                <ScrollViewer
-                    Grid.Row="1"
-                    Background="White"
-                    BorderBrush="#CCCCCC"
-                    BorderThickness="1"
-                    VerticalScrollBarVisibility="Auto">
-                    <TextBlock
-                        Padding="10"
-                        VerticalAlignment="Stretch"
-                        Foreground="Black"
-                        TextWrapping="Wrap" />
-                </ScrollViewer>
+                <ProgressBar Grid.Row="1" ShowProgressText="True" Value="{Binding InstallProgress}" />
+                
+                <TextBlock
+                    Grid.Row="2"
+                    Margin="0"
+                    Foreground="Black"
+                    Text="{Binding InstallText}"
+                    TextWrapping="Wrap" />
             </Grid>
 
             <!-- Footer -->
