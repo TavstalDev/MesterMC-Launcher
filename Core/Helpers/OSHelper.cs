@@ -136,14 +136,13 @@ public static class OSHelper
     /// </returns>
     public static string GetHomeDirectory(EOperatingSystem? os = null)
     {
-        if (os == null)
-            os = GetOperatingSystem();
+        os ??= GetOperatingSystem();
 
         switch (os)
         {
             case EOperatingSystem.Windows:
             {
-                return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             }
             case EOperatingSystem.Linux:
             case EOperatingSystem.MacOS:
@@ -167,8 +166,7 @@ public static class OSHelper
     /// </returns>
     public static string GetDesktopDirectory(EOperatingSystem? os = null)
     {
-        if (os == null)
-            os = GetOperatingSystem();
+        os ??= GetOperatingSystem();
 
         switch (os)
         {
@@ -221,8 +219,7 @@ public static class OSHelper
     /// </returns>
     public static string GetProgramsDirectory(EOperatingSystem? os = null)
     {
-        if (os == null)
-            os = GetOperatingSystem();
+        os ??= GetOperatingSystem();
 
         switch (os)
         {

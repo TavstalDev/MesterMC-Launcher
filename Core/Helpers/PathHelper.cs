@@ -15,7 +15,7 @@ namespace Tavstal.KonkordLauncher.Core.Helpers;
 /// </summary>
 public static class PathHelper
 {
-    private static string _workingDirectory;
+    private static string? _workingDirectory;
     
     /// <summary>
     /// Gets the application directory path.
@@ -56,16 +56,6 @@ public static class PathHelper
     /// Gets the path to the launcher configuration file.
     /// </summary>
     public static readonly string LauncherConfigPath = Path.Combine(ApplicationDir, "config.json");
-
-    /// <summary>
-    /// Gets the path to the launcher accounts file.
-    /// </summary>
-    public static readonly string LauncherAccountsPath = Path.Combine(ApplicationDir, "accounts.json");
-    
-    /// <summary>
-    /// Gets the path to the launcher instances file.
-    /// </summary>
-    public static readonly string LauncherInstancesPath = Path.Combine(ApplicationDir, "instances.json");
     
     /// <summary>
     /// Gets the path to the Java mirrors configuration file.
@@ -81,4 +71,27 @@ public static class PathHelper
     /// Specifies the format for log file names, where `{0}` is replaced with the log name.
     /// </summary>
     public static readonly string LogsFileFormat = "{0:yyyy-MM-dd_HH-mm-ss}.log";
+    
+    /// <summary>
+    /// Validates whether the specified path is a valid file system path.
+    /// </summary>
+    /// <param name="path">The path to validate.</param>
+    /// <returns>
+    /// <c>true</c> if the path is valid; otherwise, <c>false</c>.
+    /// </returns>
+    public static bool IsValidPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        try
+        {
+            Path.GetFullPath(path);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }
