@@ -689,9 +689,9 @@
                         Text="Kilépéshez kattints a 'Befejez' gombra."
                         TextWrapping="Wrap" />
 
-                    <CheckBox Content="MesterMC elindítása" Foreground="Black" />
+                    <CheckBox Content="MesterMC elindítása" Foreground="Black" IsChecked="{Binding LaunchGame}" />
 
-                    <CheckBox Content="MesterMC weboldal megnyitása" Foreground="Black" />
+                    <CheckBox Content="MesterMC weboldal megnyitása" Foreground="Black" IsChecked="{Binding OpenWebsite}" />
 
                 </StackPanel>
             </Grid>
@@ -712,7 +712,7 @@
                         Classes="DefaultBtn"
                         Content="Befejez"
                         Foreground="Black"
-                        Command="{Binding CloseWindowCommand}"/>
+                        Command="{Binding FinishInstallationCommand}"/>
                 </StackPanel>
             </Border>
         </Grid>

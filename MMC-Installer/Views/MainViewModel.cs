@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Reactive;
@@ -31,6 +32,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string? startMenuDirectory;
     [ObservableProperty] private bool createDesktopShortcut = true;
     [ObservableProperty] private bool createStartMenuShortcut = true;
+    [ObservableProperty] private bool openWebsite = true;
+    [ObservableProperty] private bool launchGame = true;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasPathErrorMessage))] private string? pathErrorMessage;
     [ObservableProperty] private string reviewText = string.Empty;
     [ObservableProperty] private double installProgress;
@@ -91,6 +94,48 @@ public partial class MainViewModel : ObservableObject
         }
         
         CurrentWindow = window;
+    }
+    
+    [RelayCommand]
+    private async Task FinishInstallation()
+    {
+        if (LaunchGame)
+        {
+            ProcessStartInfo gameLaunchInfo = new ProcessStartInfo
+            {
+                FileName = Path.Combine(GameDirectory, "bin", OSHelper.GetOperatingSystem() == EOperatingSystem.Windows ? "MMC-Launcher.exe" : "MMC-Launcher"),
+                WorkingDirectory = Path.Combine(GameDirectory, "bin"),
+                UseShellExecute = false
+            };
+            try
+            {
+                Process.Start(gameLaunchInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Failed to launch the game after installation: {ex}");
+            }
+        }
+
+        if (OpenWebsite)
+        {
+            ProcessStartInfo websiteInfo = new ProcessStartInfo
+            {
+                FileName = "https://mestermc.hu/",
+                UseShellExecute = false
+            };
+            try
+            {
+                Process.Start(websiteInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Failed to open the website after installation: {ex}");
+            }
+        }
+
+        await Task.Delay(250); // Small delay to ensure processes start before closing
+        await CloseInteraction.Handle(Unit.Default);
     }
     
     [RelayCommand]
