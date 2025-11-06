@@ -8,9 +8,11 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hardware.Info;
 using Tavstal.KonkordLauncher.Core.Enums;
+using Tavstal.KonkordLauncher.Core.Models;
 
 namespace Tavstal.KonkordLauncher.Core.Helpers;
 
@@ -19,6 +21,8 @@ namespace Tavstal.KonkordLauncher.Core.Helpers;
 /// </summary>
 public static class OSHelper
 {
+    private static CoreLogger _logger = CoreLogger.WithModuleType(typeof(OSHelper));
+    
     /// <summary>
     /// Determines the operating system type.
     /// </summary>
@@ -187,6 +191,8 @@ public static class OSHelper
                 
                 string userHomeDir = GetHomeDirectory();
                 string desktopDir = Path.Combine(userHomeDir, "Desktop"); // Fallback to "Desktop" in home directory
+                if (Directory.Exists(desktopDir))
+                    return desktopDir;
                 
                 var userDirsFilePath = Path.Combine(userHomeDir, ".config", "user-dirs.dirs");
                 if (!File.Exists(userDirsFilePath))
@@ -242,6 +248,57 @@ public static class OSHelper
             }
             default:
                 throw new ArgumentOutOfRangeException(nameof(os));
+        }
+    }
+    
+    /// <summary>
+    /// Opens the specified URL in the default web browser based on the operating system.
+    /// </summary>
+    /// <param name="url">The URL to be opened.</param>
+    public static void OpenUrl(string url)
+    {
+        try
+        {
+            ProcessStartInfo startInfo;
+            switch (GetOperatingSystem())
+            {
+                case EOperatingSystem.Windows:
+                {
+                    startInfo = new ProcessStartInfo(url)
+                    {
+                        UseShellExecute = true
+                    };
+                    break;
+                }
+                case EOperatingSystem.MacOS:
+                {
+                    startInfo = new ProcessStartInfo("open", url)
+                    {
+                        UseShellExecute = false
+                    };
+                    break;
+                }
+                case EOperatingSystem.Linux:
+                {
+                    startInfo = new ProcessStartInfo("xdg-open", url)
+                    {
+                        UseShellExecute = false // xdg-open is the executable
+                    };
+                    break;
+                }
+                default:
+                {
+                    _logger.Warn("Unsupported operating system for opening URLs.");
+                    return;
+                }
+            }
+        
+            // Start the process
+            Process.Start(startInfo);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Failed to open the website after installation: {ex.Message}");
         }
     }
 }
