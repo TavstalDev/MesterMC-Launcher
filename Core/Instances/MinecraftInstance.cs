@@ -166,6 +166,9 @@ public class MinecraftInstance
                 _watcher.Changed += HandleFileWatcherChanged;
             }
             
+            // Check mods
+            ModService.VerifyMods(Path.Combine(versionDetails.GameDir, "mods"));
+            
             // Launch the Minecraft game process with the constructed arguments
             var process = JavaProcessLauncher.StartJava(GameDetails.JavaPath, arguments, logsFilePath, GameDetails.WrapperCommand,
                 GameDetails.EnvironmentVariables);
