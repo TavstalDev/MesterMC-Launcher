@@ -151,6 +151,41 @@ public static class FileSystemHelper
             return false;
         }
     }
+    
+    /// <summary>
+    /// Verifies the SHA256 hash of a file against a given hash value.
+    /// </summary>
+    /// <param name="path">The path of the file to check.</param>
+    /// <param name="compareHash">
+    /// The SHA256 hash to compare against. If null or empty, the method returns true.
+    /// </param>
+    /// <returns>
+    /// True if the file's hash matches the given hash; otherwise, false.
+    /// </returns>
+    public static bool CheckSHA256(string path, string? compareHash)
+    {
+        if (string.IsNullOrEmpty(compareHash))
+            return true;
+
+        try
+        {
+            string fileHash;
+            using (FileStream file = File.OpenRead(path))
+            using (SHA256 hasher = SHA256.Create())
+            {
+                var binaryHash = hasher.ComputeHash(file);
+                fileHash = Convert.ToHexStringLower(binaryHash);
+            }
+
+            return string.Equals(fileHash, compareHash);
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc("Failed to check SHA256 hash:");
+            _logger.Error(ex.ToString());
+            return false;
+        }
+    }
 
     /// <summary>
     /// Makes a file executable by modifying its permissions using the `chmod` command.
