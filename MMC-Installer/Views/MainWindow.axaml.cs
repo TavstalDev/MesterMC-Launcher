@@ -68,7 +68,17 @@ public partial class MainWindow : KonkordWindow<MainViewModel>
         // Initial start menu directory
         DataContext.StartMenuDirectory = OSHelper.GetProgramsDirectory();
     }
-    
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (DataContext == null) 
+            return;
+        
+        if (Directory.Exists(DataContext.TmpDir))
+            Directory.Delete(DataContext.TmpDir, true);
+    }
+
     private async Task<string?> OpenDirPickerAsync()
     {
         // Ensure the VisualRoot is a TopLevel object

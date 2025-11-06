@@ -6,6 +6,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ICSharpCode.SharpZipLib.GZip;
@@ -24,7 +25,7 @@ namespace Tavstal.MesterMC.Installer.Views;
 public partial class MainViewModel : ObservableObject
 {
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(MainViewModel));
-    private readonly string _tmpDir;
+    public readonly string TmpDir;
     
     [ObservableProperty] private EInstallerWindow currentWindow;
     [ObservableProperty] private bool isLicenseAccepted;
@@ -44,9 +45,9 @@ public partial class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
-        _tmpDir = Path.Combine(Path.GetTempPath(), "mmcupdater_" + Path.GetRandomFileName());
-        if (!Directory.Exists(_tmpDir))
-            Directory.CreateDirectory(_tmpDir);
+        TmpDir = Path.Combine(Path.GetTempPath(), "mmcupdater_" + Path.GetRandomFileName());
+        if (!Directory.Exists(TmpDir))
+            Directory.CreateDirectory(TmpDir);
     }
     
     [RelayCommand]
@@ -88,8 +89,9 @@ public partial class MainViewModel : ObservableObject
             case EInstallerWindow.Installing:
             {
                 // Start installation process
-                await StartInstallProcessAsync();
-                break;
+                CurrentWindow = window;
+                await Dispatcher.UIThread.InvokeAsync(async () => await StartInstallProcessAsync());
+                return;
             }
         }
         
@@ -101,14 +103,56 @@ public partial class MainViewModel : ObservableObject
     {
         if (LaunchGame)
         {
-            ProcessStartInfo gameLaunchInfo = new ProcessStartInfo
-            {
-                FileName = Path.Combine(GameDirectory, "bin", OSHelper.GetOperatingSystem() == EOperatingSystem.Windows ? "MMC-Launcher.exe" : "MMC-Launcher"),
-                WorkingDirectory = Path.Combine(GameDirectory, "bin"),
-                UseShellExecute = false
-            };
             try
             {
+                ProcessStartInfo gameLaunchInfo;
+                switch (OSHelper.GetOperatingSystem())
+                {
+                    case EOperatingSystem.Windows:
+                    {
+                        string appPath = Path.Combine(GameDirectory, "bin", "MMC-Launcher.exe");
+                        string appDirectory = Path.Combine(GameDirectory, "bin");
+                        gameLaunchInfo = new ProcessStartInfo
+                        {
+                            FileName = "cmd.exe",
+                            Arguments = $"/C start \"\" \"{appPath}\" /D \"{appDirectory}\"",
+                            WorkingDirectory = appDirectory,
+                            UseShellExecute = false 
+                        };
+                        break;
+                    }
+                    case EOperatingSystem.Linux:
+                    {
+                        string appImagePath = Path.Combine(GameDirectory, "bin", "MMC-Launcher");
+                        string appImageDirectory = Path.Combine(GameDirectory, "bin"); 
+                        gameLaunchInfo = new ProcessStartInfo
+                        {
+                            FileName = "/bin/bash",
+                            Arguments = $"-c \"nohup {appImagePath} > /dev/null 2>&1 &\"",
+                            WorkingDirectory = appImageDirectory, 
+                            UseShellExecute = false
+                        };
+                        break;
+                    }
+                    case EOperatingSystem.MacOS:
+                    {
+                        string appImagePath = Path.Combine(GameDirectory, "bin", "MMC-Launcher");
+                        string appImageDirectory = Path.Combine(GameDirectory, "bin"); 
+                        gameLaunchInfo = new ProcessStartInfo
+                        {
+                            FileName = "/bin/bash",
+                            Arguments = $"-c \"nohup {appImagePath} > /dev/null 2>&1 &\"",
+                            WorkingDirectory = appImageDirectory, 
+                            UseShellExecute = false
+                        };
+                        break;
+                    }
+                    default:
+                    {
+                        _logger.Error("Unsupported operating system for launching the game.");
+                        return;
+                    }
+                }
                 Process.Start(gameLaunchInfo);
             }
             catch (Exception ex)
@@ -118,23 +162,9 @@ public partial class MainViewModel : ObservableObject
         }
 
         if (OpenWebsite)
-        {
-            ProcessStartInfo websiteInfo = new ProcessStartInfo
-            {
-                FileName = "https://mestermc.hu/",
-                UseShellExecute = false
-            };
-            try
-            {
-                Process.Start(websiteInfo);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error($"Failed to open the website after installation: {ex}");
-            }
-        }
+            OSHelper.OpenUrl("https://mestermc.hu/");
 
-        await Task.Delay(250); // Small delay to ensure processes start before closing
+        await Task.Delay(500); // Small delay to ensure processes start before closing
         await CloseInteraction.Handle(Unit.Default);
     }
     
@@ -180,84 +210,49 @@ public partial class MainViewModel : ObservableObject
         {
             case EOperatingSystem.Windows:
             {
-                targetAssetName = isArm ? "MMCLauncher_{0}_windows_arm.zip" : "MMCLauncher_{0}_windows_x64.zip";
+                targetAssetName = isArm ? "MMCLauncher_windows_arm.zip" : "MMCLauncher_windows_x64.zip";
                 break;
             }
             case EOperatingSystem.Linux:
             {
-                targetAssetName = isArm ? "MMCLauncher_{0}_linux_arm.tar.gz" : "MMCLauncher_{0}_linux_x64.tar.gz";
+                targetAssetName = isArm ? "MMCLauncher_linux_arm.tar.gz" : "MMCLauncher_linux_x64.tar.gz";
                 break;
             }
             case EOperatingSystem.MacOS:
             {
-                targetAssetName = isArm ? "MMCLauncher_{0}_mac_arm.tar.gz" : "MMCLauncher_{0}_mac_x64.tar.gz";
+                targetAssetName = isArm ? "MMCLauncher_mac_arm.tar.gz" : "MMCLauncher_mac_x64.tar.gz";
                 break;
             }
         }
-
-        // 0. Send http request to GitHub API to get the latest release info
-        InstallText = "Frissítés lekérése...";
-        var response = await HttpHelper.GetStringAsync(MesterMcEndpoints.LatestRelease);
-        if (string.IsNullOrEmpty(response))
+        
+        InstallText = "Fájlok másolása...";
+        string targetFilePath = Path.Combine(TmpDir, targetAssetName);
+        var launcherStream = this.GetType().Assembly.GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.{targetAssetName}");
+        if (launcherStream == null)
         {
-            InstallText = "Hiba a frissítés lekérése közben.";
-            _logger.Error("Failed to fetch release info from GitHub API.");
+            _logger.Error($"Failed to get resource stream for the application zip.");
+            InstallText = "Nem sikerült kimásolni az indító fájlokat.";
             return;
         }
-
-        JObject releaseObject = JObject.Parse(response);
-        if (!releaseObject.TryGetValue("assets", out var assetsToken))
+        
+        await using FileStream launcherStreamOutFile = new FileStream(targetFilePath, FileMode.Create, FileAccess.Write);
+        await launcherStream.CopyToAsync(launcherStreamOutFile);
+        
+        string targetModsPath = Path.Combine(TmpDir, "mods.zip");
+        var targetModsPathStream = this.GetType().Assembly.GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.mods.zip");
+        if (targetModsPathStream == null)
         {
-            InstallText = "Hiba a frissítés lekérése közben.";
-            _logger.Error("No assets found in the latest release.");
+            _logger.Error($"Failed to get resource stream for the mods zip.");
+            InstallText = "Nem sikerült kimásolni a mod fájlokat.";
             return;
         }
-
-        string? version = releaseObject.Value<string>("tag_name")?.TrimStart('v');
-        if (string.IsNullOrEmpty(version))
-        {
-            InstallText = "Hiba a frissítés lekérése közben.";
-            _logger.Error("Failed to determine the latest version from the release info.");
-            return;
-        }
-
-        // Insert version into the target asset name
-        targetAssetName = string.Format(targetAssetName, version);
-
-        JArray assetsArray = (JArray)assetsToken;
-        // Find the target asset
-        string? downloadUrl = null;
-        foreach (var asset in assetsArray)
-        {
-            if (asset["name"]?.ToString() == targetAssetName)
-            {
-                downloadUrl = asset["browser_download_url"]?.ToString() ?? string.Empty;
-                break;
-            }
-        }
-
-        if (string.IsNullOrEmpty(downloadUrl))
-        {
-            InstallText = "Hibás letöltési link.";
-            _logger.Error($"No suitable asset found for the current OS and architecture. Asset name: {targetAssetName}");
-            return;
-        }
-
-        // 1. Download the asset
-        var progress = new Progress<double>(p =>
-        {
-            var percent = (int)(p * 100);
-            if (percent > 100)
-                percent = 100; // Cap at 100%
-            InstallText = "Letöltés...";
-            InstallProgress = percent;
-        });
-        string targetFilePath = Path.Combine(_tmpDir, targetAssetName);
-        await HttpHelper.DownloadFileAsync(downloadUrl, targetFilePath, progress);
-
-        // 2. Extract the downloaded file to the temporary directory
+        
+        await using FileStream targetModsStreamOutFile = new FileStream(targetModsPath, FileMode.Create, FileAccess.Write);
+        await targetModsPathStream.CopyToAsync(targetModsStreamOutFile);
+        
+        //  Extract the downloaded file to the temporary directory
         InstallText = "Kicsomagolás...";
-        string targetTempDir = Path.Combine(_tmpDir, "extracted");
+        string targetTempDir = Path.Combine(TmpDir, "extracted");
         if (targetAssetName.EndsWith(".tar.gz"))
         {
             await using Stream inStream = File.OpenRead(targetFilePath);
@@ -266,14 +261,20 @@ public partial class MainViewModel : ObservableObject
             tarArchive.ExtractContents(targetTempDir);
         }
         else
-            ZipFile.ExtractToDirectory(targetFilePath, targetTempDir);
+            ZipFile.ExtractToDirectory(targetFilePath, targetTempDir, true);
 
         // 3. Move the extracted files to the application directory
         InstallText = "Alkalmazás...";
-        FileSystemHelper.MoveDirectory(targetTempDir, GameDirectory, true);
+        // Extract mods
+        string modsDir = Path.Combine(GameDirectory, "minecraftData", "mods");
+        ZipFile.ExtractToDirectory(targetModsPath, modsDir, true);
+        
+        string binDirhPath = Path.Combine(GameDirectory, "bin");
+        if (!Directory.Exists(binDirhPath))
+            Directory.CreateDirectory(binDirhPath);
+        FileSystemHelper.MoveDirectory(targetTempDir, binDirhPath, true);
 
         // 4. Create shortcuts
-        string binDirhPath = Path.Combine(GameDirectory, "bin");
         switch (OSHelper.GetOperatingSystem())
         {
             case EOperatingSystem.Windows:
@@ -295,6 +296,12 @@ public partial class MainViewModel : ObservableObject
                 string exePath = Path.Combine(binDirhPath, "MMC-Launcher.exe");
                 string shortcutPath = Path.Combine(GameDirectory, "MesterMC.lnk");
                 Shortcut.CreateShortcut(exePath, "", binDirhPath, iconPath, 0).WriteToFile(shortcutPath);
+                
+                foreach (var file in Directory.GetFiles(binDirhPath))
+                {
+                    if (file.Contains("MMC-Launcher") || file.Contains("MMC-Updater"))
+                        await FileSystemHelper.MakeExecutableAsync(file);
+                }
                 
                 // Copy to desktop if needed
                 if (CreateDesktopShortcut)
@@ -365,10 +372,20 @@ public partial class MainViewModel : ObservableObject
                 
                 // Create symlink
                 if (CreateDesktopShortcut)
-                    File.CreateSymbolicLink(Path.Combine(OSHelper.GetDesktopDirectory(), "MesterMC"), appPath);
+                {
+                    var target = Path.Combine(OSHelper.GetDesktopDirectory(), "MesterMC");
+                    if (File.Exists(target))
+                        File.Delete(target);
+                    File.CreateSymbolicLink(target, appPath);
+                }
 
                 if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
-                    File.CreateSymbolicLink(Path.Combine(StartMenuDirectory, "MesterMC"), appPath);
+                {
+                    var target = Path.Combine(StartMenuDirectory, "MesterMC");
+                    if (File.Exists(target))
+                        File.Delete(target);
+                    File.CreateSymbolicLink(target, appPath);
+                }
                 
                 break;
             }
@@ -388,15 +405,21 @@ public partial class MainViewModel : ObservableObject
                 await stream.CopyToAsync(outFile);
                 
                 string appPath = Path.Combine(binDirhPath, "MMC-Launcher");
+
+                foreach (var file in Directory.GetFiles(binDirhPath))
+                {
+                    if (file.Contains("MMC-Launcher") || file.Contains("MMC-Updater"))
+                        await FileSystemHelper.MakeExecutableAsync(file);
+                }
                 
                 // Create .desktop file
                 StringBuilder desktopFile = new StringBuilder();
                 desktopFile.AppendLine("[Desktop Entry]");
                 desktopFile.AppendLine("Name=MesterMC");
                 desktopFile.AppendLine("Comment=A MesterMC hivatalos indítója.");
-                desktopFile.AppendLine($"Exec=\"{appPath}\"");
-                desktopFile.AppendLine($"Icon=\"{icon}\"");
-                desktopFile.AppendLine($"Path=\"{binDirhPath}\"");
+                desktopFile.AppendLine($"Exec={appPath}");
+                desktopFile.AppendLine($"Icon={icon}");
+                desktopFile.AppendLine($"Path={binDirhPath}");
                 desktopFile.AppendLine("Terminal=false");
                 desktopFile.AppendLine("Type=Application");
                 desktopFile.AppendLine("Categories=Game;");
@@ -404,22 +427,33 @@ public partial class MainViewModel : ObservableObject
                 desktopFile.AppendLine("StartupNotify=true");
                 string desktopFilePath = Path.Combine(GameDirectory, "MesterMC.desktop");
                 await File.WriteAllTextAsync(desktopFilePath, desktopFile.ToString());
+                await FileSystemHelper.MakeExecutableAsync(desktopFilePath);
                 
                 // Create symlink
                 if (CreateDesktopShortcut)
-                    File.CreateSymbolicLink(Path.Combine(OSHelper.GetDesktopDirectory(), "MesterMC.desktop"), desktopFilePath);
+                {
+                    var target = Path.Combine(OSHelper.GetDesktopDirectory(), "MesterMC.desktop");
+                    if (File.Exists(target))
+                        File.Delete(target);
+                    File.CreateSymbolicLink(target, desktopFilePath);
+                }
 
                 if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
-                    File.CreateSymbolicLink(Path.Combine(StartMenuDirectory, "MesterMC.desktop"), desktopFilePath);
-                
+                {
+                    var target = Path.Combine(StartMenuDirectory, "MesterMC.desktop");
+                    if (File.Exists(target))
+                        File.Delete(target);
+                    File.CreateSymbolicLink(target, desktopFilePath);
+                }
+
                 break;
             }
         }
         
         // Final: Delete the temporary directory
         InstallText = "Tisztítás...";
-        if (Directory.Exists(_tmpDir))
-            FileSystemHelper.DeleteDirectory(_tmpDir);
+        if (Directory.Exists(TmpDir))
+            FileSystemHelper.DeleteDirectory(TmpDir);
         
         CurrentWindow = EInstallerWindow.Finished;
     }
