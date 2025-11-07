@@ -10,6 +10,7 @@
 
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Tavstal.KonkordLauncher.Core.Models;
 
 namespace Tavstal.KonkordLauncher.Core.Helpers;
@@ -28,17 +29,12 @@ public static class JsonHelper
     /// <param name="path">The file path to write the JSON content to.</param>
     /// <param name="obj">The object to serialize into JSON.</param>
     /// <returns>True if the operation succeeds, otherwise false.</returns>
-    public static bool WriteJsonFile<T>(string path, T obj)
+    public static bool WriteJsonFile<T>(string path, T obj, JsonTypeInfo<T> typeInfo)
     {
         try
         {
             using var stream = new MemoryStream();
-            JsonSerializer.Serialize(stream, obj, options: new()
-            {
-                IgnoreReadOnlyFields = true,
-                IgnoreReadOnlyProperties = true,
-                WriteIndented = true
-            });
+            JsonSerializer.Serialize(stream, obj, typeInfo);
             stream.Position = 0;
             var reader = new StreamReader(stream);
             string content = reader.ReadToEnd();
@@ -64,17 +60,12 @@ public static class JsonHelper
     /// <param name="path">The file path to write the JSON content to.</param>
     /// <param name="obj">The object to serialize into JSON.</param>
     /// <returns>True if the operation succeeds, otherwise false.</returns>
-    public static async Task<bool> WriteJsonFileAsync<T>(string path, T obj)
+    public static async Task<bool> WriteJsonFileAsync<T>(string path, T obj, JsonTypeInfo<T> typeInfo)
     {
         try
         {
             using var stream = new MemoryStream();
-            await JsonSerializer.SerializeAsync(stream, obj, options: new()
-            {
-                IgnoreReadOnlyFields = true,
-                IgnoreReadOnlyProperties = true,
-                WriteIndented = true
-            });
+            await JsonSerializer.SerializeAsync(stream, obj, typeInfo);
             stream.Position = 0;
             var reader = new StreamReader(stream);
             string content = await reader.ReadToEndAsync();
@@ -99,12 +90,12 @@ public static class JsonHelper
     /// <typeparam name="T">The type of the object to deserialize.</typeparam>
     /// <param name="path">The file path to read the JSON content from.</param>
     /// <returns>The deserialized object, or default if an error occurs.</returns>
-    public static T? ReadJsonFile<T>(string path)
+    public static T? ReadJsonFile<T>(string path, JsonTypeInfo<T> typeInfo)
     {
         try
         {
             using var stream = File.OpenRead(path);
-            var local = JsonSerializer.Deserialize<T>(stream);
+            var local = JsonSerializer.Deserialize(stream, typeInfo);
             return local;
         }
         catch (Exception ex)
@@ -121,12 +112,12 @@ public static class JsonHelper
     /// <typeparam name="T">The type of the object to deserialize.</typeparam>
     /// <param name="path">The file path to read the JSON content from.</param>
     /// <returns>The deserialized object, or default if an error occurs.</returns>
-    public static async Task<T?> ReadJsonFileAsync<T>(string path)
+    public static async Task<T?> ReadJsonFileAsync<T>(string path, JsonTypeInfo<T> typeInfo)
     {
         try
         {
             await using var stream = File.OpenRead(path);
-            var local = await JsonSerializer.DeserializeAsync<T>(stream);
+            var local = await JsonSerializer.DeserializeAsync(stream, typeInfo);
             return local;
         }
         catch (Exception ex)

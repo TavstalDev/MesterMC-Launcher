@@ -8,8 +8,9 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using Tavstal.KonkordLauncher.Core.Models.Fabric;
+using Tavstal.KonkordLauncher.Core.Models.Json;
 using Tavstal.KonkordLauncher.Core.Models.ModLoaders;
 using Tavstal.KonkordLauncher.Core.Models.MojangApi;
 
@@ -41,7 +42,7 @@ public static class ManifestHelper
         if (_minecraftManifest != null)
             return _minecraftManifest;
 
-        _minecraftManifest = await JsonHelper.ReadJsonFileAsync<VersionManifest>(manifestPath);
+        _minecraftManifest = await JsonHelper.ReadJsonFileAsync<VersionManifest>(manifestPath, CoreJsonContext.Default.VersionManifest);
         return _minecraftManifest;
     }
     
@@ -68,8 +69,10 @@ public static class ManifestHelper
             return _fabricManifest;
 
         var rawManifest = await File.ReadAllTextAsync(manifestPath);
-        JObject jObject = JObject.Parse(rawManifest);
-        var mappings = jObject["loader"] as JArray;
+        JsonObject? jObject = JsonNode.Parse(rawManifest)?.AsObject();
+        if (jObject == null)
+            throw new Exception("Unable to deserialize the manifest file");
+        var mappings = jObject["loader"]?.AsArray();
         if (mappings == null)
         {
             throw new InvalidOperationException("Fabric manifest loader not found in the JSON.");
@@ -77,7 +80,13 @@ public static class ManifestHelper
         _fabricManifest = [];
         foreach (var mapping in mappings)
         {
-            _fabricManifest.Add(new FabricManifest(mapping.Value<string>("version")!));
+            if (mapping == null)
+                continue;
+            
+            var result = mapping["version"]?.GetValue<string>();
+            if (string.IsNullOrEmpty(result))
+                continue;
+            _fabricManifest.Add(new FabricManifest(result));
         }
 
         return _fabricManifest;
