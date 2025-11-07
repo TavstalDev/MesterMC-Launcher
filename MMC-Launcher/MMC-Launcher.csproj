@@ -22,6 +22,9 @@
 
     <PropertyGroup>
         <PublishSingleFile>true</PublishSingleFile>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>partial</TrimMode>
+        <InvariantGlobalization>true</InvariantGlobalization>
         <SelfContained>true</SelfContained>
         <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
     </PropertyGroup>

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -39,6 +40,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// </summary>
     private readonly int _stepDelay = 100;
     
+    [RequiresUnreferencedCode("This constructor uses code that may be removed during trimming.")]
     public UpdateWindow()
     {
         InitializeComponent();

@@ -12,18 +12,21 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <PublishSingleFile>true</PublishSingleFile>
-        <SelfContained>true</SelfContained>
-        <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
-    </PropertyGroup>
-
-    <PropertyGroup>
         <AssemblyTitle>MMC-Updater</AssemblyTitle>
         <Company>MesterMC</Company>
         <Product>MesterMC Updater</Product>
         <Description>Updater for the MesterMC Launcher</Description>
         <Version>1.0.0.0</Version>
         <FileVersion>1.0.0.0</FileVersion>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PublishSingleFile>true</PublishSingleFile>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>partial</TrimMode>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <SelfContained>true</SelfContained>
+        <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
     </PropertyGroup>
 
     <ItemGroup>

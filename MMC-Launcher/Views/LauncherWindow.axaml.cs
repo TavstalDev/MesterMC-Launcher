@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace Tavstal.MesterMC.Launcher.Views;
 
 public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
 {
+    [RequiresUnreferencedCode("This constructor uses code that may be removed during trimming.")]
     public LauncherWindow()
     {
         InitializeComponent();
