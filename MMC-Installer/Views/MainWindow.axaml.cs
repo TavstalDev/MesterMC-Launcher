@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -19,7 +20,8 @@ namespace Tavstal.MesterMC.Installer.Views;
 public partial class MainWindow : KonkordWindow<MainViewModel>
 {
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(MainWindow));
-    
+
+    [RequiresUnreferencedCode("This constructor uses code that may be removed during trimming.")]
     public MainWindow()
     {
         InitializeComponent();

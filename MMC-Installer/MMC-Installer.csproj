@@ -20,6 +20,14 @@
         <FileVersion>1.0.0.0</FileVersion>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PublishSingleFile>true</PublishSingleFile>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>partial</TrimMode>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <SelfContained>true</SelfContained>
+        <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="11.3.8"/>
@@ -43,9 +51,11 @@
         <EmbeddedResource Include="Assets\icons\**" />
         <None Remove="Software\mods.zip" />
         <None Remove="Software\MMCLauncher_linux_x64.tar.gz" />
-        <EmbeddedResource Include="Software\MMCLauncher_linux_x64.tar.gz" />
         <None Remove="Software\MMCLauncher_windows_x64.zip" />
-        <EmbeddedResource Include="Software\MMCLauncher_windows_x64.zip" />
+        <None Remove="Software\MMCLauncher_mac_arm.tar.gz" />
+        <EmbeddedResource Include="Software\MMCLauncher_mac_arm.tar.gz" />
+        <None Remove="Software\content.zip" />
+        <EmbeddedResource Include="Software\content.zip" />
     </ItemGroup>
 
 
@@ -61,24 +71,21 @@
       <ProjectReference Include="..\Common\Common.csproj" />
     </ItemGroup>
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">
-        <EmbeddedResource Include="Software/MMCLauncher_linux_arm.tar.gz" />
+        <EmbeddedResource Include="Software\MMCLauncher_linux_arm.tar.gz" />
     </ItemGroup>
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
-        <EmbeddedResource Include="Software/MMCLauncher_linux_x64.tar.gz" />
+        <EmbeddedResource Include="Software\MMCLauncher_linux_x64.tar.gz" />
     </ItemGroup>
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-arm64'">
-        <EmbeddedResource Include="Software/MMCLauncher_mac_arm.tar.gz" />
+        <EmbeddedResource Include="Software\MMCLauncher_mac_arm.tar.gz" />
     </ItemGroup>
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-x64'">
-        <EmbeddedResource Include="Software/MMCLauncher_mac_x64.tar.gz" />
+        <EmbeddedResource Include="Software\MMCLauncher_mac_x64.tar.gz" />
     </ItemGroup>
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-arm64'">
-        <EmbeddedResource Include="Software/MMCLauncher_windows_arm.zip" />
+        <EmbeddedResource Include="Software\MMCLauncher_windows_arm.zip" />
     </ItemGroup>
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
-        <EmbeddedResource Include="Software/MMCLauncher_windows_x64.zip" />
-    </ItemGroup>
-    <ItemGroup>
-      <EmbeddedResource Include="Software\mods.zip" />
+        <EmbeddedResource Include="Software\MMCLauncher_windows_x64.zip" />
     </ItemGroup>
 </Project>

@@ -236,8 +236,8 @@ public partial class MainViewModel : ObservableObject
         await using FileStream launcherStreamOutFile = new FileStream(targetFilePath, FileMode.Create, FileAccess.Write);
         await launcherStream.CopyToAsync(launcherStreamOutFile);
         
-        string targetModsPath = Path.Combine(TmpDir, "mods.zip");
-        var targetModsPathStream = this.GetType().Assembly.GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.mods.zip");
+        string targetModsPath = Path.Combine(TmpDir, "content.zip");
+        var targetModsPathStream = this.GetType().Assembly.GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.content.zip");
         if (targetModsPathStream == null)
         {
             _logger.Error($"Failed to get resource stream for the mods zip.");
@@ -264,7 +264,7 @@ public partial class MainViewModel : ObservableObject
         // 3. Move the extracted files to the application directory
         InstallText = "Alkalmazás...";
         // Extract mods
-        string modsDir = Path.Combine(GameDirectory, "minecraftData", "mods");
+        string modsDir = Path.Combine(GameDirectory, "minecraftData");
         ZipFile.ExtractToDirectory(targetModsPath, modsDir, true);
         
         string binDirhPath = Path.Combine(GameDirectory, "bin");
