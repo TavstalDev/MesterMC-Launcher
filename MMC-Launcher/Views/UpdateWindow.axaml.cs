@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -13,10 +14,10 @@ using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Newtonsoft.Json.Linq;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Common.Models;
+using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
@@ -159,7 +160,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             if (string.IsNullOrEmpty(settings.Java.JavaPath) && javaInstallations.Count > 0)
             {
                 settings.Java.JavaPath = javaInstallations[0].Path;
-                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings);
+                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
             }
 
             // 4. Check for Updates
@@ -171,7 +172,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
 
                 settings.Launcher.NextUpdateCheck =
                     DateTime.Now.AddHours(settings.Launcher.UpdateInterval == 0 ? 1 : settings.Launcher.UpdateInterval);
-                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings);
+                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
 
                 if (await CheckUpdateAsync())
                 {
@@ -193,6 +194,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             await instance.Start(true); 
 
             // 6. Create servers.dat if not exists
+            SetStatus("A servers.dat ellenőrzése...");
             if (!await ValidationHelper.ValidateServersAsync())
             {
                 _logger.Error("Failed to validate servers.dat");
@@ -202,7 +204,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             if (DateTime.Now > settings.CacheRefreshDate)
             {
                 settings.CacheRefreshDate = DateTime.Now.AddDays(7);
-                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings);
+                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
             }
             
             // 8. Start Main Window
@@ -249,7 +251,13 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             }
 
             string json = await result.Content.ReadAsStringAsync();
-            JObject jsonObject = JObject.Parse(json);
+            JsonObject? jsonObject = JsonNode.Parse(json)?.AsObject();
+            if (jsonObject == null)
+            {
+                _logger.Error("Failed to parse latest release JSON");
+                return false;
+            }
+            
             string? latestVersion = jsonObject["tag_name"]?.ToString();
 
             // 2. Compare the current version with the latest version
