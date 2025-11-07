@@ -41,13 +41,11 @@
         <AvaloniaResource Include="Assets\**" />
         <AvaloniaResource Include="Styles\**" />
         <EmbeddedResource Include="Assets\icons\**" />
-        <EmbeddedResource Include="Software\MMCLauncher_linux_arm.tar.gz" />
-        <EmbeddedResource Include="Software\MMCLauncher_linux_x64.tar.gz" />
-        <EmbeddedResource Include="Software\MMCLauncher_mac_arm.tar.gz" />
-        <EmbeddedResource Include="Software\MMCLauncher_mac_x64.tar.gz" />
-        <EmbeddedResource Include="Software\MMCLauncher_windows_arm.zip" />
-        <EmbeddedResource Include="Software\MMCLauncher_windows_x64.zip" />
         <None Remove="Software\mods.zip" />
+        <None Remove="Software\MMCLauncher_linux_x64.tar.gz" />
+        <EmbeddedResource Include="Software\MMCLauncher_linux_x64.tar.gz" />
+        <None Remove="Software\MMCLauncher_windows_x64.zip" />
+        <EmbeddedResource Include="Software\MMCLauncher_windows_x64.zip" />
     </ItemGroup>
 
 
@@ -79,5 +77,8 @@
     </ItemGroup>
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
         <EmbeddedResource Include="Software/MMCLauncher_windows_x64.zip" />
+    </ItemGroup>
+    <ItemGroup>
+      <EmbeddedResource Include="Software\mods.zip" />
     </ItemGroup>
 </Project>
