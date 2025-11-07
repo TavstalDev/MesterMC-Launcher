@@ -48,7 +48,6 @@ public class FabricInstance(
         string librarySizeCacheDir = Path.Combine(PathDetails.CacheDir, "libsizes");
         if (!Directory.Exists(librarySizeCacheDir))
             Directory.CreateDirectory(librarySizeCacheDir);
-        string librarySizeCachePath = Path.Combine(librarySizeCacheDir, $"{fabricVersion.MinecraftVersion}-fabric-{fabricVersion.CustomVersion}.json");
 
         // Download version json
         FabricVersionMeta? fabricVersionMeta;
@@ -75,21 +74,12 @@ public class FabricInstance(
             // Add the libraries
             _progressReporter?.SetStatus("A fabric verzió json fájl feldolgozása...");
             fabricVersionMeta = JsonConvert.DeserializeObject<FabricVersionMeta>(resultJson);
-            int localLibrarySize = 0;
             if (fabricVersionMeta == null)
             {
                 File.Delete(fabricVersion.VersionJsonPath); // Delete it because this if part won't be executed again if it exists
                 _logger.Error("Fabric version meta is null after deserialization. Invalid JSON format.");
                 return null;
             }
-            
-            foreach (var lib in fabricVersionMeta.Libraries)
-            {
-                localLibrarySize += lib.Size;
-                localLibraries.Add(new LibraryMeta(lib.Name, new LibraryDownloads(new Artifact(lib.GetPath(), lib.Sha1, lib.Size, lib.GetURL()), null), []));
-            }
-            // Save the version cache
-            await JsonHelper.WriteJsonFileAsync(librarySizeCachePath, localLibrarySize);
         }
         else
         {
