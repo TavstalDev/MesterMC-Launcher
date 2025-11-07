@@ -14,6 +14,7 @@ using System.Text;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
 using Tavstal.KonkordLauncher.Common.Models.Java;
+using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
@@ -78,11 +79,11 @@ public static class JavaHelper
                 if (!File.Exists(PathHelper.JavaMirrorsPath))
                 {
                     _mirrorConfig = new JavaMirrorConfig();
-                    await JsonHelper.WriteJsonFileAsync(PathHelper.JavaMirrorsPath, _mirrorConfig);
+                    await JsonHelper.WriteJsonFileAsync(PathHelper.JavaMirrorsPath, _mirrorConfig, CommonJsonContext.Default.JavaMirrorConfig);
                 }
                 else
                 {
-                    _mirrorConfig = await JsonHelper.ReadJsonFileAsync<JavaMirrorConfig>(PathHelper.JavaMirrorsPath) ??
+                    _mirrorConfig = await JsonHelper.ReadJsonFileAsync<JavaMirrorConfig>(PathHelper.JavaMirrorsPath, CommonJsonContext.Default.JavaMirrorConfig) ??
                                     new JavaMirrorConfig();
                 }
             }

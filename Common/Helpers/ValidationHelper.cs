@@ -106,7 +106,7 @@ public static class ValidationHelper
                 };
                 await HttpHelper.DownloadFileAsync(MicrosoftEndpoints.MinecraftManifestUrl, settings.Launcher.GetVanillaManifestPath(), progress);
             }
-            
+            progressReporter?.SetStatus("A minecraft manifest ellenőrzése...");
             if (await ManifestHelper.GetMinecraftManifestAsync(settings.Launcher.GetVanillaManifestPath()) == null)
                 _logger.Error("Failed to load Minecraft manifest");
             
@@ -120,6 +120,7 @@ public static class ValidationHelper
                 };
                 await HttpHelper.DownloadFileAsync(FabricEndpoints.VersionManifestUrl, settings.Launcher.GetFabricManifestPath(), progress);
             }
+            progressReporter?.SetStatus("A fabric manifest ellenőrzése...");
             if (await ManifestHelper.GetFabricManifestAsync(settings.Launcher.GetFabricManifestPath()) == null)
                 _logger.Error("Failed to load Fabric manifest");
 

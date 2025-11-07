@@ -9,6 +9,7 @@
  */
 
 using Tavstal.KonkordLauncher.Common.Models.Config;
+using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Helpers;
 
 namespace Tavstal.KonkordLauncher.Common.Helpers;
@@ -28,16 +29,16 @@ public static class LauncherHelper
         if (!File.Exists(PathHelper.LauncherConfigPath))
         {
             CoreConfig result = new CoreConfig();
-            JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, result);
+            JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, result, CommonJsonContext.Default.CoreConfig);
             return result;
         }
 
-        var readResult = JsonHelper.ReadJsonFile<CoreConfig>(PathHelper.LauncherConfigPath);
+        var readResult = JsonHelper.ReadJsonFile<CoreConfig>(PathHelper.LauncherConfigPath, CommonJsonContext.Default.CoreConfig);
         if (readResult == null)
         {
             CoreConfig result = new CoreConfig();
             File.Move(PathHelper.LauncherConfigPath, PathHelper.LauncherConfigPath + ".bak", true);
-            JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, result);
+            JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, result, CommonJsonContext.Default.CoreConfig);
             return result;
         }
 
@@ -54,16 +55,16 @@ public static class LauncherHelper
         if (!File.Exists(PathHelper.LauncherConfigPath))
         {
             CoreConfig result = new CoreConfig();
-            await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, result);
+            await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, result, CommonJsonContext.Default.CoreConfig);
             return result;
         }
 
-        var readResult = await JsonHelper.ReadJsonFileAsync<CoreConfig>(PathHelper.LauncherConfigPath);
+        var readResult = await JsonHelper.ReadJsonFileAsync<CoreConfig>(PathHelper.LauncherConfigPath, CommonJsonContext.Default.CoreConfig);
         if (readResult == null)
         {
             CoreConfig result = new CoreConfig();
             File.Move(PathHelper.LauncherConfigPath, PathHelper.LauncherConfigPath + ".bak", true);
-            await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, result);
+            await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, result, CommonJsonContext.Default.CoreConfig);
             return result;
         }
 
