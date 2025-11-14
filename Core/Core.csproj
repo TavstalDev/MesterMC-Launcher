@@ -9,6 +9,14 @@
 	<Deterministic>false</Deterministic>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>copyused</TrimMode>
+    <TrimUnusedDependencies>true</TrimUnusedDependencies>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Hardware.Info" Version="101.0.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="9.0.8" />

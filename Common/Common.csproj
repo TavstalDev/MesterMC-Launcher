@@ -7,6 +7,14 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>copyused</TrimMode>
+        <TrimUnusedDependencies>true</TrimUnusedDependencies>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
+    </PropertyGroup>
+
     <ItemGroup>
       <ProjectReference Include="..\Core\Core.csproj" />
     </ItemGroup>

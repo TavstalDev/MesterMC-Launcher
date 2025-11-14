@@ -23,7 +23,9 @@
     <PropertyGroup>
         <PublishSingleFile>true</PublishSingleFile>
         <PublishTrimmed>true</PublishTrimmed>
-        <TrimMode>partial</TrimMode>
+        <TrimMode>copyused</TrimMode>
+        <TrimUnusedDependencies>true</TrimUnusedDependencies>
+        <TrimmerSingleWarn>false</TrimmerSingleWarn>
         <InvariantGlobalization>true</InvariantGlobalization>
         <SelfContained>true</SelfContained>
         <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
