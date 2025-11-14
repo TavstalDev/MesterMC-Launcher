@@ -112,10 +112,10 @@ public partial class MainViewModel : ObservableObject
                         string appDirectory = Path.Combine(GameDirectory, "bin");
                         gameLaunchInfo = new ProcessStartInfo
                         {
-                            FileName = "cmd.exe",
-                            Arguments = $"/C start \"\" \"{appPath}\" /D \"{appDirectory}\"",
+                            FileName = appPath,
+                            Arguments = "",
                             WorkingDirectory = appDirectory,
-                            UseShellExecute = false 
+                            UseShellExecute = false
                         };
                         break;
                     }
@@ -191,17 +191,17 @@ public partial class MainViewModel : ObservableObject
         
         StartMenuDirectory = directoryResult;
     }
-    
+
     private async Task StartInstallProcessAsync()
     {
         // TODO: Test on all platforms
-        InstallText = "Előkészítés...";
+        UpdateText("Előkészítés...");
         if (!Directory.Exists(GameDirectory))
             Directory.CreateDirectory(GameDirectory);
-        
+
         if (CreateStartMenuShortcut && !Directory.Exists(StartMenuDirectory))
             Directory.CreateDirectory(StartMenuDirectory);
-        
+
         string targetAssetName = string.Empty;
         bool isArm = OSHelper.IsArmBased();
         switch (OSHelper.GetOperatingSystem())
@@ -222,34 +222,43 @@ public partial class MainViewModel : ObservableObject
                 break;
             }
         }
-        
-        InstallText = "Fájlok másolása...";
+
+        UpdateText("Fájlok másolása...");
+        UpdateProgress(20);
         string targetFilePath = Path.Combine(TmpDir, targetAssetName);
-        var launcherStream = this.GetType().Assembly.GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.{targetAssetName}");
+        var launcherStream = this.GetType().Assembly
+            .GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.{targetAssetName}");
         if (launcherStream == null)
         {
             _logger.Error($"Failed to get resource stream for the application zip.");
-            InstallText = "Nem sikerült kimásolni az indító fájlokat.";
+            UpdateText("Nem sikerült kimásolni az indító fájlokat.");
             return;
         }
-        
-        await using FileStream launcherStreamOutFile = new FileStream(targetFilePath, FileMode.Create, FileAccess.Write);
-        await launcherStream.CopyToAsync(launcherStreamOutFile);
-        
+
+        await using (FileStream launcherStreamOutFile =
+                     new FileStream(targetFilePath, FileMode.Create, FileAccess.Write))
+        {
+            await launcherStream.CopyToAsync(launcherStreamOutFile);
+        }
+
         string targetModsPath = Path.Combine(TmpDir, "content.zip");
-        var targetModsPathStream = this.GetType().Assembly.GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.content.zip");
+        var targetModsPathStream = this.GetType().Assembly
+            .GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.content.zip");
         if (targetModsPathStream == null)
         {
             _logger.Error($"Failed to get resource stream for the mods zip.");
-            InstallText = "Nem sikerült kimásolni a mod fájlokat.";
+            UpdateText("Nem sikerült kimásolni a mod fájlokat.");
             return;
         }
-        
-        await using FileStream targetModsStreamOutFile = new FileStream(targetModsPath, FileMode.Create, FileAccess.Write);
-        await targetModsPathStream.CopyToAsync(targetModsStreamOutFile);
-        
+
+        await using (FileStream targetModsStreamOutFile = new FileStream(targetModsPath, FileMode.Create, FileAccess.Write))
+        {
+            await targetModsPathStream.CopyToAsync(targetModsStreamOutFile);
+        }
+
         //  Extract the downloaded file to the temporary directory
-        InstallText = "Kicsomagolás...";
+        UpdateText("Kicsomagolás...");
+        UpdateProgress(40);
         string targetTempDir = Path.Combine(TmpDir, "extracted");
         if (targetAssetName.EndsWith(".tar.gz"))
         {
@@ -259,20 +268,30 @@ public partial class MainViewModel : ObservableObject
             tarArchive.ExtractContents(targetTempDir);
         }
         else
-            ZipFile.ExtractToDirectory(targetFilePath, targetTempDir, true);
+        {
+            await using var stream = File.OpenRead(targetFilePath);
+            using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+            archive.ExtractToDirectory(targetTempDir, true);
+        }
 
         // 3. Move the extracted files to the application directory
-        InstallText = "Alkalmazás...";
+        UpdateText("Alkalmazás...");
+        UpdateProgress(60);
         // Extract mods
         string modsDir = Path.Combine(GameDirectory, "minecraftData");
-        ZipFile.ExtractToDirectory(targetModsPath, modsDir, true);
-        
-        string binDirhPath = Path.Combine(GameDirectory, "bin");
-        if (!Directory.Exists(binDirhPath))
-            Directory.CreateDirectory(binDirhPath);
-        FileSystemHelper.MoveDirectory(targetTempDir, binDirhPath, true);
+        await using (var targetModsStream = File.OpenRead(targetModsPath))
+        {
+            using var targetModsArchive = new ZipArchive(targetModsStream, ZipArchiveMode.Read);
+            targetModsArchive.ExtractToDirectory(modsDir, true);
+        }
+
+        string binDirPath = Path.Combine(GameDirectory, "bin");
+        if (!Directory.Exists(binDirPath))
+            Directory.CreateDirectory(binDirPath);
+        FileSystemHelper.MoveDirectory(targetTempDir, binDirPath, true);
 
         // 4. Create shortcuts
+        UpdateProgress(80);
         switch (OSHelper.GetOperatingSystem())
         {
             case EOperatingSystem.Windows:
@@ -286,20 +305,22 @@ public partial class MainViewModel : ObservableObject
                     return;
                 }
 
-                string iconPath = Path.Combine(binDirhPath, "favicon.ico");
-                await using FileStream outFile = new FileStream(iconPath, FileMode.Create, FileAccess.Write);
-                await stream.CopyToAsync(outFile);
-                
+                string iconPath = Path.Combine(binDirPath, "favicon.ico");
+                await using (FileStream outFile = new FileStream(iconPath, FileMode.Create, FileAccess.Write))
+                {
+                    await stream.CopyToAsync(outFile);
+                }
+
                 // Create main shortcut
-                string exePath = Path.Combine(binDirhPath, "MMC-Launcher.exe");
+                string exePath = Path.Combine(binDirPath, "MMC-Launcher.exe");
                 string shortcutPath = Path.Combine(GameDirectory, "MesterMC.lnk");
-                Shortcut.CreateShortcut(exePath, "", binDirhPath, iconPath, 0).WriteToFile(shortcutPath);
+                Shortcut.CreateShortcut(exePath, "", binDirPath, iconPath, 0).WriteToFile(shortcutPath);
                 
-                foreach (var file in Directory.GetFiles(binDirhPath))
+                /*foreach (var file in Directory.GetFiles(binDirPath))
                 {
                     if (file.Contains("MMC-Launcher") || file.Contains("MMC-Updater"))
                         await FileSystemHelper.MakeExecutableAsync(file);
-                }
+                }*/
                 
                 // Copy to desktop if needed
                 if (CreateDesktopShortcut)
@@ -321,10 +342,12 @@ public partial class MainViewModel : ObservableObject
                     return;
                 }
 
-                string iconPath = Path.Combine(binDirhPath, "favicon.icns");
-                await using FileStream outFile = new FileStream(iconPath, FileMode.Create, FileAccess.Write);
-                await stream.CopyToAsync(outFile);
-                
+                string iconPath = Path.Combine(binDirPath, "favicon.icns");
+                await using (FileStream outFile = new FileStream(iconPath, FileMode.Create, FileAccess.Write))
+                {
+                    await stream.CopyToAsync(outFile);
+                }
+
                 // Create app bundle
                 string appPath = Path.Combine(GameDirectory, "MMC-Launcher.app");
                 StringBuilder appCode = new StringBuilder();
@@ -365,7 +388,7 @@ public partial class MainViewModel : ObservableObject
                 string resourcesPath = Path.Combine(contentsPath, "Resources");
                 Directory.CreateDirectory(resourcesPath);
                 await File.WriteAllTextAsync(Path.Combine(contentsPath, "Info.plist"), appCode.ToString());
-                File.Copy(Path.Combine(binDirhPath, "MMC-Launcher"), Path.Combine(macOSPath, "MMC-Launcher"), true);
+                File.Copy(Path.Combine(binDirPath, "MMC-Launcher"), Path.Combine(macOSPath, "MMC-Launcher"), true);
                 File.Copy(iconPath, Path.Combine(resourcesPath, "favicon.icns"), true);
                 
                 // Create symlink
@@ -398,13 +421,15 @@ public partial class MainViewModel : ObservableObject
                     return;
                 }
 
-                string icon = Path.Combine(binDirhPath, "favicon.png");
-                await using FileStream outFile = new FileStream(icon, FileMode.Create, FileAccess.Write);
-                await stream.CopyToAsync(outFile);
-                
-                string appPath = Path.Combine(binDirhPath, "MMC-Launcher");
+                string icon = Path.Combine(binDirPath, "favicon.png");
+                await using (FileStream outFile = new FileStream(icon, FileMode.Create, FileAccess.Write))
+                {
+                    await stream.CopyToAsync(outFile);
+                }
 
-                foreach (var file in Directory.GetFiles(binDirhPath))
+                string appPath = Path.Combine(binDirPath, "MMC-Launcher");
+
+                foreach (var file in Directory.GetFiles(binDirPath))
                 {
                     if (file.Contains("MMC-Launcher") || file.Contains("MMC-Updater"))
                         await FileSystemHelper.MakeExecutableAsync(file);
@@ -417,7 +442,7 @@ public partial class MainViewModel : ObservableObject
                 desktopFile.AppendLine("Comment=A MesterMC hivatalos indítója.");
                 desktopFile.AppendLine($"Exec={appPath}");
                 desktopFile.AppendLine($"Icon={icon}");
-                desktopFile.AppendLine($"Path={binDirhPath}");
+                desktopFile.AppendLine($"Path={binDirPath}");
                 desktopFile.AppendLine("Terminal=false");
                 desktopFile.AppendLine("Type=Application");
                 desktopFile.AppendLine("Categories=Game;");
@@ -449,10 +474,27 @@ public partial class MainViewModel : ObservableObject
         }
         
         // Final: Delete the temporary directory
-        InstallText = "Tisztítás...";
+        UpdateText("Tisztítás...");
+        UpdateProgress(100);
         if (Directory.Exists(TmpDir))
             FileSystemHelper.DeleteDirectory(TmpDir);
         
         CurrentWindow = EInstallerWindow.Finished;
+    }
+
+    private void UpdateText(string text)
+    {
+        Dispatcher.UIThread.Invoke(() =>
+        {
+            InstallText = text;
+        });
+    }
+    
+    private void UpdateProgress(double progress)
+    {
+        Dispatcher.UIThread.Invoke(() =>
+        {
+            InstallProgress = progress;
+        });
     }
 }
