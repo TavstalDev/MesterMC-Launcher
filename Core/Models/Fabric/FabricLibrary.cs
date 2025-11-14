@@ -25,9 +25,8 @@ public class FabricLibrary
 
     public string GetURL()
     {
-        string path;
         string[] parts = Name.Split(":", 3);
-        path = parts[0].Replace(".", "/") + "/" + parts[1] + "/" + parts[2] + "/" + parts[1] + "-" + parts[2] + ".jar";
+        var path = parts[0].Replace(".", "/") + "/" + parts[1] + "/" + parts[2] + "/" + parts[1] + "-" + parts[2] + ".jar";
 
         return Url + path;
     }

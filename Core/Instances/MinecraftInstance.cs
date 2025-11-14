@@ -30,6 +30,7 @@ public class MinecraftInstance
     private FileSystemWatcher? _watcher;
     private readonly Lock _watcherLock = new();
     private bool _isSanitizingLogFile;
+    private string _classPathFilePath = string.Empty;
 
     protected GameDetails GameDetails { get; }
     protected PathDetails PathDetails { get; }
@@ -293,6 +294,17 @@ public class MinecraftInstance
         arguments.AddRange(BuildGameArguments(mainClass));
 
         string argumentString = string.Join(' ', arguments);
+        string classpath;
+        // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+        // It is more readable this way
+        if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
+            classpath = string.Join(";", _classPath).Replace("/", "\\");
+        else
+            classpath = string.Join(":", _classPath);
+
+        _classPathFilePath = Path.Combine(GameDetails.CustomGameDirectory, "classpath.txt");
+        File.WriteAllText(_classPathFilePath, classpath);
+        
         return ReplacePlaceholders(argumentString, gameDir, nativesDir, modVersion);
     }
 
@@ -316,7 +328,7 @@ public class MinecraftInstance
             jvmArgs.Add(GameDetails.JvmArgs);
 
         // 1.16 offline mode fix
-        if (_client.IsOffline)
+        if (VersionData.MinecraftVersion.StartsWith("1.16") && _client.IsOffline)
         {
             jvmArgs.Add("-Dminecraft.api.auth.host=https://nope.invalid ");
             jvmArgs.Add("-Dminecraft.api.account.host=https://nope.invalid");
@@ -406,14 +418,6 @@ public class MinecraftInstance
         string gameAssetsDir = Path.Combine(PathDetails.AssetsDir, "virtual", "legacy");
         gameAssetsDir = gameAssetsDir.StartsWith('"') ? gameAssetsDir : $"\"{gameAssetsDir}\"";
         string userType = _client.IsOffline ? "offline" : "msa";
-
-        string classpath;
-        // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
-        // It is more readable this way
-        if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
-            classpath = string.Join(";", _classPath).Replace("/", "\\");
-        else
-            classpath = string.Join(":", _classPath);
         
         var replacements = new Dictionary<string, string?>
         {
@@ -433,7 +437,7 @@ public class MinecraftInstance
             { "${auth_xuid}", _client.Xuid },
             { "${user_type}", userType },
             { "${version_type}", "release" },
-            { "${classpath}", $"\"{classpath}\"" },
+            { "${classpath}", $"\"@{_classPathFilePath}\"" },
             { "${library_directory}", PathDetails.LibrariesDir.StartsWith('"') ? PathDetails.LibrariesDir : $"\"{PathDetails.LibrariesDir}\"" },
             { "${user_properties}", "{}" },
             { "${arch}", Environment.Is64BitOperatingSystem ? "64" : "32" }
