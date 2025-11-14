@@ -5,11 +5,8 @@ using System.Reactive.Disposables.Fluent;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using ReactiveUI;
-using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Common.Models;
-using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.MesterMC.Launcher.Models;
 using Tavstal.MesterMC.Launcher.Views.Models;
 
@@ -34,6 +31,12 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             DataContext.CloseWindowInteraction.RegisterHandler(action =>
             {
                 Close();
+                action.SetOutput(Unit.Default);
+                return Task.CompletedTask;
+            }).DisposeWith(disposables);
+            DataContext.HideWindowInteraction.RegisterHandler(action =>
+            {
+                Hide();
                 action.SetOutput(Unit.Default);
                 return Task.CompletedTask;
             }).DisposeWith(disposables);
@@ -87,7 +90,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         else
             multiplier = 0.47;*/
         
-        double scale = Math.Min(scaleX, scaleY) * 0.47;
+        double scale = Math.Min(scaleX, scaleY) * 0.55;
 
         // Apply scaled window size
         Width = baseWidth * scale;

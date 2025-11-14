@@ -19,6 +19,7 @@
     ShowInTaskbar="True"
     SystemDecorations="None"
     TransparencyLevelHint="Transparent"
+    WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <Window.Resources>
         <models:LoginStatusConverter x:Key="LoginConverter" />

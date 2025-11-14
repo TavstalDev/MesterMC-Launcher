@@ -15,6 +15,7 @@
         ExtendClientAreaToDecorationsHint="False"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
+        WindowStartupLocation="CenterScreen"
         Icon="avares://MMC-Launcher/Assets/icons/favicon.png">
     <Grid>
         <!-- Background Image -->

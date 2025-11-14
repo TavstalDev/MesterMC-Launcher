@@ -3,7 +3,6 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReactiveUI;
@@ -29,6 +28,7 @@ public partial class LauncherViewModel : ObservableObject
     public bool isError => LoginStatus == ELoginStatus.ERROR;
     public string NewsPageDisplay => $"{SelectedNewsIndex + 1} / {NewsItems.Count}";
     public Interaction<Unit, Unit> CloseWindowInteraction { get; } = new();
+    public Interaction<Unit, Unit> HideWindowInteraction { get; } = new();
 
     public LauncherViewModel()
     {
@@ -164,7 +164,10 @@ public partial class LauncherViewModel : ObservableObject
         var process = await instance.Start();
         await Task.Delay(5000); // Wait for a bit to ensure the process has started
         if (process is { HasExited: false })
-            await CloseWindowInteraction.Handle(Unit.Default);
+        {
+            await HideWindowInteraction.Handle(Unit.Default);
+            process.Exited += async (_, _) => await CloseWindowInteraction.Handle(Unit.Default);
+        }
         else
         {
             ErrorMessage = "Váratlan hiba történt a játék elindítása során.";
