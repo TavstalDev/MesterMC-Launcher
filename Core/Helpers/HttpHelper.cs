@@ -8,6 +8,7 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using System.Net;
 using System.Net.Http.Json;
 using System.Net.Security;
 using System.Security.Authentication;
@@ -38,8 +39,11 @@ public static class HttpHelper
                 SslOptions = new SslClientAuthenticationOptions()
                 {
                     EnabledSslProtocols = SslProtocols.Tls12
-                }
+                },
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                AllowAutoRedirect = true
             };
+            handler.EnableMultipleHttp2Connections = false;
             client = new HttpClient(handler);
         }
         else 
