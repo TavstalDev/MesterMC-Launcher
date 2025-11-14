@@ -9,6 +9,8 @@
  */
 
 using System.Net.Http.Json;
+using System.Net.Security;
+using System.Security.Authentication;
 using Tavstal.KonkordLauncher.Core.Models;
 
 namespace Tavstal.KonkordLauncher.Core.Helpers;
@@ -28,7 +30,21 @@ public static class HttpHelper
     /// <returns>A configured <see cref="HttpClient"/> instance.</returns>
     public static HttpClient CreateHttpClient()
     {
-        var client = new HttpClient();
+        HttpClient client;
+        if (OSHelper.IsWIndows11())
+        {
+            var handler = new SocketsHttpHandler()
+            {
+                SslOptions = new SslClientAuthenticationOptions()
+                {
+                    EnabledSslProtocols = SslProtocols.Tls12
+                }
+            };
+            client = new HttpClient(handler);
+        }
+        else 
+            client = new HttpClient();
+        
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         client.DefaultRequestHeaders.UserAgent.ParseAdd("KonkordLauncher/2.0.0 (+https://tavstaldev.github.io)");
         client.Timeout = TimeSpan.FromSeconds(20);

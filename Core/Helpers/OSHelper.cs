@@ -55,6 +55,21 @@ public static class OSHelper
             }
         }
     }
+    
+    /// <summary>
+    /// Determines if the operating system is Windows 11.
+    /// </summary>
+    /// <returns>
+    /// A boolean value indicating whether the operating system is Windows 11.
+    /// </returns>
+    public static bool IsWIndows11()
+    {
+        if (GetOperatingSystem() != EOperatingSystem.Windows)
+            return false;
+
+        Version osVersion = Environment.OSVersion.Version;
+        return (osVersion.Major > 10) || osVersion is { Major: 10, Build: >= 22000 };
+    }
 
     /// <summary>
     /// Determines if the operating system is ARM-based.
