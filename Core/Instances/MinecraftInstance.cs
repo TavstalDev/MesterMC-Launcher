@@ -8,7 +8,9 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Text;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
@@ -324,6 +326,34 @@ public class MinecraftInstance
             $"-Dminecraft.applet.TargetDirectory=\"{gameDir}\""
         };
         
+        try
+        {
+            // TODO: REMOVE AFTER TESTING
+            string verifyKey = "Q8MWtvhscFXM8J5a";
+            long issueTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            byte[] usernameBytes = Encoding.UTF8.GetBytes(_client.DisplayName.ToLowerInvariant());
+            byte[] timestampBytes = new byte[8];
+            BinaryPrimitives.WriteInt64BigEndian(timestampBytes, issueTimestamp);
+            byte[] preHash = Concat(usernameBytes, timestampBytes);
+            byte[] keyBytes = Encoding.UTF8.GetBytes(verifyKey);
+            if (keyBytes.Length != 16)
+                throw new ArgumentException("verifyKey must be exactly 16 bytes when encoded as UTF-8!");
+            
+            long tokenHash = SipHash24(keyBytes, preHash);
+            byte[] hashBytes = new byte[8];
+            BinaryPrimitives.WriteInt64BigEndian(hashBytes, tokenHash);
+            byte[] finalBytes = Concat(timestampBytes, hashBytes);
+
+            jvmArgs.Add($"-Dlimboauth.token=\"{Convert.ToBase64String(finalBytes)}\"");
+            
+            /*if (!string.IsNullOrEmpty(_client.AccessToken) && _client.AccessToken.Length > 1)
+                jvmArgs.Add($"-Dlimboauth.token=\"{_client.AccessToken}\"");*/
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Failed to generate LimboAuth token: " + ex.Message);
+        }
+
         if (!string.IsNullOrEmpty(GameDetails.JvmArgs))
             jvmArgs.Add(GameDetails.JvmArgs);
 
@@ -444,6 +474,96 @@ public class MinecraftInstance
         };
 
         return replacements.Aggregate(argumentString, (current, replacement) => current.Replace(replacement.Key, replacement.Value));
+    }
+    
+    private static byte[] Concat(byte[] a, byte[] b)
+    {
+        byte[] result = new byte[a.Length + b.Length];
+        Buffer.BlockCopy(a, 0, result, 0, a.Length);
+        Buffer.BlockCopy(b, 0, result, a.Length, b.Length);
+        return result;
+    }
+
+    // --- Minimal SipHash 2-4 implementation ---
+    public static long SipHash24(byte[] key, byte[] data)
+    {
+        if (key.Length != 16)
+            throw new ArgumentException("SipHash key must be 16 bytes.");
+
+        ulong k0 = BitConverter.ToUInt64(key, 0);
+        ulong k1 = BitConverter.ToUInt64(key, 8);
+
+        return (long)SipHash24Internal(k0, k1, data);
+    }
+
+    private static ulong SipHash24Internal(ulong k0, ulong k1, byte[] data)
+    {
+        const ulong c0 = 0x736f6d6570736575;
+        const ulong c1 = 0x646f72616e646f6d;
+        const ulong c2 = 0x6c7967656e657261;
+        const ulong c3 = 0x7465646279746573;
+
+        ulong v0 = k0 ^ c0;
+        ulong v1 = k1 ^ c1;
+        ulong v2 = k0 ^ c2;
+        ulong v3 = k1 ^ c3;
+
+        int len = data.Length;
+        int end = len - (len % 8);
+
+        // process full 8-byte blocks
+        for (int i = 0; i < end; i += 8)
+        {
+            ulong m = BitConverter.ToUInt64(data, i);
+            v3 ^= m;
+
+            SipRound(ref v0, ref v1, ref v2, ref v3);
+            SipRound(ref v0, ref v1, ref v2, ref v3);
+
+            v0 ^= m;
+        }
+
+        // last partial block
+        ulong b = (ulong)len << 56;
+        for (int i = end, shift = 0; i < len; i++, shift += 8)
+        {
+            b |= (ulong)data[i] << shift;
+        }
+
+        v3 ^= b;
+        SipRound(ref v0, ref v1, ref v2, ref v3);
+        SipRound(ref v0, ref v1, ref v2, ref v3);
+        v0 ^= b;
+
+        // finalization
+        v2 ^= 0xff;
+        SipRound(ref v0, ref v1, ref v2, ref v3);
+        SipRound(ref v0, ref v1, ref v2, ref v3);
+        SipRound(ref v0, ref v1, ref v2, ref v3);
+        SipRound(ref v0, ref v1, ref v2, ref v3);
+
+        return v0 ^ v1 ^ v2 ^ v3;
+    }
+
+    private static void SipRound(ref ulong v0, ref ulong v1, ref ulong v2, ref ulong v3)
+    {
+        v0 += v1;
+        v1 = (v1 << 13) | (v1 >> (64 - 13));
+        v1 ^= v0;
+        v0 = (v0 << 32) | (v0 >> 32);
+
+        v2 += v3;
+        v3 = (v3 << 16) | (v3 >> (64 - 16));
+        v3 ^= v2;
+
+        v0 += v3;
+        v3 = (v3 << 21) | (v3 >> (64 - 21));
+        v3 ^= v0;
+
+        v2 += v1;
+        v1 = (v1 << 17) | (v1 >> (64 - 17));
+        v1 ^= v2;
+        v2 = (v2 << 32) | (v2 >> 32);
     }
     
     #region  Events
