@@ -8,6 +8,7 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Security;
@@ -247,6 +248,7 @@ public static class HttpHelper
     /// <typeparam name="T">The type of the object to deserialize.</typeparam>
     /// <param name="request">The URL to send the GET request to.</param>
     /// <returns>The deserialized object, or default if an error occurs.</returns>
+    [RequiresUnreferencedCode("Generic deserialization may require additional types to be preserved.")]
     public static async Task<T?> GetObjectFromJsonAsync<T>(string request)
     {
         try
@@ -288,6 +290,7 @@ public static class HttpHelper
     /// <param name="request">The URL to send the POST request to.</param>
     /// <param name="value">The object to serialize as JSON.</param>
     /// <returns>The HTTP response, or null if an error occurs.</returns>
+    [RequiresUnreferencedCode("Generic serialization may require additional types to be preserved.")]
     public static async Task<HttpResponseMessage?> PostJsonAsync<T>(string request, T value)
     {
         try
