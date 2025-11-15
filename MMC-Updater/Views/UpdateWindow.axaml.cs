@@ -195,8 +195,6 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         string fileName = "MMC-Launcher";
         if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
             fileName += ".exe";
-        else if (OSHelper.GetOperatingSystem() == EOperatingSystem.MacOS)
-            fileName += ".app";
         string appPath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
         if (!File.Exists(appPath))
         {

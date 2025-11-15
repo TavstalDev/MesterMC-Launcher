@@ -302,8 +302,6 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             string fileName = "Updater";
             if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
                 fileName += ".exe";
-            else if (OSHelper.GetOperatingSystem() == EOperatingSystem.MacOS)
-                fileName += ".app";
             
             if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), fileName)))
             {
