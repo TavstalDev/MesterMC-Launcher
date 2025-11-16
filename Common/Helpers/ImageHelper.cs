@@ -1,5 +1,6 @@
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Tavstal.KonkordLauncher.Core.Models;
 
 namespace Tavstal.KonkordLauncher.Common.Helpers;
 
@@ -22,7 +23,7 @@ public static class ImageHelper
     /// <returns>A <see cref="Bitmap"/> object if the image is successfully loaded; otherwise, null.</returns>
     public static async Task<Bitmap?> Load(Uri resourceUri)
     {
-        if (resourceUri.PathAndQuery.StartsWith("http"))
+        if (resourceUri.ToString().StartsWith("http"))
             return await LoadFromWeb(resourceUri) ?? null;
         return LoadFromResource(resourceUri);
     }
