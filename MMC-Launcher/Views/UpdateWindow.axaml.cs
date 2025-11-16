@@ -199,10 +199,19 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 _logger.Error("Failed to validate servers.dat");
             }
             
-            // 7. Update cache refresh date
+            // 7. Update cache refresh date & fetch news
             if (DateTime.Now > settings.CacheRefreshDate)
             {
-                settings.CacheRefreshDate = DateTime.Now.AddDays(7);
+                SetStatus("Hírek lekérése...");
+                await Task.Delay(_stepDelay);
+                var newsItems = await NewsHelper.FetchNewsAsync();
+                if (newsItems is { Count: > 0 })
+                {
+                    string newsPath = Path.Combine(settings.Launcher.CacheDirectoryPath, "news.json");
+                    await JsonHelper.WriteJsonFileAsync(newsPath, newsItems, CommonJsonContext.Default.ListNewsData);
+                }
+                
+                settings.CacheRefreshDate = DateTime.Now.AddDays(1);
                 await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
             }
             
@@ -210,8 +219,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
             {
                 SetStatus("Nem sikerült elindítani a fő ablakot.");
-                _logger.Error(
-                    "Failed to start main window: Application lifetime is not IClassicDesktopStyleApplicationLifetime");
+                _logger.Error("Failed to start main window: Application lifetime is not IClassicDesktopStyleApplicationLifetime");
                 return;
             }
 

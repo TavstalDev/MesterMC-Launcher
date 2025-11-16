@@ -5,8 +5,12 @@ using System.Reactive.Disposables.Fluent;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Input;
+using Avalonia.Media.Imaging;
 using ReactiveUI;
+using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Common.Models;
+using Tavstal.KonkordLauncher.Core.Models;
+using Tavstal.KonkordLauncher.Core.Models.Endpoints;
 using Tavstal.MesterMC.Launcher.Models;
 using Tavstal.MesterMC.Launcher.Views.Models;
 
@@ -14,6 +18,8 @@ namespace Tavstal.MesterMC.Launcher.Views;
 
 public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
 {
+    private CoreLogger _logger = CoreLogger.WithModuleType(typeof(LauncherWindow));
+    
     [RequiresUnreferencedCode("This constructor uses code that may be removed during trimming.")]
     public LauncherWindow()
     {
@@ -42,16 +48,69 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             }).DisposeWith(disposables);
         });
         
-        // Set window size
-        //this.Width = (double)App.ScreenWidth * 0.7;
-        //this.Height = (double)App.ScreenHeight * 0.45;
-        
-        // Add initial news
-        DataContext.NewsItems.Add(new NewsModel("Friss hírek betöltése...", "Kérlek várj, amíg a hírek betöltődnek.", "avares://MMC-Launcher/Assets/news/banners/loading-news.png"));
-        
-        DataContext.SelectedNewsItem = DataContext.NewsItems[0];
-        DataContext.SelectedNewsIndex = 0;
+        _ = InitializeNewsAsync();
     }
+    
+    private async Task InitializeNewsAsync()
+    {
+        if (DataContext == null)
+            return;
+        
+        try
+        {
+            var settings = await LauncherHelper.GetLauncherSettingsAsync();
+            var items = await LauncherHelper.GetNewsAsync(settings.Launcher.CacheDirectoryPath);
+
+            if (items.Count == 0)
+            {
+                AddFallbackNews();
+                return;
+            }
+
+            foreach (var item in items)
+            {
+                Bitmap image;
+
+                try
+                {
+                    image = await ImageHelper.LoadFromWeb(item.GetBannerUri())
+                            ?? ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/post_image_01.jpg"));
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error("Failed to load news image.\n" + ex);
+                    image = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/post_image_01.jpg"));
+                }
+
+                DataContext.NewsItems.Add(new NewsModel(item.Title, item.Content, image));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Failed to load news items.\n" + ex);
+            AddFallbackNews();
+        }
+
+        if (DataContext.NewsItems.Count > 0)
+        {
+            DataContext.SelectedNewsItem = DataContext.NewsItems[0];
+            DataContext.SelectedNewsIndex = 0;
+        }
+    }
+    
+    private void AddFallbackNews()
+    {
+        if (DataContext == null)
+            return;
+        
+        DataContext.NewsItems.Clear();
+        DataContext.NewsItems.Add(new NewsModel(
+            "Hiba",
+            "Váratlan hiba történt a hírek betöltése során.",
+            ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/post_image_01.jpg"))
+        ));
+    }
+
 
     protected override void OnOpened(EventArgs e)
     {
