@@ -8,6 +8,7 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using Tavstal.KonkordLauncher.Common.Models;
 using Tavstal.KonkordLauncher.Common.Models.Config;
 using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Helpers;
@@ -65,6 +66,50 @@ public static class LauncherHelper
             CoreConfig result = new CoreConfig();
             File.Move(PathHelper.LauncherConfigPath, PathHelper.LauncherConfigPath + ".bak", true);
             await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, result, CommonJsonContext.Default.CoreConfig);
+            return result;
+        }
+
+        return readResult;
+    }
+    
+    public static List<NewsData> GetNews(string cacheDir)
+    {
+        string newsPath = Path.Combine(cacheDir, "news.json");
+        if (!File.Exists(newsPath))
+        {
+            List<NewsData> result = new();
+            JsonHelper.WriteJsonFile(newsPath, result, CommonJsonContext.Default.ListNewsData);
+            return result;
+        }
+
+        var readResult = JsonHelper.ReadJsonFile<List<NewsData>>(newsPath, CommonJsonContext.Default.ListNewsData);
+        if (readResult == null)
+        {
+            List<NewsData> result = new();
+            File.Move(newsPath, newsPath + ".bak", true);
+            JsonHelper.WriteJsonFile(newsPath, result, CommonJsonContext.Default.ListNewsData);
+            return result;
+        }
+
+        return readResult;
+    }
+    
+    public static async Task<List<NewsData>> GetNewsAsync(string cacheDir)
+    {
+        string newsPath = Path.Combine(cacheDir, "news.json");
+        if (!File.Exists(newsPath))
+        {
+            List<NewsData> result = new();
+            await JsonHelper.WriteJsonFileAsync(newsPath, result, CommonJsonContext.Default.ListNewsData);
+            return result;
+        }
+
+        var readResult = await JsonHelper.ReadJsonFileAsync<List<NewsData>>(newsPath, CommonJsonContext.Default.ListNewsData);
+        if (readResult == null)
+        {
+            List<NewsData> result = new();
+            File.Move(newsPath, newsPath + ".bak", true);
+            await JsonHelper.WriteJsonFileAsync(newsPath, result, CommonJsonContext.Default.ListNewsData);
             return result;
         }
 
