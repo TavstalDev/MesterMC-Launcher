@@ -55,7 +55,7 @@ public class MinecraftInstance
     /// <param name="clientDetails">Details about the client user.</param>
     /// <param name="resolution">Optional resolution settings for the game.</param>
     /// <param name="progressReporter">Optional progress reporter for tracking installation progress.</param>
-    public MinecraftInstance(GameDetails gameDetails, PathDetails pathDetails, LauncherDetails launcherDetails,
+    protected MinecraftInstance(GameDetails gameDetails, PathDetails pathDetails, LauncherDetails launcherDetails,
         ClientDetails clientDetails, Resolution? resolution = null, IProgressReporter? progressReporter = null)
     {
         _progressReporter = progressReporter;
