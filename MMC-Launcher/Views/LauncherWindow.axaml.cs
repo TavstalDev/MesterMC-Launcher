@@ -32,6 +32,16 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
 
         
         DataContext ??= new LauncherViewModel();
+        // Temporal news item shown while loading, otherwise the content area would be empty
+        DataContext.NewsItems.Add(new NewsModel(
+            "Betöltés...",
+            "Hírek betöltése folyamatban, kérlek várj...",
+            ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/post_image_01.jpg"))
+        ));
+        DataContext.SelectedNewsItem = DataContext.NewsItems[0];
+        DataContext.SelectedNewsIndex = 0;
+        
+        
         this.WhenActivated(disposables =>
         {
             DataContext.CloseWindowInteraction.RegisterHandler(action =>
@@ -60,13 +70,14 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         {
             var settings = await LauncherHelper.GetLauncherSettingsAsync();
             var items = await LauncherHelper.GetNewsAsync(settings.Launcher.CacheDirectoryPath);
-
+            
             if (items.Count == 0)
             {
                 AddFallbackNews();
                 return;
             }
 
+            bool oldNewsRemoved = false;
             foreach (var item in items)
             {
                 Bitmap image;
@@ -82,6 +93,11 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                     image = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/post_image_01.jpg"));
                 }
 
+                if (!oldNewsRemoved)
+                {
+                    DataContext.NewsItems.Clear();
+                    oldNewsRemoved = true;
+                }
                 DataContext.NewsItems.Add(new NewsModel(item.Title, item.Content, image));
             }
         }

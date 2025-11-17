@@ -72,7 +72,8 @@ public static class ModService
         { "voicechat-fabric-1.21.5-2.6.6.jar", "8e134c8377590c405ca9b5760fcc21104b3fa2f6eed3867645e0ee99e8ee9d99" },
         { "UniLib-1.2.0+1.21.5-fabric.jar", "3cb887173f1dc896554bff1bdb9def83e186957ac5b7c73cc2c5b31f9cba4d91" },
         { "replaymod-1.21.5-2.6.23.jar", "f6f85ee29aeaece861e221381327b2aa8d6765f33b386127ec478784fbaf7ca3" },
-        { "WorldEditCUI-1.21.5+01.jar", "350078ea08c302d603bb443031d141f1022e312aac1746683fb2dd97b15a50bc" }
+        { "WorldEditCUI-1.21.5+01.jar", "350078ea08c302d603bb443031d141f1022e312aac1746683fb2dd97b15a50bc" },
+        { "CustomSkinLoader_Fabric-14.26.1.jar", "733af00a53a9d66719f09f5cb3d630c4bb22ce043b2c66700a234c578f65c621" }
     };
 
     /// <summary>
