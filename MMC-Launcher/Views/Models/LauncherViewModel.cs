@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
@@ -13,6 +14,7 @@ using Tavstal.MesterMC.Launcher.Models;
 
 namespace Tavstal.MesterMC.Launcher.Views.Models;
 
+[RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class LauncherViewModel : ObservableObject
 {
     public ObservableCollection<NewsModel> NewsItems = [];
@@ -32,7 +34,7 @@ public partial class LauncherViewModel : ObservableObject
 
     public LauncherViewModel()
     {
-        NewsItems.CollectionChanged += (s, e) => 
+        NewsItems.CollectionChanged += (_, _) => 
         {
             // 3. Manually notify that the property needs recalculation
             OnPropertyChanged(nameof(NewsPageDisplay));

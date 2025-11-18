@@ -1,6 +1,5 @@
 ﻿using System;
 using Avalonia;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ReactiveUI.Avalonia;
 
@@ -18,11 +17,6 @@ class Program
     public static void Main(string[] args)
     {
         AppHost = Host.CreateDefaultBuilder(args)
-            .ConfigureServices(services =>
-            {
-                // Register your Data Protection services here.
-                services.AddDataProtection();
-            })
             .Build();
         
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

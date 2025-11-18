@@ -25,6 +25,7 @@ using Tavstal.MesterMC.Launcher.Views.Models;
 
 namespace Tavstal.MesterMC.Launcher.Views;
 
+[RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressReporter
 {
     /// <summary>
@@ -291,7 +292,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 return false;
             
             if (!justCheck)
-                await UpdateLauncherAsync();
+                await UpdateLauncher();
             return true;
         }
         catch (Exception ex)
@@ -303,7 +304,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         }
     }
     
-    private async Task UpdateLauncherAsync()
+    private Task UpdateLauncher()
     {
         try
         {
@@ -315,7 +316,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             {
                 SetStatus("A frissítő fájl nem található.");
                 _logger.Error("Updater file not found: " + fileName);
-                return;
+                return Task.CompletedTask;
             }
             
             ProcessStartInfo processInfo = new ProcessStartInfo()
@@ -335,6 +336,8 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             _logger.Exc("Error while updating the launcher");
             _logger.Error(ex);
         }
+
+        return Task.CompletedTask;
     }
 
     #region IProgressReporter Implementation

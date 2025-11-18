@@ -1,15 +1,15 @@
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.MesterMC.Updater.Views;
 
 namespace Tavstal.MesterMC.Updater;
 
+// ReSharper disable once PartialTypeWithSinglePart
+[RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class App : Application
 {
-    private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(App));
-    
     #region Screen Size
     private static PixelSize _screenSize = new(1920, 1080);
     public static PixelSize ScreenSize => _screenSize;
@@ -26,7 +26,7 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
     }
-
+    
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

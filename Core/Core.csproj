@@ -10,16 +10,17 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PublishTrimmed>true</PublishTrimmed>
+    <PublishTrimmed>false</PublishTrimmed>
     <TrimMode>copyused</TrimMode>
     <TrimUnusedDependencies>true</TrimUnusedDependencies>
     <InvariantGlobalization>true</InvariantGlobalization>
     <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Hardware.Info" Version="101.0.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="9.0.8" />
     <PackageReference Include="NbtLib" Version="1.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />

@@ -8,11 +8,13 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <PublishTrimmed>true</PublishTrimmed>
+        <PublishTrimmed>false</PublishTrimmed>
         <TrimMode>copyused</TrimMode>
         <TrimUnusedDependencies>true</TrimUnusedDependencies>
         <InvariantGlobalization>true</InvariantGlobalization>
         <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     </PropertyGroup>
 
     <ItemGroup>

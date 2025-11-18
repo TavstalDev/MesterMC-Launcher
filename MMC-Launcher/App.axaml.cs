@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.DependencyInjection;
 using Tavstal.KonkordLauncher.Common.Helpers;
-using Tavstal.KonkordLauncher.Core.Encryption;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Instances;
@@ -18,11 +16,12 @@ using Tavstal.MesterMC.Launcher.Views;
 
 namespace Tavstal.MesterMC.Launcher;
 
+// ReSharper disable once PartialTypeWithSinglePart
+[RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class App : Application
 {
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(App));
     private static MinecraftInstance? _instance;
-    public static IServiceProvider? Services => Program.AppHost?.Services;
     
     #region Screen Size
     private static PixelSize _screenSize = new(1920, 1080);
@@ -98,11 +97,8 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
-        var dataProctionService = Services?.GetRequiredService<IDataProtectionProvider>();
-        if (dataProctionService != null)
-            EncryptionUtility.SetDataProtectionProvider(dataProctionService);
     }
-
+    
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

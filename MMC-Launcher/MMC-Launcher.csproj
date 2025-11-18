@@ -22,13 +22,15 @@
 
     <PropertyGroup>
         <PublishSingleFile>true</PublishSingleFile>
-        <PublishTrimmed>true</PublishTrimmed>
+        <PublishTrimmed>false</PublishTrimmed>
         <TrimMode>copyused</TrimMode>
         <TrimUnusedDependencies>true</TrimUnusedDependencies>
         <TrimmerSingleWarn>false</TrimmerSingleWarn>
         <InvariantGlobalization>true</InvariantGlobalization>
         <SelfContained>true</SelfContained>
         <EnableUnsafeUTF8Json>true</EnableUnsafeUTF8Json>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -42,7 +44,6 @@
             <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="9.0.10" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.10" />
         <PackageReference Include="NbtLib" Version="1.0.1" />

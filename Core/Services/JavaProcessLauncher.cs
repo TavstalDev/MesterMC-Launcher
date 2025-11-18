@@ -184,14 +184,14 @@ public static class JavaProcessLauncher
         {
             process.EnableRaisingEvents = true;
 #if DEBUG
-            process.OutputDataReceived += (sender, e) =>
+            process.OutputDataReceived += (_, e) =>
             {
                 if (!string.IsNullOrEmpty(e.Data))
                 {
                     _logger.Debug($"Custom command: {e.Data}");
                 }
             };
-            process.ErrorDataReceived += (sender, e) =>
+            process.ErrorDataReceived += (_, e) =>
             {
                 if (!string.IsNullOrEmpty(e.Data))
                 {

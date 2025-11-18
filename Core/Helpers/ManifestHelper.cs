@@ -9,9 +9,9 @@
  */
 
 using System.Text.Json.Nodes;
+using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Fabric;
 using Tavstal.KonkordLauncher.Core.Models.Json;
-using Tavstal.KonkordLauncher.Core.Models.ModLoaders;
 using Tavstal.KonkordLauncher.Core.Models.MojangApi;
 
 namespace Tavstal.KonkordLauncher.Core.Helpers;

@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ReactiveUI.Avalonia;
 
 namespace Tavstal.MesterMC.Updater;
 
 // ReSharper disable once ClassNeverInstantiated.Global
+[RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 class Program
 {
     public static IHost? AppHost { get; private set; }
@@ -18,11 +19,6 @@ class Program
     public static void Main(string[] args)
     {
         AppHost = Host.CreateDefaultBuilder(args)
-            .ConfigureServices(services =>
-            {
-                // Register your Data Protection services here.
-                services.AddDataProtection();
-            })
             .Build();
         
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

@@ -28,6 +28,7 @@ public static class JsonHelper
     /// <typeparam name="T">The type of the object to serialize.</typeparam>
     /// <param name="path">The file path to write the JSON content to.</param>
     /// <param name="obj">The object to serialize into JSON.</param>
+    /// <param name="typeInfo"></param>
     /// <returns>True if the operation succeeds, otherwise false.</returns>
     public static bool WriteJsonFile<T>(string path, T obj, JsonTypeInfo<T> typeInfo)
     {
@@ -59,6 +60,7 @@ public static class JsonHelper
     /// <typeparam name="T">The type of the object to serialize.</typeparam>
     /// <param name="path">The file path to write the JSON content to.</param>
     /// <param name="obj">The object to serialize into JSON.</param>
+    /// <param name="typeInfo"></param>
     /// <returns>True if the operation succeeds, otherwise false.</returns>
     public static async Task<bool> WriteJsonFileAsync<T>(string path, T obj, JsonTypeInfo<T> typeInfo)
     {
@@ -89,6 +91,7 @@ public static class JsonHelper
     /// </summary>
     /// <typeparam name="T">The type of the object to deserialize.</typeparam>
     /// <param name="path">The file path to read the JSON content from.</param>
+    /// <param name="typeInfo"></param>
     /// <returns>The deserialized object, or default if an error occurs.</returns>
     public static T? ReadJsonFile<T>(string path, JsonTypeInfo<T> typeInfo)
     {
@@ -111,6 +114,7 @@ public static class JsonHelper
     /// </summary>
     /// <typeparam name="T">The type of the object to deserialize.</typeparam>
     /// <param name="path">The file path to read the JSON content from.</param>
+    /// <param name="typeInfo"></param>
     /// <returns>The deserialized object, or default if an error occurs.</returns>
     public static async Task<T?> ReadJsonFileAsync<T>(string path, JsonTypeInfo<T> typeInfo)
     {

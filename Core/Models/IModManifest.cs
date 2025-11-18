@@ -1,4 +1,4 @@
-namespace Tavstal.KonkordLauncher.Core.Models.ModLoaders;
+namespace Tavstal.KonkordLauncher.Core.Models;
 
 /// <summary>
 /// Defines the structure for a mod manifest, including version and game version details.
