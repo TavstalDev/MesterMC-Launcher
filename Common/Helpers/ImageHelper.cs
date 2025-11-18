@@ -1,6 +1,5 @@
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using Tavstal.KonkordLauncher.Core.Models;
 
 namespace Tavstal.KonkordLauncher.Common.Helpers;
 

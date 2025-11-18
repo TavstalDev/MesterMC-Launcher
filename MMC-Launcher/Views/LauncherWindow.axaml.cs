@@ -10,7 +10,6 @@ using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Common.Models;
 using Tavstal.KonkordLauncher.Core.Models;
-using Tavstal.KonkordLauncher.Core.Models.Endpoints;
 using Tavstal.MesterMC.Launcher.Models;
 using Tavstal.MesterMC.Launcher.Views.Models;
 

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Newtonsoft.Json.Linq;
@@ -10,7 +11,8 @@ namespace Tavstal.KonkordLauncher.Common.Helpers;
 public static class AuthHelper
 {
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(AuthHelper));
-    
+
+    [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
     public static async Task<string?> LoginAsync(string username, string password)
     {
         try
@@ -63,6 +65,7 @@ public static class AuthHelper
         }
     }
 
+    [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
     public static async Task<string?> SubmitTFA(string token, string code)
     {
         try
