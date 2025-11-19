@@ -73,8 +73,8 @@ public static class ModService
         { "UniLib-1.2.0+1.21.5-fabric.jar", "3cb887173f1dc896554bff1bdb9def83e186957ac5b7c73cc2c5b31f9cba4d91" },
         { "replaymod-1.21.5-2.6.23.jar", "f6f85ee29aeaece861e221381327b2aa8d6765f33b386127ec478784fbaf7ca3" },
         { "WorldEditCUI-1.21.5+01.jar", "350078ea08c302d603bb443031d141f1022e312aac1746683fb2dd97b15a50bc" },
-        { "CustomSkinLoader_Fabric-14.26.1.jar", "733af00a53a9d66719f09f5cb3d630c4bb22ce043b2c66700a234c578f65c621" },
-        { "MMCAuth-1.0-SNAPSHOT.jar", "5c5602d2238c5a6be717b7ab5693dd39f49587fa035f7157803d25a754d36ff4"}
+        { "CustomSkinLoader_Fabric-14.26.1.jar", "bd86e01e60f05dc585f2056becf2855975b38eaa0c0ca1489c41f6169bb8b4d1" },
+        { "MMCAuth-1.0-SNAPSHOT.jar", "4f718ca7f2f50c174a6001935b06552c753bcff9b89d886c3673785545f90ea4"}
     };
 
     /// <summary>
