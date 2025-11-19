@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
+using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
 using Tavstal.MesterMC.Launcher.Models;
@@ -160,10 +161,15 @@ public partial class LauncherViewModel : ObservableObject
             return;
         
         LoginStatus = ELoginStatus.SUCCESS;
+        var config = await LauncherHelper.GetLauncherSettingsAsync();
+        config.Users.TryAdd(playerName, accessToken);
+        await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CommonJsonContext.Default.CoreConfig);
+        
         instance.UpdateUserDetails(new ClientDetails(accessToken, playerName, GameHelper.GetOfflinePlayerUUID(playerName), true));
         await Task.Delay(250); // Small delay to ensure status update is visible
         LoginStatus = ELoginStatus.LAUNCHING;
         var process = await instance.Start();
+        App.ClearRPC();
         await Task.Delay(5000); // Wait for a bit to ensure the process has started
         if (process is { HasExited: false })
         {

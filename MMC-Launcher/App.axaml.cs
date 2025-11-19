@@ -3,10 +3,15 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using DiscordRPC;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.DependencyInjection;
 using Tavstal.KonkordLauncher.Common.Helpers;
+using Tavstal.KonkordLauncher.Core.Encryption;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Instances;
@@ -22,6 +27,8 @@ public partial class App : Application
 {
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(App));
     private static MinecraftInstance? _instance;
+    private static DiscordRpcClient? _rpcClient;
+    public static IServiceProvider? Services => Program.AppHost?.Services;
     
     #region Screen Size
     private static PixelSize _screenSize = new(1920, 1080);
@@ -97,14 +104,35 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        var dataProctionService = Services?.GetRequiredService<IDataProtectionProvider>();
+        if (dataProctionService != null)
+            EncryptionUtility.SetDataProtectionProvider(dataProctionService);
     }
-    
+
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new UpdateWindow();
-            //desktop.MainWindow = new ClientWindow();
+            try
+            {
+                _rpcClient = new DiscordRpcClient("1440491989261877359");
+                _rpcClient.Initialize();
+                _rpcClient.SetPresence(new RichPresence
+                {
+                    Details = "Az indítóban",
+                    Timestamps = Timestamps.Now,
+                    Assets = new Assets
+                    {
+                        LargeImageKey = "logo",
+                        LargeImageText = "MesterMC",
+                    }
+                });
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -223,4 +251,63 @@ public partial class App : Application
     }
     
     public static MinecraftInstance? getInstance() => _instance;
+    
+    /// <summary>
+    /// Updates the Discord Rich Presence (RPC) with the specified details.
+    /// </summary>
+    /// <param name="details">The details to display in the Discord Rich Presence.</param>
+    public static void UpdateRPC(string details)
+    {
+        try
+        {
+            // Check if the Discord RPC client is initialized and not disposed.
+            if (_rpcClient == null || _rpcClient.IsDisposed)
+            {
+                _logger.Error("Discord RPC client is not initialized or disposed.");
+                return;
+            }
+        
+            // Set the presence with the provided details and current timestamps.
+            _rpcClient.SetPresence(new RichPresence
+            {
+                Details = details,
+                Timestamps = _rpcClient?.CurrentPresence?.Timestamps ?? Timestamps.Now
+            });
+        }
+        catch (Exception ex)
+        {
+            // Log any exceptions that occur during the update process.
+            _logger.Exc("Failed to update Discord RPC");
+            _logger.Error(ex);
+        }
+    }
+
+    /// <summary>
+    /// Clears the Discord Rich Presence (RPC) by removing the current presence.
+    /// </summary>
+    public static void ClearRPC()
+    {
+        try
+        {
+            // Check if the Discord RPC client is initialized and not disposed.
+            if (_rpcClient == null || _rpcClient.IsDisposed)
+            {
+                _logger.Error("Discord RPC client is not initialized or disposed.");
+                return;
+            }
+
+            // Clear the presence asynchronously.
+            Task.Run(() =>
+            {
+                _rpcClient.SetPresence(null);
+                _rpcClient.Invoke();
+            });
+        }
+        catch (Exception ex)
+        {
+            // Log any exceptions that occur during the clearing process.
+            _logger.Exc("Failed to clear Discord RPC");
+            _logger.Error(ex);
+        }
+    }
 }
