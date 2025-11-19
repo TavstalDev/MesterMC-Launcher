@@ -327,6 +327,8 @@ public class MinecraftInstance
         if (!string.IsNullOrEmpty(GameDetails.JvmArgs))
             jvmArgs.Add(GameDetails.JvmArgs);
 
+        jvmArgs.Add("-DauthToken=\"${auth_access_token}\"");
+        
         // 1.16 offline mode fix
         if (VersionData.MinecraftVersion.StartsWith("1.16") && _client.IsOffline)
         {
