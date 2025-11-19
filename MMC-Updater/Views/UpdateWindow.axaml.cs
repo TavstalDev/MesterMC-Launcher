@@ -8,6 +8,7 @@ using System.Reactive.Disposables.Fluent;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Input;
 using Avalonia.Threading;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
@@ -67,6 +68,15 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         if (Directory.Exists(_tmpDir))
             FileSystemHelper.DeleteDirectory(_tmpDir);
         base.OnClosed(e);
+    }
+    
+    private void DragStart_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Start moving the window when left mouse button is pressed
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            BeginMoveDrag(e);
+        }
     }
     
     private async Task StartUpdateProcessAsync()

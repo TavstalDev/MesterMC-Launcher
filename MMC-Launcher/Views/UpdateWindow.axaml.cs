@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using ReactiveUI;
@@ -237,6 +238,15 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             else
                 Close();
         });
+    }
+    
+    private void DragStart_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Start moving the window when left mouse button is pressed
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            BeginMoveDrag(e);
+        }
     }
     
     private async Task<bool> CheckUpdateAsync(bool justCheck = false)

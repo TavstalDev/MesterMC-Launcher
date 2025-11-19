@@ -17,22 +17,13 @@
         TransparencyLevelHint="Transparent"
         WindowStartupLocation="CenterScreen"
         Icon="avares://MMC-Launcher/Assets/icons/favicon.png">
-    <Grid>
+    <Grid IsHitTestVisible="True">
         <!-- Background Image -->
         <Image Source="{Binding ScreenImage}" 
                Stretch="Fill" 
                VerticalAlignment="Stretch" 
-               HorizontalAlignment="Stretch"/>
-
-        <!-- Close Button -->
-        <Button Classes="CloseButton" Height="55"
-                HorizontalAlignment="Right" 
-                VerticalAlignment="Top"
-                Margin="0,106,264,0"
-                Background="Transparent"
-                Command="{Binding CloseWindowCommand}">
-            <Image />
-        </Button>
+               HorizontalAlignment="Stretch"
+               IsHitTestVisible="False" />
         
         <TextBlock Margin="255, 200, 270, 25" 
                    Foreground="White" 
@@ -70,5 +61,24 @@
                              Value="{Binding Progress}"/>
             </StackPanel>
         </Grid>
+        
+        <!-- Drag Area -->
+        <Grid
+            Margin="175, 110, 270, 25"
+            IsHitTestVisible="True"
+            Background="Transparent"
+            PointerPressed="DragStart_PointerPressed"
+        />
+        
+        <!-- Close Button -->
+        <Button Classes="CloseButton" Height="55"
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Top"
+                Margin="0,106,264,0"
+                Background="Transparent"
+                IsHitTestVisible="True"
+                Command="{Binding CloseWindowCommand}">
+            <Image />
+        </Button>
     </Grid>
 </Window>

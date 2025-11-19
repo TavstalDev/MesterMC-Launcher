@@ -164,14 +164,6 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         // Calculate scale factor relative to screen
         double scaleX = screenWidth / baseWidth;
         double scaleY = screenHeight / baseHeight;
-
-        // Pick whichever fits better
-        /*double multiplier;
-        if (screenHeight >= 1080 && screenWidth >= 1920)
-            multiplier = 0.6;
-        else
-            multiplier = 0.47;*/
-        
         double scale = Math.Min(scaleX, scaleY) * 0.5;
 
         // Apply scaled window size
