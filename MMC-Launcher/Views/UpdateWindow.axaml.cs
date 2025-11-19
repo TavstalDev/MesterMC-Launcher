@@ -25,6 +25,7 @@ using Tavstal.MesterMC.Launcher.Views.Models;
 
 namespace Tavstal.MesterMC.Launcher.Views;
 
+[RequiresUnreferencedCode("Uses reflection to load assemblies and their attributes.")]
 public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressReporter
 {
     /// <summary>
@@ -115,6 +116,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
 
             // 3. Validate Java
             SetStatus("A Java ellenőrzése...");
+            App.UpdateRPC("Fájlok ellenőrzése...");
             await Task.Delay(_stepDelay);
             var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath);
             bool wasJavaUpdated = false;

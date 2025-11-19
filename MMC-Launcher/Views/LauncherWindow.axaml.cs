@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ using Tavstal.MesterMC.Launcher.Views.Models;
 
 namespace Tavstal.MesterMC.Launcher.Views;
 
+[RequiresUnreferencedCode("This class uses code that may be removed during trimming.")]
 public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
 {
     private CoreLogger _logger = CoreLogger.WithModuleType(typeof(LauncherWindow));
@@ -57,10 +59,10 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             }).DisposeWith(disposables);
         });
         
-        _ = InitializeNewsAsync();
+        _ = InitializeAsync();
     }
     
-    private async Task InitializeNewsAsync()
+    private async Task InitializeAsync()
     {
         if (DataContext == null)
             return;
@@ -68,6 +70,8 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         try
         {
             var settings = await LauncherHelper.GetLauncherSettingsAsync();
+            if (settings.Users.Count > 0)
+                DataContext.Username = settings.Users.Keys.ElementAt(0);
             var items = await LauncherHelper.GetNewsAsync(settings.Launcher.CacheDirectoryPath);
             
             if (items.Count == 0)
@@ -133,6 +137,12 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         FitToDisplay();
     }
 
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        App.ClearRPC();
+    }
+
     private void DragStart_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         // Start moving the window when left mouse button is pressed
@@ -162,7 +172,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         else
             multiplier = 0.47;*/
         
-        double scale = Math.Min(scaleX, scaleY) * 0.55;
+        double scale = Math.Min(scaleX, scaleY) * 0.5;
 
         // Apply scaled window size
         Width = baseWidth * scale;
