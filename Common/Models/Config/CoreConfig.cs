@@ -52,6 +52,9 @@ public class CoreConfig
     [JsonProperty("environmentVariables"), JsonPropertyName("environmentVariables")]
     public Dictionary<string, string> EnvironmentVariables { get; set; }
     
+    [JsonProperty("users"), JsonPropertyName("users")]
+    public Dictionary<string, string> Users { get; set; }
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="CoreConfig"/> class with default values.
     /// </summary>
@@ -67,9 +70,10 @@ public class CoreConfig
         CacheRefreshDate = DateTime.Now;
         EnableEnvironmentVariables = false;
         EnvironmentVariables = new Dictionary<string, string>();
+        Users = new Dictionary<string, string>();
     }
     
-    public CoreConfig(LauncherConfig launcher, JavaConfig java, MinecraftConfig minecraft, MiscConfig misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables)
+    public CoreConfig(LauncherConfig launcher, JavaConfig java, MinecraftConfig minecraft, MiscConfig misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables, Dictionary<string, string> users)
     {
         Launcher = launcher;
         Java = java;
@@ -78,5 +82,6 @@ public class CoreConfig
         CacheRefreshDate = cacheRefreshDate;
         EnableEnvironmentVariables = enableEnvironmentVariables;
         EnvironmentVariables = environmentVariables;
+        Users = users;
     }
 }
