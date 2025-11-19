@@ -316,4 +316,34 @@ public static class OSHelper
             _logger.Error($"Failed to open the website after installation: {ex.Message}");
         }
     }
+
+    public static object CollectHardwareInfo()
+    {
+        var hardwareInfo = new HardwareInfo();
+        hardwareInfo.RefreshVideoControllerList();
+        hardwareInfo.RefreshMemoryList();
+        hardwareInfo.RefreshMemoryStatus();
+        hardwareInfo.RefreshDriveList();
+        
+        ulong totalDiskSize = 0;
+        foreach (var drive in hardwareInfo.DriveList)
+        {
+            totalDiskSize += drive.Size;
+        }
+        
+        string gpu = "unknown";
+        foreach (var videoController in hardwareInfo.VideoControllerList)
+        {
+            gpu = videoController.Description;
+            break;
+        }
+        
+        return new {
+            os = GetOperatingSystem().ToString(),
+            cpu = Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER"),
+            ram = hardwareInfo.MemoryStatus.TotalPhysical / (1024 * 1024 * 1024),
+            disksize = totalDiskSize / (1024L*1024*1024),
+            gpu
+        };
+    }
 }

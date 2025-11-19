@@ -8,8 +8,12 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
+using Tavstal.KonkordLauncher.Core.Helpers;
 
 namespace Tavstal.KonkordLauncher.Common.Models.Config;
 
@@ -17,8 +21,12 @@ namespace Tavstal.KonkordLauncher.Common.Models.Config;
 /// Represents the core configuration for the launcher, including launcher settings, Java settings,
 /// Minecraft settings, and miscellaneous options.
 /// </summary>
+[RequiresUnreferencedCode("This class uses code that may be removed during trimming.")]
 public class CoreConfig
 {
+    [JsonProperty("clientId"), JsonPropertyName("clientId")]
+    public string ClientId { get; set; }
+    
     /// <summary>
     /// Gets or sets the configuration for the launcher.
     /// </summary>
@@ -54,12 +62,19 @@ public class CoreConfig
     
     [JsonProperty("users"), JsonPropertyName("users")]
     public Dictionary<string, string> Users { get; set; }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CoreConfig"/> class with default values.
     /// </summary>
     public CoreConfig()
     {
+        using (var sha = SHA256.Create())
+        {
+            string json = JsonConvert.SerializeObject(OSHelper.CollectHardwareInfo());
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(json));
+            ClientId = Convert.ToHexString(bytes);
+        }
+
         Launcher = new LauncherConfig();
         Java = new JavaConfig
         {
@@ -73,8 +88,9 @@ public class CoreConfig
         Users = new Dictionary<string, string>();
     }
     
-    public CoreConfig(LauncherConfig launcher, JavaConfig java, MinecraftConfig minecraft, MiscConfig misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables, Dictionary<string, string> users)
+    public CoreConfig(string clientId, LauncherConfig launcher, JavaConfig java, MinecraftConfig minecraft, MiscConfig misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables, Dictionary<string, string> users)
     {
+        ClientId = clientId;
         Launcher = launcher;
         Java = java;
         Minecraft = minecraft;
