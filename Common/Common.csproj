@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
+        <GenerateDebugInfo>false</GenerateDebugInfo>
         <PublishTrimmed>false</PublishTrimmed>
         <TrimMode>copyused</TrimMode>
         <TrimUnusedDependencies>true</TrimUnusedDependencies>

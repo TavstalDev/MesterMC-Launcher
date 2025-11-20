@@ -21,6 +21,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
+        <GenerateDebugInfo>false</GenerateDebugInfo>
         <PublishSingleFile>true</PublishSingleFile>
         <PublishTrimmed>false</PublishTrimmed>
         <TrimMode>copyused</TrimMode>
