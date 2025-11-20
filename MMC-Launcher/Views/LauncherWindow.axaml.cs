@@ -35,10 +35,15 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         DataContext ??= new LauncherViewModel();
         // Temporal news item shown while loading, otherwise the content area would be empty
         DataContext.NewsItems.Add(new NewsModel(
+            "Béta Vezió",
+            "Üdvözlünk a MesterMC Launcher Béta verziójában! Kérlek vedd figyelembe, hogy ez még egy fejlesztés alatt álló kiadás, így előfordulhatnak hibák és hiányzó funkciók. Köszönjük a türelmed és támogatásod!\n\nAz alábbi funkciók szándékosan ki vannak kapcsolva a béta tesztelés idejére:\n- Hírek betöltése az internetről\n- Automatikus frissítések\n- Bejelentkezés a fiókba, csak offline mód érhető el, de így is tudsz csatlakozni a szerverre.\n\nHa bármilyen problémába ütközöl, kérlek jelezd nekünk a Discord szerverünkön keresztül: https://discord.gg/mestermc\n\nFigyelem! Mivel a launcher még nem rendelkezik code signing tanúsítvánnyal, az antivírus szoftverek hamis pozitív eredményeket adhatnak. Kérlek győződj meg róla, hogy a letöltött fájl a hivatalos forrásból származik.",
+            ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/post_image_beta.png"))
+        ));
+        /*DataContext.NewsItems.Add(new NewsModel(
             "Betöltés...",
             "Hírek betöltése folyamatban, kérlek várj...",
             ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/post_image_01.jpg"))
-        ));
+        ));*/
         DataContext.SelectedNewsItem = DataContext.NewsItems[0];
         DataContext.SelectedNewsIndex = 0;
         
@@ -72,7 +77,8 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             var settings = await LauncherHelper.GetLauncherSettingsAsync();
             if (settings.Users.Count > 0)
                 DataContext.Username = settings.Users.Keys.ElementAt(0);
-            var items = await LauncherHelper.GetNewsAsync(settings.Launcher.CacheDirectoryPath);
+            /* Disabled for BETA testing
+             var items = await LauncherHelper.GetNewsAsync(settings.Launcher.CacheDirectoryPath);
             
             if (items.Count == 0)
             {
@@ -102,7 +108,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                     oldNewsRemoved = true;
                 }
                 DataContext.NewsItems.Add(new NewsModel(item.Title, item.Content, image));
-            }
+            }*/
         }
         catch (Exception ex)
         {
