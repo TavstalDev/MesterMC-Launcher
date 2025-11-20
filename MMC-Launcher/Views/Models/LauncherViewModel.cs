@@ -168,7 +168,7 @@ public partial class LauncherViewModel : ObservableObject
         instance.UpdateUserDetails(new ClientDetails(accessToken, playerName, GameHelper.GetOfflinePlayerUUID(playerName), true));
         await Task.Delay(250); // Small delay to ensure status update is visible
         LoginStatus = ELoginStatus.LAUNCHING;
-        await Task.Run(async () => await MetricsHelper.SendMetricAsync()); // Send metrics in the background, tracks basic hardware info (cpu, ram, gpu, sum of disk space), so we can track what to optimize for and how our userbase looks like
+        //await Task.Run(async () => await MetricsHelper.SendMetricAsync()); // Send metrics in the background, tracks basic hardware info (cpu, ram, gpu, sum of disk space), so we can track what to optimize for and how our userbase looks like
         var process = await instance.Start();
         App.ClearRPC();
         await Task.Delay(5000); // Wait for a bit to ensure the process has started

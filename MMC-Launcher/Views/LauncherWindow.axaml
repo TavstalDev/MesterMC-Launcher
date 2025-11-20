@@ -134,7 +134,8 @@
                     ColumnDefinitions="Auto, Auto"
                     ColumnSpacing="10"
                     RowDefinitions="Auto, Auto"
-                    RowSpacing="5">
+                    RowSpacing="5"
+                    PointerPressed="DragStart_PointerPressed">
                     <!--  PrevPage Button  -->
                     <Button
                         Grid.Row="0"
