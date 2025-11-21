@@ -32,15 +32,15 @@ public class MinecraftInstance
     private bool _isSanitizingLogFile;
     private string _classPathFilePath = string.Empty;
 
-    protected GameDetails GameDetails { get; }
-    protected PathDetails PathDetails { get; }
+    protected GameDetails? GameDetails { get; }
+    protected PathDetails? PathDetails { get; }
     protected Resolution? Resolution { get; }
-    public VersionDetails VersionData { get; }
-    public VersionManifest VersionManifest { get; }
-    public MinecraftVersion MinecraftVersion { get; }
+    public VersionDetails? VersionData { get; }
+    public VersionManifest? VersionManifest { get; }
+    public MinecraftVersion? MinecraftVersion { get; }
     protected IProgressReporter? _progressReporter { get; }
 
-    protected VersionMeta MinecraftVersionMeta { get; private set; }
+    protected VersionMeta? MinecraftVersionMeta { get; private set; }
     protected readonly List<string> _classPath = [];
     protected readonly List<LaunchArg> _jvmArguments = [];
     protected readonly List<LaunchArg> _gameArguments = [];
@@ -65,13 +65,21 @@ public class MinecraftInstance
         _launcherDetails = launcherDetails;
         _client = clientDetails;
 
-        VersionManifest = ManifestHelper.GetMinecraftManifest()
-                          ?? throw new InvalidOperationException(
-                              "Failed to read the local vanilla manifest. Please ensure that the file exists and is valid.");
+        var versionManifest = ManifestHelper.GetMinecraftManifest();
+        if (versionManifest == null)
+        {
+            _logger.Error("Failed to read the local vanilla manifest. Please ensure that the file exists and is valid.");
+            return;
+        }
+        VersionManifest = versionManifest;
 
-        MinecraftVersion = VersionManifest.Versions.FirstOrDefault(x => x.Id == GameDetails.MinecraftVersion)
-                           ?? throw new InvalidOperationException(
-                               $"The specified Minecraft version does not exist in the manifest: {GameDetails.MinecraftVersion}");
+        var minecraftVersion = VersionManifest.Versions.FirstOrDefault(x => x.Id == GameDetails.MinecraftVersion);
+        if (minecraftVersion == null)
+        {
+            _logger.Error($"Minecraft version '{GameDetails.MinecraftVersion}' not found in the local vanilla manifest.");
+            return;
+        }
+        MinecraftVersion = minecraftVersion;
 
         VersionData = GameHelper.GetVersionDetails(PathDetails.VersionsDir, GameDetails.MinecraftVersion,
             EMinecraftKind.VANILLA, null, GameDetails.CustomGameDirectory);
@@ -170,6 +178,9 @@ public class MinecraftInstance
             // Check mods
             ModService.VerifyMods(Path.Combine(versionDetails.GameDir, "mods"));
             
+            // Make commands_history readonly
+            FileSystemHelper.FixCommandHistoryFile(GameDetails.CustomGameDirectory);
+            
             // Launch the Minecraft game process with the constructed arguments
             var process = JavaProcessLauncher.StartJava(GameDetails.JavaPath, arguments, logsFilePath, GameDetails.WrapperCommand,
                 GameDetails.EnvironmentVariables);
@@ -215,7 +226,7 @@ public class MinecraftInstance
                 MinecraftVersionMeta.JavaVersionMeta.MajorVersion = 7;
         }
         
-        if (GameDetails.JavaPath == "LAUNCH_ME_FIRST")
+        if (GameDetails.JavaPath == "LAUNCH_ME_FIRST" || string.IsNullOrEmpty(GameDetails.JavaPath))
             OnSetupDefaultJava.Invoke(MinecraftVersionMeta);
         
         await MinecraftFileService.DownloadMappingsAsync(MinecraftVersionMeta, VersionData, _progressReporter);
@@ -243,6 +254,12 @@ public class MinecraftInstance
     /// <returns>A list of combined library metadata.</returns>
     private List<LibraryMeta> GetCombinedLibraries(ModdedData? moddedData)
     {
+        if (MinecraftVersionMeta == null)
+        {
+            _logger.Error("MinecraftVersionMeta is null. Cannot download combined libraries.");
+            return [];
+        }
+        
         var libraries = new List<LibraryMeta>(MinecraftVersionMeta.Libraries);
         if (moddedData?.Libraries.Count > 0)
         {
@@ -259,9 +276,21 @@ public class MinecraftInstance
     /// <returns>A list of native libraries required for the installation.</returns>
     private async Task DownloadDependenciesAsync(VersionDetails versionDetails, List<LibraryMeta> libraries)
     {
+        if (MinecraftVersionMeta == null)
+        {
+            _logger.Error("MinecraftVersionMeta is null. Cannot download dependencies.");
+            return;
+        }
+        
         var loggingArg = await MinecraftFileService.DownloadLoggingAsync(MinecraftVersionMeta, versionDetails.VersionDirectory, versionDetails.GameDir, _progressReporter);
         if (loggingArg != null)
             _jvmArgumentsBeforeClassPath.Add(loggingArg);
+
+        if (GameDetails == null || VersionData == null  || PathDetails == null)
+        {
+            _logger.Error("GameDetails, VersionData, or PathDetails is null. Cannot download dependencies.");
+            return;
+        }
 
         var classPath = await MinecraftFileService.DownloadLibrariesAsync(GameDetails.Kind, VersionData, libraries, _classPath, PathDetails.CacheDir, PathDetails.LibrariesDir, _progressReporter);
         _classPath.AddRange(classPath);
@@ -286,7 +315,7 @@ public class MinecraftInstance
     /// <param name="nativesDir">The directory containing native libraries.</param>
     /// <param name="modVersion">Optional mod version string.</param>
     /// <returns>A string containing the launch arguments.</returns>
-    private string BuildArguments(string gameDir, string mainClass, string nativesDir, string? modVersion = null)
+    private string? BuildArguments(string gameDir, string mainClass, string nativesDir, string? modVersion = null)
     {
         var arguments = new List<string>();
 
@@ -302,7 +331,7 @@ public class MinecraftInstance
         else
             classpath = string.Join(":", _classPath);
 
-        _classPathFilePath = Path.Combine(GameDetails.CustomGameDirectory, "classpath.txt");
+        _classPathFilePath = Path.Combine(gameDir, "classpath.txt");
         File.WriteAllText(_classPathFilePath, classpath);
         
         return ReplacePlaceholders(argumentString, gameDir, nativesDir, modVersion);
@@ -315,6 +344,12 @@ public class MinecraftInstance
     /// <returns>A collection of JVM arguments.</returns>
     private IEnumerable<string> BuildJvmArguments(string gameDir)
     {
+        if (GameDetails == null || MinecraftVersionMeta == null)
+        {
+            _logger.Error("GameDetails or MinecraftVersionMeta is null. Cannot build JVM arguments.");
+            return [];
+        }
+        
         var jvmArgs = new List<string>
         {
             GameDetails.MinMemory > GameDetails.MaxMemory
@@ -330,7 +365,7 @@ public class MinecraftInstance
         jvmArgs.Add("-DmmcToken=\"${auth_access_token}\"");
         
         // 1.16 offline mode fix
-        if (VersionData.MinecraftVersion.StartsWith("1.16") && _client.IsOffline)
+        if (VersionData != null && VersionData.MinecraftVersion.StartsWith("1.16") && _client.IsOffline)
         {
             jvmArgs.Add("-Dminecraft.api.auth.host=https://nope.invalid ");
             jvmArgs.Add("-Dminecraft.api.account.host=https://nope.invalid");
@@ -364,6 +399,12 @@ public class MinecraftInstance
     /// <returns>A collection of game arguments.</returns>
     private IEnumerable<string> BuildGameArguments(string mainClass)
     {
+        if (MinecraftVersionMeta == null)
+        {
+            _logger.Error("MinecraftVersionMeta is null. Cannot build game arguments.");
+            return [];
+        }
+        
         var gameArgs = new List<string>
         {
             mainClass,
@@ -383,7 +424,7 @@ public class MinecraftInstance
         if (Resolution is { Y: > 0 })
             gameArgs.Add($"--height {Resolution.Y}");
 
-        if (!string.IsNullOrEmpty(GameDetails.ServerAddressToJoin))
+        if (GameDetails != null && !string.IsNullOrEmpty(GameDetails.ServerAddressToJoin))
             gameArgs.Add($"--quickPlayMultiplayer {GameDetails.ServerAddressToJoin}");
 
         return gameArgs;
@@ -396,6 +437,18 @@ public class MinecraftInstance
     /// <returns>The version name as a string.</returns>
     private string GetVersionName(string? modVersion)
     {
+        if (GameDetails == null)
+        {
+            _logger.Error("GameDetails is null. Cannot get version name.");
+            return string.Empty;
+        }
+
+        if (VersionData == null)
+        {
+            _logger.Error("VersionData is null. Cannot get version name.");
+            return string.Empty;
+        }
+        
         return GameDetails.Kind switch
         {
             EMinecraftKind.VANILLA => VersionData.MinecraftVersion,
@@ -415,8 +468,20 @@ public class MinecraftInstance
     /// <param name="nativesDir">The directory containing native libraries.</param>
     /// <param name="modVersion">Optional mod version string.</param>
     /// <returns>The argument string with placeholders replaced.</returns>
-    private string ReplacePlaceholders(string argumentString, string gameDir, string nativesDir, string? modVersion)
+    private string? ReplacePlaceholders(string argumentString, string gameDir, string nativesDir, string? modVersion)
     {
+        if (PathDetails == null)
+        {
+            _logger.Error("PathDetails is null. Cannot replace placeholders.");
+            return null;
+        }
+
+        if (MinecraftVersionMeta == null)
+        {
+            _logger.Error("MinecraftVersionMeta is null. Cannot replace placeholders.");
+            return null;
+        }
+        
         string gameAssetsDir = Path.Combine(PathDetails.AssetsDir, "virtual", "legacy");
         gameAssetsDir = gameAssetsDir.StartsWith('"') ? gameAssetsDir : $"\"{gameAssetsDir}\"";
         string userType = _client.IsOffline ? "offline" : "msa";
@@ -460,7 +525,7 @@ public class MinecraftInstance
     /// Event triggered when the default Java path needs to be set up.
     /// Subscribers can handle this event to configure the Java path based on the provided version metadata.
     /// </summary>
-    public event SetupDefaultJavaEventHandler OnSetupDefaultJava;
+    public event SetupDefaultJavaEventHandler? OnSetupDefaultJava;
 
     /// <summary>
     /// Updates the Java path used by the game and logs the change.
@@ -468,6 +533,12 @@ public class MinecraftInstance
     /// <param name="javaPath">The new Java path to be used by the game.</param>
     public void UpdateJavaPath(string javaPath)
     {
+        if (GameDetails == null)
+        {
+            _logger.Error("GameDetails is null. Cannot update Java path.");
+            return;
+        }
+        
         GameDetails.JavaPath = javaPath;
         _logger.Debug($"Java path updated to: {javaPath}");
     }
@@ -481,7 +552,7 @@ public class MinecraftInstance
     private void HandleFileWatcherChanged(object sender, FileSystemEventArgs e)
     {
         // Impossible but the IDE complains
-        if (_watcher == null)
+        if (_watcher == null || VersionData == null)
             return;
         
         lock (_watcherLock)
