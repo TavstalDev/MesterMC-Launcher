@@ -1,7 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Tavstal.MesterMC.Launcher.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Light">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
@@ -11,5 +11,6 @@
         <StyleInclude Source="Styles/Buttons.axaml"  />
         <StyleInclude Source="Styles/Checkboxes.axaml" />
         <StyleInclude Source="Styles/Textboxes.axaml" />
+        <StyleInclude Source="Styles/Comboboxes.axaml" />
     </Application.Styles>
 </Application>

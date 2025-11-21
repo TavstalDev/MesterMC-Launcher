@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia;
@@ -9,11 +10,13 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using DiscordRPC;
 using Tavstal.KonkordLauncher.Common.Helpers;
+using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Instances;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
+using Tavstal.KonkordLauncher.Core.Models.MojangApi.Meta;
 using Tavstal.MesterMC.Launcher.Views;
 
 namespace Tavstal.MesterMC.Launcher;
@@ -57,7 +60,7 @@ public partial class App : Application
             else
                 currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
             
-            _version = currentVersion?.ToString() ?? "2.0.0";
+            _version = currentVersion?.ToString() ?? "0.0.1";
             return _version;
         }
     }
@@ -131,6 +134,7 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
     
+    //#region Game Instance
     public static MinecraftInstance createMinecraftInstance(IProgressReporter progressReporter)
     {
         if (_instance != null)
@@ -240,11 +244,52 @@ public partial class App : Application
         );
 
         _instance = new FabricInstance(gameDetails, pathDetails, launcherDetails, clientDetails, resolution, progressReporter);
+        _instance.OnSetupDefaultJava += SetupDefaultJavaPath;
         return _instance;
     }
     
     public static MinecraftInstance? getInstance() => _instance;
     
+    private static void SetupDefaultJavaPath(VersionMeta? meta)
+    {
+        var settings = LauncherHelper.GetLauncherSettings();
+        string defaultJavaPath = settings.Java.JavaPath;
+        if (meta == null)
+        {
+            _logger.Warn("Java version meta is null, using existing Java path.");
+            UpdateJavaPath(defaultJavaPath);
+            return;
+        }
+        
+        // Check if the Java version specified in the metadata is available, if not attempt to download it
+        var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath);
+        if (javaInstallations.All(x => x.Major != meta.JavaVersionMeta.MajorVersion) && string.IsNullOrEmpty(defaultJavaPath))
+        {
+            _logger.Error("Required Java version not found and no default Java path set.");
+            return;
+        }
+
+        foreach (var javaInstallation in javaInstallations)
+        {
+            if (meta.JavaVersionMeta != null && javaInstallation.Major == meta.JavaVersionMeta.MajorVersion)
+            {
+                defaultJavaPath = javaInstallation.Path;
+                break;
+            }
+        }
+        UpdateJavaPath(defaultJavaPath);
+    }
+    
+    private static void UpdateJavaPath(string javaPath)
+    {
+        _instance?.UpdateJavaPath(javaPath);
+        var settings = LauncherHelper.GetLauncherSettings();
+        settings.Java.JavaPath = javaPath;
+        JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
+    }
+    //#endregion
+    
+    //#region Discord RPC
     /// <summary>
     /// Updates the Discord Rich Presence (RPC) with the specified details.
     /// </summary>
@@ -303,4 +348,5 @@ public partial class App : Application
             _logger.Error(ex);
         }
     }
+    //#endregion
 }
