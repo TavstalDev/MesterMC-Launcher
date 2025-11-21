@@ -426,7 +426,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                     Margin="0"
                     VerticalAlignment="Bottom"
                     Foreground="Black"
-                    Text="Legalább 500 MB szabad hely szükséges a telepítéshez."
+                    Text="Legalább ~1024 MB szabad hely szükséges a TELJES telepítéshez."
                     TextWrapping="Wrap" />
             </Grid>
 
