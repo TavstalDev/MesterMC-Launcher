@@ -8,7 +8,7 @@ public static class MicrosoftEndpoints
     /// <summary>
     /// The URL for retrieving the Minecraft version manifest.
     /// </summary>
-    public const string MinecraftManifestUrl = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
+    public const string MinecraftManifestUrl = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
     
     /// <summary>
     /// The base URL for downloading Minecraft resources.
