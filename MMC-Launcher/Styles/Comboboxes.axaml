@@ -1,0 +1,131 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+        <!-- Base Style -->
+        <Style Selector="ComboBox.LoginBox">
+                <Setter Property="Background" Value="#f9f9f9"/>
+                <Setter Property="Foreground" Value="#333"/>
+                <Setter Property="CornerRadius" Value="6"/>
+                <Setter Property="BorderBrush" Value="#ccc"/>
+                <Setter Property="BorderThickness" Value="1.5"/>
+                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontWeight" Value="600" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="Transitions">
+                        <Transitions>
+                                <BrushTransition Property="Background" Duration="0:0:0.15"/>
+                                <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+                        </Transitions>
+                </Setter>
+                <Setter Property="Effect">
+                        <DropShadowEffect BlurRadius="4" Opacity="0.05"/>
+                </Setter>
+        </Style>
+
+        <!-- Disabled -->
+        <Style Selector="ComboBox.LoginBox:disabled">
+                <Setter Property="Background" Value="#eeeeee"/>
+                <Setter Property="Foreground" Value="#999"/>
+                <Setter Property="BorderBrush" Value="#ddd"/>
+                <Setter Property="Opacity" Value="0.8"/>
+        </Style>
+        
+        <Style Selector="ComboBox.LoginBox:disabled /template/ Border#Background">
+                <Setter Property="Background" Value="#eeeeee"/>
+                <Setter Property="BorderBrush" Value="#ddd"/>
+                <Setter Property="Opacity" Value="0.8"/>
+        </Style>
+        
+        <Style Selector="ComboBox.LoginBox:disabled /template/ TextBlock#PlaceholderTextBlock">
+                <Setter Property="Foreground" Value="#111"/>
+        </Style>
+
+        <!-- Pointer Over -->
+        <Style Selector="ComboBox.LoginBox:pointerover /template/ Border#Background">
+                <Setter Property="BorderBrush" Value="#ffcf61"/>
+                <Setter Property="Background" Value="#f0f0f0"/>
+        </Style>
+        
+        <Style Selector="ComboBox.LoginBox:pointerover /template/ TextBlock#PlaceholderTextBlock">
+                <Setter Property="Foreground" Value="#333"/>
+        </Style>
+
+        <!-- Focused / Opened -->
+        <Style Selector="ComboBox.LoginBox:focus /template/ Border#Background">
+                <Setter Property="BorderBrush" Value="#ffa314"/>
+                <Setter Property="Background" Value="#f0f0f0"/>
+                <Setter Property="Effect">
+                        <DropShadowEffect Color="#ffa314" BlurRadius="10" Opacity="0.25"/>
+                </Setter>
+        </Style>
+        
+        <Style Selector="ComboBox.LoginBox:focus /template/ TextBlock#PlaceholderTextBlock">
+                <Setter Property="Foreground" Value="#333"/>
+        </Style>
+        
+        <!-- Editable TextBox styling -->
+        <Style Selector="ComboBox.LoginBox /template/ TextBox#PART_EditableTextBox">
+                <Setter Property="Foreground" Value="#333"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="10, 0"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontWeight" Value="600"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Toggle Button -->
+        <Style Selector="ComboBox.LoginBox /template/ ToggleButton#PART_ToggleButton">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Foreground" Value="#333"/>
+        </Style>
+        
+        <Style Selector="ComboBox.LoginBox:pointerover /template/ ToggleButton#PART_ToggleButton">
+                <Setter Property="Foreground" Value="#ffa314"/>
+        </Style>
+        
+        <Style Selector="ComboBox.LoginBox:focus /template/ ToggleButton#PART_ToggleButton">
+                <Setter Property="Foreground" Value="#ffa314"/>
+        </Style>
+        
+        <Style Selector="ComboBox.LoginBox:disabled /template/ ToggleButton#PART_ToggleButton">
+                <Setter Property="Foreground" Value="#999"/>
+        </Style>
+
+
+        <!-- Dropdown Popup Styling -->
+        <Style Selector="ComboBox.LoginBox /template/ Popup#PART_Popup > Border">
+                <Setter Property="Background" Value="#f9f9f9"/>
+                <Setter Property="BorderBrush" Value="#ffa314"/>
+                <Setter Property="BorderThickness" Value="1.5"/>
+                <Setter Property="CornerRadius" Value="6"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Effect">
+                        <DropShadowEffect Color="#ffa314" BlurRadius="10" Opacity="0.25"/>
+                </Setter>
+        </Style>
+
+        <!-- Dropdown Items -->
+        <Style Selector="ComboBox.LoginBox ComboBoxItem">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="#333"/>
+                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontWeight" Value="600"/>
+        </Style>
+
+        <Style Selector="ComboBox.LoginBox ComboBoxItem:pointerover /template/ ContentPresenter">
+                <Setter Property="Background" Value="#ffcf61"/>
+                <Setter Property="Foreground" Value="#f0f0f0"/>
+        </Style>
+
+        <Style Selector="ComboBox.LoginBox ComboBoxItem:selected /template/ ContentPresenter">
+                <Setter Property="Background" Value="#ffa314"/>
+                <Setter Property="Foreground" Value="#f0f0f0"/>
+        </Style>
+
+</Styles>
