@@ -256,4 +256,32 @@ public static class FileSystemHelper
         // Hopefully we won't reach this point, but just in case
         return $"{size / 1024.0 / 1024.0 / 1024.0 / 1024.0:F2} TB";
     }
+
+    /// <summary>
+    /// Ensures the existence of the `command_history.txt` file in the specified game directory.
+    /// If the file already exists, it is deleted and recreated as a read-only file.
+    /// </summary>
+    /// <param name="gameDir">The path to the game directory where the file should be fixed.</param>
+    public static void FixCommandHistoryFile(string gameDir)
+    {
+        try
+        {
+            if (!Directory.Exists(gameDir))
+                Directory.CreateDirectory(gameDir);
+
+            string commandHistoryFilePath = Path.Combine(gameDir, "command_history.txt");
+            if (File.Exists(commandHistoryFilePath))
+                File.Delete(commandHistoryFilePath);
+
+            File.Create(commandHistoryFilePath).Close();
+            var attributes = File.GetAttributes(commandHistoryFilePath);
+            attributes |= FileAttributes.ReadOnly;
+            File.SetAttributes(commandHistoryFilePath, attributes);
+        }
+        catch (Exception e)
+        {
+            _logger.Exc("Failed to fix command_history.txt file:");
+            _logger.Error(e.ToString());
+        }
+    }
 }
