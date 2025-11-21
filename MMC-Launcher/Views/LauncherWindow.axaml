@@ -226,6 +226,7 @@
                     ItemsSource="{Binding SavedUsernames}"
                     SelectedItem="{Binding Username}"
                     Text="{Binding Username}"
+                    PlaceholderText="Felhasználónév"
                     >
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
