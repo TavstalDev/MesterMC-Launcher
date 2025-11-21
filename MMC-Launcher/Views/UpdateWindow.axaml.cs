@@ -119,14 +119,17 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             SetStatus("A Java ellenőrzése...");
             App.UpdateRPC("Fájlok ellenőrzése...");
             await Task.Delay(_stepDelay);
-            var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath);
+            var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, settings.Java.IgnoreSystemJava);
             bool wasJavaUpdated = false;
             int[] javaVersionsToDownload = [21];
             foreach (int javaVersion in javaVersionsToDownload)
             {
                 var jdkResult = javaInstallations.FirstOrDefault(x => x.Major == javaVersion);
                 if (jdkResult != null)
+                {
+                    _logger.Info("Java installation found for version " + javaVersion + " at " + jdkResult.Path);
                     continue;
+                }
 
                 Progress<double> progress = new Progress<double>();
                 progress.ProgressChanged += (_, prog) =>
