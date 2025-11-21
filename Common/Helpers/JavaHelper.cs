@@ -268,10 +268,13 @@ public static class JavaHelper
     /// <param name="forceRefresh">
     /// A boolean indicating whether to force a refresh of the cached Java installations.
     /// </param>
+    /// <param name="ignoreSystemJava">
+    /// A boolean indicating whether to ignore system-wide Java installations.
+    /// </param>
     /// <returns>
     /// A list of <see cref="JavaVersion"/> objects representing the located Java installations.
     /// </returns>
-    public static List<JavaVersion> LocateJavaInstallations(string? instanceJavaDir = null, bool forceRefresh = false)
+    public static List<JavaVersion> LocateJavaInstallations(string? instanceJavaDir = null, bool forceRefresh = false, bool ignoreSystemJava = false)
     {
         if (forceRefresh)
         {
@@ -326,16 +329,20 @@ public static class JavaHelper
     /// <param name="instanceJavaDir">
     /// An optional directory path to search for Java installations. If null, default directories are used.
     /// </param>
+    /// <param name="ignoreSystemJava">
+    /// A boolean indicating whether to ignore system-wide Java installations.
+    /// </param>
     /// <returns>
     /// A list of file paths to Java executables found in the specified or default directories.
     /// </returns>
-    private static List<string> GetWindowsJavaPaths(string? instanceJavaDir = null)
+    private static List<string> GetWindowsJavaPaths(string? instanceJavaDir = null, bool ignoreSystemJava = false)
     {
         List<string> paths = [];
         List<string> localDirs = [];
         if (!string.IsNullOrEmpty(instanceJavaDir))
             localDirs.Add(instanceJavaDir);
-        localDirs.AddRange(WindowsDirectories);
+        if (!ignoreSystemJava)
+            localDirs.AddRange(WindowsDirectories);
 
         foreach (var dirPath in localDirs)
         {
@@ -362,16 +369,20 @@ public static class JavaHelper
     /// <param name="instanceJavaDir">
     /// An optional directory path to search for Java installations. If null, default directories are used.
     /// </param>
+    /// <param name="ignoreSystemJava">
+    /// A boolean indicating whether to ignore system-wide Java installations.
+    /// </param>
     /// <returns>
     /// A list of file paths to Java executables found in the specified or default directories.
     /// </returns>
-    private static List<string> GetLinuxJavaPaths(string? instanceJavaDir = null)
+    private static List<string> GetLinuxJavaPaths(string? instanceJavaDir = null, bool ignoreSystemJava = false)
     {
         List<string> paths = [];
         List<string> localDirs = [];
         if (!string.IsNullOrEmpty(instanceJavaDir))
             localDirs.Add(instanceJavaDir);
-        localDirs.AddRange(LinuxDirectories);
+        if (!ignoreSystemJava)
+            localDirs.AddRange(LinuxDirectories);
 
         foreach (var dirPath in localDirs)
         {
@@ -398,16 +409,20 @@ public static class JavaHelper
     /// <param name="instanceJavaDir">
     /// An optional directory path to search for Java installations. If null, default directories are used.
     /// </param>
+    /// <param name="ignoreSystemJava">
+    /// A boolean indicating whether to ignore system-wide Java installations.
+    /// </param>
     /// <returns>
     /// A list of file paths to Java executables found in the specified or default directories.
     /// </returns>
-    private static List<string> GetMacJavaPaths(string? instanceJavaDir = null)
+    private static List<string> GetMacJavaPaths(string? instanceJavaDir = null, bool ignoreSystemJava = false)
     {
         List<string> paths = [];
         List<string> localDirs = [];
         if (!string.IsNullOrEmpty(instanceJavaDir))
             localDirs.Add(instanceJavaDir);
-        localDirs.AddRange(MacDirectories);
+        if (!ignoreSystemJava)
+            localDirs.AddRange(MacDirectories);
 
         foreach (var dirPath in localDirs)
         {
