@@ -27,6 +27,7 @@ public partial class LauncherViewModel : ObservableObject
     [ObservableProperty] private string? password;
     [ObservableProperty] private bool offlineMode = true;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] [NotifyPropertyChangedFor(nameof(isError))] private ELoginStatus loginStatus;
+    public ObservableCollection<string> SavedUsernames { get; set; } = new();
     public bool isLoggingIn => LoginStatus != ELoginStatus.NONE;
     public bool isError => LoginStatus == ELoginStatus.ERROR;
     public string NewsPageDisplay => $"{SelectedNewsIndex + 1} / {NewsItems.Count}";
@@ -35,13 +36,17 @@ public partial class LauncherViewModel : ObservableObject
 
     public LauncherViewModel()
     {
-        NewsItems.CollectionChanged += (_, _) => 
+        NewsItems.CollectionChanged += (_, _) =>
         {
             // 3. Manually notify that the property needs recalculation
             OnPropertyChanged(nameof(NewsPageDisplay));
         };
+
+        var settings = LauncherHelper.GetLauncherSettings();
+        foreach (var user in settings.Users.Keys)
+            SavedUsernames.Add(user);
     }
-    
+
     #region Relay Commands
     [RelayCommand]
     public async Task Login()
@@ -151,6 +156,20 @@ public partial class LauncherViewModel : ObservableObject
         
         SelectedNewsItem = NewsItems[SelectedNewsIndex];
         await Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    public async Task RemoveUser(string user)
+    {
+        if (!SavedUsernames.Contains(user))
+            return;
+
+        SavedUsernames.Remove(user);
+        var config = await LauncherHelper.GetLauncherSettingsAsync();
+        if (config.Users.Remove(user))
+        {
+            await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CommonJsonContext.Default.CoreConfig);
+        }
     }
     #endregion
     

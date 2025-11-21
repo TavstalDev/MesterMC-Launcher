@@ -32,7 +32,8 @@
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 Source="avares://MMC-Launcher/Assets/screens/mmc-launcher-bg.png"
-                Stretch="Fill" />
+                Stretch="Fill"
+                PointerPressed="DragStart_PointerPressed"/>
 
             <!--  Logo  -->
             <Image
@@ -40,7 +41,8 @@
                 Margin="0,0,30,0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
-                Source="avares://MMC-Launcher/Assets/logos/mmc-logo.png" />
+                Source="avares://MMC-Launcher/Assets/logos/mmc-logo.png"
+                PointerPressed="DragStart_PointerPressed"/>
 
             <!--  Character Image  -->
             <Image
@@ -49,7 +51,8 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 Opacity="1"
-                Source="avares://MMC-Launcher/Assets/aron.png" />
+                Source="avares://MMC-Launcher/Assets/aron.png" 
+                PointerPressed="DragStart_PointerPressed"/>
 
             <!--#region Left Side Panel-->
             <Grid
@@ -59,7 +62,8 @@
                 HorizontalAlignment="Left"
                 Background="Transparent"
                 RowDefinitions="*, *, *, *"
-                RowSpacing="5">
+                RowSpacing="5"
+                PointerPressed="DragStart_PointerPressed">
                 <!--  Facebook Button  -->
                 <HyperlinkButton
                     Grid.Row="0"
@@ -212,13 +216,37 @@
                 RowSpacing="8">
 
                 <!--  Username TextBox  -->
-                <TextBox
+                <ComboBox
                     Grid.Row="0"
                     Width="230"
                     Height="30"
                     Classes="LoginBox"
+                    IsEditable="True"
+                    GotFocus="Username_GotFocus"
+                    ItemsSource="{Binding SavedUsernames}"
+                    SelectedItem="{Binding Username}"
                     Text="{Binding Username}"
-                    Watermark="Felhasználónév" />
+                    >
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" 
+                                           Text="{Binding}" 
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="1" 
+                                        Content="×" 
+                                        Command="{Binding $parent[ComboBox].((vm:LauncherViewModel)DataContext).RemoveUserCommand}"
+                                        CommandParameter="{Binding}"
+                                        Tag="{Binding}"
+                                        Margin="5,0,0,0"
+                                        Padding="5,0"
+                                        Background="Transparent"
+                                        FontSize="16"
+                                        BorderThickness="0" />
+                            </Grid>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
 
                 <!--  Password TextBox  -->
                 <TextBox

@@ -5,8 +5,9 @@ using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Media.Imaging;
+using Avalonia.VisualTree;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Common.Models;
@@ -35,7 +36,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         DataContext ??= new LauncherViewModel();
         // Temporal news item shown while loading, otherwise the content area would be empty
         DataContext.NewsItems.Add(new NewsModel(
-            "Béta Vezió",
+            $"Béta Verzió - {App.Version} - {App.BuildDate}",
             "Üdvözlünk a MesterMC Launcher Béta verziójában! Kérlek vedd figyelembe, hogy ez még egy fejlesztés alatt álló kiadás, így előfordulhatnak hibák és hiányzó funkciók. Köszönjük a türelmed és támogatásod!\n\nAz alábbi funkciók szándékosan ki vannak kapcsolva a béta tesztelés idejére:\n- Hírek betöltése az internetről\n- Automatikus frissítések\n- Bejelentkezés a fiókba, csak offline mód érhető el, de így is tudsz csatlakozni a szerverre.\n\nHa bármilyen problémába ütközöl, kérlek jelezd nekünk a Discord szerverünkön keresztül: https://discord.gg/mestermc\n\nFigyelem! Mivel a launcher még nem rendelkezik code signing tanúsítvánnyal, az antivírus szoftverek hamis pozitív eredményeket adhatnak. Kérlek győződj meg róla, hogy a letöltött fájl a hivatalos forrásból származik.",
             ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/post_image_beta.png"))
         ));
@@ -155,6 +156,22 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             BeginMoveDrag(e);
+        }
+    }
+    
+    private void Username_GotFocus(object? sender, GotFocusEventArgs e)
+    {
+        if (sender is ComboBox comboBox)
+        {
+            var textBox = comboBox.GetVisualDescendants()
+                .OfType<TextBox>()
+                .FirstOrDefault();
+        
+            if (textBox != null)
+            {
+                textBox.SelectionStart = textBox.Text?.Length ?? 0;
+                textBox.SelectionEnd = textBox.SelectionStart;
+            }
         }
     }
     
