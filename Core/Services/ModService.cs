@@ -47,6 +47,7 @@ public static class ModService
         { "ok_zoomer-fabric-13.0.0-beta.3.jar", "5496a77bc2e8626638db88364947081caec8bfd8bf72f4ddb8fc49396cb0adc8" },
         { "replaymod-1.21.5-2.6.23.jar", "f6f85ee29aeaece861e221381327b2aa8d6765f33b386127ec478784fbaf7ca3" },
         { "continuity-3.0.1-test.4+1.21.5.jar", "0a2bf3d121378856ef4fadafa162a5417d09ad9b0f944ea6fbb55e0017f8811c" },
+        { "BorderlessFullscreen-v2.2.1a-mc1.21.2.jar.jar", "d9b5ffbc190ae0bab6e4fc4b7a4f56068871970e3fed3a3b0e122bdd206a4c8f" },
         { "CustomSkinLoader_Fabric-14.26.1-SNAPSHOT-00.jar", "5e01d067f5a6ee2fdddeb68e1ea9b6e19a72b43652ca400c62a7db20c4b437f2" },
         { "MMCAuth-1.0-SNAPSHOT.jar", "4f718ca7f2f50c174a6001935b06552c753bcff9b89d886c3673785545f90ea4"}
     };
