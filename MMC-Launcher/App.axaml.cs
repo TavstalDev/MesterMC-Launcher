@@ -220,7 +220,7 @@ public partial class App : Application
             wrapperCommand, 
             launcherSettings.Misc.PostExitCommand, 
             environmentVariables, 
-            "play.mestermc.hu"
+            null
             );
         
         
