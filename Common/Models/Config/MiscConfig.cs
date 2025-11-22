@@ -93,7 +93,7 @@ public class MiscConfig
         CustomOpenAlPath = string.Empty;
         EnableFeralGameMode = false;
         EnableMangoHud = false;
-        UseDedicatedGpu = false;
+        UseDedicatedGpu = true;
     }
 
     /// <summary>
