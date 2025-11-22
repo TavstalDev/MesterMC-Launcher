@@ -271,7 +271,12 @@ public static class FileSystemHelper
 
             string commandHistoryFilePath = Path.Combine(gameDir, "command_history.txt");
             if (File.Exists(commandHistoryFilePath))
+            {
+                var attribute = File.GetAttributes(commandHistoryFilePath);
+                if (attribute.HasFlag(FileAttributes.ReadOnly))
+                    return;
                 File.Delete(commandHistoryFilePath);
+            }
 
             File.Create(commandHistoryFilePath).Close();
             var attributes = File.GetAttributes(commandHistoryFilePath);
