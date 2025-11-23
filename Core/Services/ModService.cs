@@ -14,43 +14,55 @@ public static class ModService
     /// <summary>
     /// A dictionary containing the list of mods and their corresponding SHA-256 hashes.
     /// </summary>
-    public static readonly Dictionary<string, string> Mods = new() 
-    {
-        { "sodium-fabric-0.6.13+mc1.21.5.jar", "38db626f6286e8773b3bfcdff5ad32965ef0f0098751c63acf82bda6ac051d35" },
-        { "sodium-extra-fabric-0.6.3+mc1.21.5.jar", "96f831e07203d643cda7600a911e1da63fafba9188916fb851a63804f9313e1a" },
-        { "modmenu-14.0.0.jar", "19f91607ff8ee298119055c13ff3c8dbeb7513b635e030cc56e7e9b6099a8939" },
-        { "lithium-fabric-0.16.3+mc1.21.5.jar", "6661b5a50fbc85c60328c68bab7361c3af6685b482f3b324dc10dbbdcf64e06d" },
-        { "appleskin-fabric-mc1.21.5-3.0.6.jar", "e6fe03339204f887e295701998df4b116f92ea183394156467670ab1aaf6efb3" },
-        { "reeses-sodium-options-fabric-1.8.3+mc1.21.4.jar", "b42fc0424050f076c8e1f77b7549e48ec6e07605fbf868ed5d0ef47848665dd2" },
-        { "Jade-1.21.5-Fabric-18.2.0.jar", "f65529ed635ade21bcd737731afdfc7fb6086c9bea5eaa9ee601042389332568" },
-        { "modelfix-1.21.5-1.12-fabric.jar", "a04945f556e3a2edbbf0306ca6f2c1e36826d2f15948d8db73b00735cdc6f33c" },
-        { "fast-ip-ping-v1.0.7-mc1.21.5-fabric.jar", "e4feee50228fb45442dc36b76ce7eb9be97913c5ccb7b1e3e29a16d41c6ecc63" },
-        { "PickUpNotifier-v21.5.1-1.21.5-Fabric.jar", "267f09534120de5be1b979f99cd51b1a318fb47a7d145aa095503f3324e529a4" },
-        { "Controlling-fabric-1.21.5-23.0.2.jar", "532e7ab4f0d657bfc4417ac0c1c7b06a7e79d286a09fa95b3d043f1ef2528752" },
-        { "voicechat-fabric-1.21.5-2.6.6.jar", "8e134c8377590c405ca9b5760fcc21104b3fa2f6eed3867645e0ee99e8ee9d99" },
-        { "litematica-fabric-1.21.5-0.22.2.jar", "48c4def9c296691191527a639fd4864ad4af58a72f6a0c5d6509ef6ec2e95fc8" },
-        { "chatanimation-1.0.6.jar", "5269c1cdd7ef8bd04821e400120188caa385979ab4b4932af197a8a4f17b5c22" },
-        { "CraftPresence-2.7.0+1.21.5-fabric.jar", "03bc9e1bbae3150e57f01cdd51344c51b5fa3285986e8188daf4349feee21f81" },
-        { "status-effect-bars-1.0.8.jar", "0b504e0cc6b5cab7116b5535bbafecae11721e1dd5f999e7c50f1c65e32d5856" },
-        { "fastboot-1.21.x-v1.3.jar", "3c5963545cf51f646b4ce29c575dcb08dc23c1bcb964b5171817f6e6fe1cc074" },
-        { "dynamic-fps-3.9.5+minecraft-1.21.5-fabric.jar", "0ebff6389f639ca96285eaf7ddc952359726f9cfbe627470edfb6184636f4cbb" },
-        { "iris-fabric-1.8.11+mc1.21.5.jar", "e961c1fc63493b56edaea7a4934b8f8b13a913cd95437927ea18ec1e870ef93f" },
-        { "placeholder-api-2.6.4+1.21.5.jar", "53249581a47cff42b6c06f3e13115e42b8d57357fc2ee89e2de4a0d849a3e22e" },
-        { "OverflowingBars-v21.5.0-1.21.5-Fabric.jar", "e9951da7858b0b6e7b4afd2113ee4db8a48787ed19adda67887ca04b0cbd0a50" },
-        { "fabric-api-0.128.2+1.21.5.jar", "a82fd00827206e911936ed1e0ceaec6eb55d061ca5d3c5d63c7f0031426d29ae" },
-        { "Searchables-fabric-1.21.5-1.0.3.jar", "d07957d3a752d71e4ae142c8a8f332aa019d846d868746e8673e5f6bae097d5f" },
-        { "yet_another_config_lib_v3-3.8.0+1.21.5-fabric.jar", "93a10d36d8d005aa5dc0cef4b8e3e33ae9ce6c3fdfa953cb028dec93565625ce" },
-        { "malilib-fabric-1.21.5-0.24.2.jar", "cf248d84b0ea8a0c7af4c875e20290ceb7e592f4291546dc4703e2f630f57288" },
-        { "ForgeConfigAPIPort-v21.5.3-1.21.5-Fabric.jar", "aba7a5fb52581aae164462c93a53fa4a5825838bae468e1d8393803c2b61c4dd" },
-        { "PuzzlesLib-v21.5.13-1.21.5-Fabric.jar", "8e82c8c821e74fa1b8cfd1d815e38a2d217671b3ce2d811eaf962278de022d51" },
-        { "UniLib-1.2.0+1.21.5-fabric.jar", "3cb887173f1dc896554bff1bdb9def83e186957ac5b7c73cc2c5b31f9cba4d91" },
-        { "ok_zoomer-fabric-13.0.0-beta.3.jar", "5496a77bc2e8626638db88364947081caec8bfd8bf72f4ddb8fc49396cb0adc8" },
-        { "replaymod-1.21.5-2.6.23.jar", "f6f85ee29aeaece861e221381327b2aa8d6765f33b386127ec478784fbaf7ca3" },
-        { "continuity-3.0.1-test.4+1.21.5.jar", "0a2bf3d121378856ef4fadafa162a5417d09ad9b0f944ea6fbb55e0017f8811c" },
-        { "BorderlessFullscreen-v2.2.1a-mc1.21.2.jar.jar", "d9b5ffbc190ae0bab6e4fc4b7a4f56068871970e3fed3a3b0e122bdd206a4c8f" },
-        { "CustomSkinLoader_Fabric-14.26.1-SNAPSHOT-00.jar", "5e01d067f5a6ee2fdddeb68e1ea9b6e19a72b43652ca400c62a7db20c4b437f2" },
-        { "MMCAuth-1.0-SNAPSHOT.jar", "4f718ca7f2f50c174a6001935b06552c753bcff9b89d886c3673785545f90ea4"}
-    };
+    public static readonly HashSet<ModData> Mods =
+    [
+        new("animatica-0.6.1+1.21.5.jar", "6091b255b7c4fe7d02aa1e20373a8a5d08b23af3bfcd81c75d7dce6678a804e9", "https://cdn.modrinth.com/data/PRN43VSY/versions/CVlwSVpU/animatica-0.6.1%2B1.21.5.jar"),
+        new("appleskin-fabric-mc1.21.6-3.0.6.jar", "b82abe586851ba6dbb9bcd4d9270fbddcd519e855ea7bffe933ed45ab5158e21", "https://cdn.modrinth.com/data/EsAfCjCV/versions/YAjCkZ29/appleskin-fabric-mc1.21.6-3.0.6.jar"),
+        new("bettermounthud-1.2.6.jar", "98a625d51db9ee1d2548bef0fc28540e991034654da14ceb2b541da4fc695402", "https://cdn.modrinth.com/data/kqJFAPU9/versions/rXZxHSEZ/bettermounthud-1.2.6.jar"),
+        new("BetterGrassify-1.8.2+fabric.1.21.10.jar", "94c30e62a1bd2fd5710cac4b9348f484ec8e6127705910ca6b45b46ae061b15d", "https://cdn.modrinth.com/data/m5T5xmUy/versions/2C7y66BK/BetterGrassify-1.8.2%2Bfabric.1.21.10.jar"),
+        new("chatanimation-1.0.7.jar", "524b8bfdcdb567e109ddd80ebd9e6c66e0cf6455cb869a9b440023dbdaa80963", "https://cdn.modrinth.com/data/DnNYdJsx/versions/UFrXjD4k/chatanimation-1.0.7.jar"),
+        new("cloth-config-19.0.147-fabric.jar", "d8a6dca9d0dad1fe44622a3c6a0348641934e3943c8d425a26f112bce6debfa2", "https://cdn.modrinth.com/data/9s6osm5g/versions/cz0b1j8R/cloth-config-19.0.147-fabric.jar"),
+        new("continuity-3.0.1-beta.1+1.21.6.jar", "80b03195bbfdc805a3280d6b6354e3ecdeb6a3c936fd2928a71fac8bee619708", "https://cdn.modrinth.com/data/1IjD5062/versions/m0cvWhzT/continuity-3.0.1-beta.1%2B1.21.6.jar"),
+        new("CraftPresence-2.7.0+1.21.8-fabric.jar", "a08c55ac8cec21cee3bbfc1f939b374b31eaa084aa3ff2308be8f8fdc43a1738", "https://cdn.modrinth.com/data/DFqQfIBR/versions/4vj0xtr0/CraftPresence-2.7.0%2B1.21.8-fabric.jar"),
+        new("cwb-fabric-3.0.0+mc1.21.5.jar", "0ffe5494c49758a5c3ba407aa25cb33962f7d1b00d1068cfbadf5104a219766a", "https://cdn.modrinth.com/data/ETlrkaYF/versions/wXhtL4fb/cwb-fabric-3.0.0%2Bmc1.21.5.jar"),
+        new("CustomSkinLoader_Fabric-14.26.1.jar", "733af00a53a9d66719f09f5cb3d630c4bb22ce043b2c66700a234c578f65c621", "https://cdn.modrinth.com/data/idMHQ4n2/versions/bLZg6wUJ/CustomSkinLoader_Fabric-14.26.1.jar"),
+        new("debugify-1.21.8+1.0.jar", "5277a32bb4c21fbe0752bea28e90e6c365da82c6d6a0a7b26732f2a0ebd3a775", "https://cdn.modrinth.com/data/QwxR6Gcd/versions/WLSwJeXa/debugify-1.21.8%2B1.0.jar"),
+        new("dynamic-fps-3.9.6+minecraft-1.21.6-fabric.jar", "bc1173b967b23368138ee8539ab12c7865339a7696486bfad61dd7062d33c4a2", "https://cdn.modrinth.com/data/LQ3K71Q1/versions/PqIDU2GY/dynamic-fps-3.9.6%2Bminecraft-1.21.6-fabric.jar"),
+        new("e4mc_minecraft-fabric-5.4.1.jar", "42d722bceb020190509d1c228d3bd9714cf9090903ba80ad2fd525fe830e70bf", "https://cdn.modrinth.com/data/qANg5Jrr/versions/baNcxaPZ/e4mc_minecraft-fabric-5.4.1.jar"),
+        new("entity_model_features_1.21.6-fabric-3.0.1.jar", "3603c541021cebc538fe449632acd704bf01e2e6e86385f22ef896a0c0e92ed8", "https://cdn.modrinth.com/data/4I1XuqiY/versions/LzLApfcL/entity_model_features_1.21.6-fabric-3.0.6.jar"),
+        new("entity_texture_features_1.21.6-fabric-7.0.2.jar", "deb60880ede708e3bbd3c20bfd668ce6bdcc070422248311b433dd3dc91e67d8", "https://cdn.modrinth.com/data/BVzZfTc1/versions/ZGrSwKTR/entity_texture_features_1.21.6-fabric-7.0.2.jar"),
+        new("entityculling-fabric-1.9.3-mc1.21.8.jar", "bf64ca808bb8b06b7120c2efb2fea2fc783072ec40290ca7b146c1b2545e4a25", "https://cdn.modrinth.com/data/NNAgCjsB/versions/U81jswDa/entityculling-fabric-1.9.3-mc1.21.8.jar"),
+        new("fabric-api-0.136.0+1.21.8.jar", "1036704991b3efbf8a3d03ffd38355274cb00202ae45c768a8f630c194d12ed6", "https://cdn.modrinth.com/data/P7dR8mSH/versions/RMahJx2I/fabric-api-0.136.0%2B1.21.8.jar"),
+        new("fabric-language-kotlin-1.13.7+kotlin.2.2.21.jar", "77951963edd5d7d37ee4f174e37d46a871e45b973426f3b49d6725c819b4b8f2", "https://cdn.modrinth.com/data/Ha28R6CL/versions/LcgnDDmT/fabric-language-kotlin-1.13.7%2Bkotlin.2.2.21.jar"),
+        new("fabrishot-1.16.2.jar", "8296195b1e39cff6c3e80bd12ba332a2237a2111cd65a7c0110800d553be9d46", "https://cdn.modrinth.com/data/3qsfQtE9/versions/qaV4jqYg/fabrishot-1.16.2.jar"),
+        new("fastquit-3.1.1+mc1.21.6.jar", "d9d0d39b010a5411e454ae75c2080fbb4c910448b1e4a88922e1c6c1446cabab", "https://cdn.modrinth.com/data/x1hIzbuY/versions/ah71vPRw/fastquit-3.1.1%2Bmc1.21.6.jar"),
+        new("ferritecore-8.0.0-fabric.jar", "2b90bf00c2a5808c3c539712a55691191f8716d5bfa6eefaba35e9c4c5a28eea", "https://cdn.modrinth.com/data/uXXizFIs/versions/CtMpt7Jr/ferritecore-8.0.0-fabric.jar"),
+        new("ForgeConfigAPIPort-v21.8.1-1.21.8-Fabric.jar", "272fddcf3cc81d557211ec5cd3b94608ae2f4e695987fb69c9911bdbbb6ff0fc", "https://cdn.modrinth.com/data/ohNO6lps/versions/daREdLQt/ForgeConfigAPIPort-v21.8.1-1.21.8-Fabric.jar"),
+        new("ImmediatelyFast-Fabric-1.12.2+1.21.8.jar", "e6934e2e0028801eac5c6809853917e6fc350306fc49c7a56bfc38fb5813ba6d", "https://cdn.modrinth.com/data/5ZwdcRci/versions/OrO3H19n/ImmediatelyFast-Fabric-1.12.2%2B1.21.8.jar"),
+        new("iris-fabric-1.9.6+mc1.21.8.jar", "804f0cdf2d6a06baf5cd5b50c1c9cc1ec187bd3d394da4fee15c70d2b8dcccd0", "https://cdn.modrinth.com/data/YL57xq9U/versions/Rhzf61g1/iris-fabric-1.9.6%2Bmc1.21.8.jar"),
+        new("language-reload-1.7.4+1.21.6.jar", "1126d67e96acdb66f0684f37da869c98dcbcacdea686782370c650e24cf7e39d", "https://cdn.modrinth.com/data/uLbm7CG6/versions/W8KDnevt/language-reload-1.7.4%2B1.21.6.jar"),
+        new("lithium-fabric-0.18.1+mc1.21.8.jar", "04f370c2f6e819dcd86a3c5684e38fd1e9c4988c7c2493ffb2bc07eb4504b94c", "https://cdn.modrinth.com/data/gvQqBUqZ/versions/qxIL7Kb8/lithium-fabric-0.18.1%2Bmc1.21.8.jar"),
+        new("mixintrace-1.1.1+1.17.jar", "26ca21a27706cfa4561868f31c4fd07c542e8cc759419f5884ddff1f3a126a99", "https://cdn.modrinth.com/data/sGmHWmeL/versions/1.1.1%2B1.17/mixintrace-1.1.1%2B1.17.jar"),
+        new("modmenu-15.0.0.jar", "5a6459c2760e35a0086c813fafe3fe61a964a5fddd94a331b2284a502ba1792f", "https://cdn.modrinth.com/data/mOgUt4GM/versions/am1Siv7F/modmenu-15.0.0.jar"),
+        new("modelfix-1.21.5-1.12-fabric.jar", "a04945f556e3a2edbbf0306ca6f2c1e36826d2f15948d8db73b00735cdc6f33c", "https://cdn.modrinth.com/data/QdG47OkI/versions/WcDxGReS/modelfix-1.21.5-1.12-fabric.jar"),
+        new("moreculling-fabric-1.21.8-1.4.0-beta.2.jar", "deffc4b9c50b9ec8439a61eb3ab3128a279dbffd1dcd0ad31b893d92183ef600", "https://cdn.modrinth.com/data/51shyZVL/versions/ivOsScf8/moreculling-fabric-1.21.8-1.4.0-beta.2.jar"),
+        new("NoChatReports-FABRIC-1.21.8-v2.15.0.jar", "f21bf1c79fadb1277c756abc7cf07c0edd7ce954706cf7ddf9fcc1b0ee176c90", "https://cdn.modrinth.com/data/qQyHxfxd/versions/pmpg6ocz/NoChatReports-FABRIC-1.21.8-v2.15.0.jar"),
+        new("optiboxes-1.7+1.21.8-fabric.jar", "00d9c5dd6b76313f76686f332818e2c2281255cb70da0e3273860d79384bbef0", "https://cdn.modrinth.com/data/DWuwk8aA/versions/VHppll0O/optiboxes-1.7%2B1.21.8-fabric.jar"),
+        new("optigui-2.3.0-beta.8+1.21.6.jar", "7e95944434be0c11347b110ab399609a567e33a5751905b08f8bebd65bc66db7", "https://cdn.modrinth.com/data/JuksLGBQ/versions/ft3Pi0Dc/optigui-2.3.0-beta.8%2B1.21.6.jar"),
+        new("paginatedadvancements-2.7.0+1.21.8.jar", "c82248aad622352c2eb0d8b7e2fd4505213f8039d0fac2984e1a57caf876c21c", "https://cdn.modrinth.com/data/pJogNFap/versions/yErEOfqA/paginatedadvancements-2.7.0%2B1.21.8.jar"),
+        new("PickUpNotifier-v21.8.1-1.21.8-Fabric.jar", "72fe4e8008ea4217e488ac6f721c8ce7ca09917952bd5f423c32a62367d2fad3", "https://cdn.modrinth.com/data/ZX66K16c/versions/CQxBBsyi/PickUpNotifier-v21.8.1-1.21.8-Fabric.jar"),
+        new("puzzle-fabric-2.1.1+1.21.6.jar", "601ead8a8b27319787d9094a5a690d7a79e2297da100cabeab692da8fe19ccfe", "https://cdn.modrinth.com/data/3IuO68q1/versions/EfTbdnT6/puzzle-fabric-2.1.1%2B1.21.6.jar"),
+        new("PuzzlesLib-v21.8.9-1.21.8-Fabric.jar", "f9ab44080a0756876e42e777bbe111dee2e5b87c75eea9425a7b7b0f91dbda61", "https://cdn.modrinth.com/data/QAGBst4M/versions/tXTEdgyF/PuzzlesLib-v21.8.9-1.21.8-Fabric.jar"),
+        new("reeses-sodium-options-fabric-1.8.4+mc1.21.6.jar", "bc140a2af0a3cf7dcb691be5d88263d9db87468d643a666ad6f881ddcb23482a", "https://cdn.modrinth.com/data/Bh37bMuy/versions/AgGRyydH/reeses-sodium-options-fabric-1.8.4%2Bmc1.21.6.jar"),
+        new("rrls-5.1.10+mc1.21.8-fabric.jar", "92f6e26d6aba4b9a74097f90cdf758a7994f0dd39896b3993e070ef292fea07b", "https://cdn.modrinth.com/data/ZP7xHXtw/versions/hkfSWmNV/rrls-5.1.10%2Bmc1.21.8-fabric.jar"),
+        new("voicechat-fabric-1.21.8-2.6.6.jar", "fefbf1bc1ab9618e93baedd46ab05799d89537484e553c0bfde357dc72e8d321", "https://cdn.modrinth.com/data/9eGKb6K1/versions/2Z1g1v36/voicechat-fabric-1.21.8-2.6.6.jar" ),
+        new("sodium-fabric-0.7.3+mc1.21.8.jar", "388323a88c22a56357ff3f6b782b446ceb47006122b6bd62a9ec81b22bef2d70", "https://cdn.modrinth.com/data/AANobbMI/versions/7pwil2dy/sodium-fabric-0.7.3%2Bmc1.21.8.jar"),
+        new("sodium-extra-fabric-0.7.0+mc1.21.8.jar", "853923fba108a00ef4320814d81e93db6c55d3aeb5220fe4039d3cb3f001dbe4", "https://cdn.modrinth.com/data/PtjYWJkn/versions/Of25zuEG/sodium-extra-fabric-0.7.0%2Bmc1.21.8.jar"),
+        new("UniLib-1.2.0+1.21.8-fabric.jar", "efb1289469874ad43d7a2273590960dffd1e134f588e3f21291c7f8443acbcc4", "https://cdn.modrinth.com/data/nT86WUER/versions/BEkYsae8/UniLib-1.2.0%2B1.21.8-fabric.jar"),
+        new("yet_another_config_lib_v3-3.7.1+1.21.6-fabric.jar", "7d71fbee0e2ca0f38a475309d23c9d084cd68edd4be6544eecdb5aec1f36d1ed", "https://cdn.modrinth.com/data/1eAoo2KR/versions/WxYlHLu6/yet_another_config_lib_v3-3.7.1%2B1.21.6-fabric.jar"),
+        new("yosbr-0.1.2.jar", "db4c744fd71f5617639cb0fdff72378b08d2852004f4045c62090de1bf53afcb", "https://cdn.modrinth.com/data/WwbubTsV/versions/KMOzdYko/yosbr-0.1.2.jar"),
+        new("Zoomify-2.14.6+1.21.6.jar", "f730fc2f5e2b0a5f285f9ed01a307f2c5cecb13e5527fcb6971b4b398c85549a", "https://cdn.modrinth.com/data/w7ThoJFB/versions/qMqviL3t/Zoomify-2.14.6%2B1.21.6.jar"),
+    ];
 
     /// <summary>
     /// Verifies the mods in the specified directory by checking their file names and hashes.
@@ -68,19 +80,49 @@ public static class ModService
             if (!(fileName.EndsWith(".jar") || fileName.EndsWith(".zip")))
                 continue;
                 
-            if (!Mods.TryGetValue(fileName, out var modHash))
+            var modEntry = Mods.FirstOrDefault(m => m.Name == fileName);
+            if (modEntry == null)
             {
                 _logger.Info("Deleting unknown mod file: " + fileName);
                 File.Delete(file);
                 continue;
             }
-
-            if (!FileSystemHelper.CheckSHA256(file, modHash))
+            
+            if (!FileSystemHelper.CheckSHA256(file, modEntry.Sha256Hash))
             {
                 _logger.Info("Deleting invalid mod file: " + fileName);
                 File.Delete(file);
                 continue;
             }
+        }
+    }
+    
+    public static async Task DownloadModsAsync(string modsDirectory, IProgress<double>? progress = null)
+    {
+        if (!Directory.Exists(modsDirectory))
+            Directory.CreateDirectory(modsDirectory);
+        
+        int totalMods = Mods.Count;
+        int downloadedMods = 0;
+
+        foreach (var mod in Mods)
+        {
+            string modPath = Path.Combine(modsDirectory, mod.Name);
+            if (File.Exists(modPath) || string.IsNullOrEmpty(mod.Url))
+            {
+                downloadedMods++;
+                progress?.Report((double)downloadedMods / totalMods);
+                continue;
+            }
+
+            _logger.Info("Downloading mod: " + mod.Name);
+            await HttpHelper.DownloadFileAsync(mod.Url, modPath, progress);
+
+            if (!FileSystemHelper.CheckSHA256(modPath, mod.Sha256Hash))
+                _logger.Error("Downloaded mod has invalid hash: " + mod.Name);
+
+            downloadedMods++;
+            progress?.Report((double)downloadedMods / totalMods);
         }
     }
 }
