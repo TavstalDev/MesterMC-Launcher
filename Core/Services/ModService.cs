@@ -10,6 +10,7 @@ public static class ModService
 {
     // Logger instance for the ModService class.
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(ModService));
+    private static readonly int MaxParallelDownloads = 8;
     
     /// <summary>
     /// A dictionary containing the list of mods and their corresponding SHA-256 hashes.
@@ -92,7 +93,6 @@ public static class ModService
             {
                 _logger.Info("Deleting invalid mod file: " + fileName);
                 File.Delete(file);
-                continue;
             }
         }
     }
@@ -104,25 +104,42 @@ public static class ModService
         
         int totalMods = Mods.Count;
         int downloadedMods = 0;
+        
+        var semaphore = new SemaphoreSlim(MaxParallelDownloads);
+        var tasks = new List<Task>();
 
         foreach (var mod in Mods)
         {
-            string modPath = Path.Combine(modsDirectory, mod.Name);
-            if (File.Exists(modPath) || string.IsNullOrEmpty(mod.Url))
+            await semaphore.WaitAsync();
+            var t = Task.Run(async () =>
             {
-                downloadedMods++;
-                progress?.Report((double)downloadedMods / totalMods);
-                continue;
-            }
+                try
+                {
+                    string modPath = Path.Combine(modsDirectory, mod.Name);
+                    if (File.Exists(modPath) || string.IsNullOrEmpty(mod.Url))
+                    {
+                        Interlocked.Add(ref downloadedMods, 1);
+                        progress?.Report((double)downloadedMods / totalMods * 100d);
+                        return;
+                    }
 
-            _logger.Info("Downloading mod: " + mod.Name);
-            await HttpHelper.DownloadFileAsync(mod.Url, modPath, progress);
+                    _logger.Info("Downloading mod: " + mod.Name);
+                    await HttpHelper.DownloadFileAsync(mod.Url, modPath, progress);
 
-            if (!FileSystemHelper.CheckSHA256(modPath, mod.Sha256Hash))
-                _logger.Error("Downloaded mod has invalid hash: " + mod.Name);
+                    if (!FileSystemHelper.CheckSHA256(modPath, mod.Sha256Hash))
+                        _logger.Error("Downloaded mod has invalid hash: " + mod.Name);
 
-            downloadedMods++;
-            progress?.Report((double)downloadedMods / totalMods);
+                    Interlocked.Add(ref downloadedMods, 1);
+                    progress?.Report((double)downloadedMods / totalMods * 100d);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+            tasks.Add(t);
         }
+        
+        await Task.WhenAll(tasks);
     }
 }
