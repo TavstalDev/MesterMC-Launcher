@@ -22,6 +22,7 @@ using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Endpoints;
+using Tavstal.KonkordLauncher.Core.Services;
 using Tavstal.MesterMC.Launcher.Views.Models;
 
 namespace Tavstal.MesterMC.Launcher.Views;
@@ -197,15 +198,26 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             SetStatus("Minecraft példány előkészítése...");
             var instance = App.createMinecraftInstance(this);
             await instance.Start(true); 
+            
+            // 6. Download Mods
+            SetStatus("Modok ellenőrzése és letöltése...");
+            string modsDir = Path.Combine(settings.Launcher.MinecraftDataDirectoryPath, "mods");
+            Progress<double> modProgress = new Progress<double>();
+            modProgress.ProgressChanged += (_, prog) =>
+            {
+                SetStatus("Modok letöltése... " + prog.ToString("0.00") + "%");
+                SetProgress(prog);
+            };
+            await ModService.DownloadModsAsync(modsDir);
 
-            // 6. Create servers.dat if not exists
+            // 7. Create servers.dat if not exists
             SetStatus("A servers.dat ellenőrzése...");
             if (!await ValidationHelper.ValidateServersAsync())
             {
                 _logger.Error("Failed to validate servers.dat");
             }
             
-            // 7. Update cache refresh date & fetch news
+            // 8. Update cache refresh date & fetch news
             if (DateTime.Now > settings.CacheRefreshDate)
             {
                 SetStatus("Hírek lekérése...");
@@ -221,7 +233,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
             }
             
-            // 8. Start Main Window
+            // 9. Start Main Window
             if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
             {
                 SetStatus("Nem sikerült elindítani a fő ablakot.");

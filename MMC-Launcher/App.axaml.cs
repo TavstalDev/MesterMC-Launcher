@@ -212,7 +212,7 @@ public partial class App : Application
             launcherSettings.Java.MinMemory, 
             launcherSettings.Java.MaxMemory, 
             launcherSettings.Java.JvmArguments, 
-            "1.21.5", 
+            "1.21.8", 
             EMinecraftKind.FABRIC, 
             "0.17.3", 
             launcherSettings.Launcher.MinecraftDataDirectoryPath,
