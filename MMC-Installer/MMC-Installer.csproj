@@ -16,8 +16,6 @@
         <Company>MesterMC</Company>
         <Product>MesterMC Installer</Product>
         <Description>Installer for the MesterMC Launcher</Description>
-        <Version>1.0.0.0</Version>
-        <FileVersion>1.0.0.0</FileVersion>
     </PropertyGroup>
 
     <PropertyGroup>
