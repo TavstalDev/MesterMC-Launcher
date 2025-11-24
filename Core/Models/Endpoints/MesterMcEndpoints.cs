@@ -15,9 +15,9 @@ public static class MesterMcEndpoints
     /// </summary>
     public const string AllReleases = "https://api.github.com/repos/TavstalDev/MMC-Launcher/releases";
     
-    public const string AuthEndpoint = "https://api.mestermc.hu/auth/login";
+    public const string AuthEndpoint = "https://api.mestermc.hu/launcher/login";
     
-    public const string TfaEndpoint = "https://api.mestermc.hu/auth/2fa";
+    public const string TfaEndpoint = "https://api.mestermc.hu/launcher/2fa";
     
     public const string ApiBaseEndpoint = "https://api.mestermc.hu/";
 }
