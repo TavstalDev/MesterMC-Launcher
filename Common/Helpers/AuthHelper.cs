@@ -13,7 +13,7 @@ public static class AuthHelper
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(AuthHelper));
 
     [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
-    public static async Task<string?> LoginAsync(string username, string password)
+    public static async Task<(string, bool)?> LoginAsync(string username, string password)
     {
         try
         {
@@ -27,7 +27,7 @@ public static class AuthHelper
                 _logger.Error("Failed to login because the response was null.");
                 return null;
             }
-            
+
             if (!result.IsSuccessStatusCode)
             {
                 _logger.Error("Login failed with status code: " + result.StatusCode);
@@ -35,7 +35,7 @@ public static class AuthHelper
                 {
                     var localCont = await result.Content.ReadAsStringAsync();
                     JObject localJson = JObject.Parse(localCont);
-                    
+
                     if (localJson.TryGetValue("message", out var value))
                         _logger.Error("Login error message: " + value);
                 }
@@ -43,20 +43,38 @@ public static class AuthHelper
                 {
                     // ignored
                 }
+
                 return null;
             }
 
             var content = await result.Content.ReadAsStringAsync();
             JObject json = JObject.Parse(content);
-            
+
             bool success = json["success"]?.ToObject<bool>() ?? false;
             if (!success)
+            {
+                _logger.Error("Login unsuccessful: " + result.StatusCode);
                 return null;
-            
+            }
+
             if (json.ContainsKey("redirect")) // When 2FA is required
-                return string.Empty;
-            
-            return json["token"]?.ToString() ?? null;
+            {
+                string? sessionToken = json["token"]?.ToString();
+                if (sessionToken == null)
+                {
+                    _logger.Error("Failed to get TFA session token: " + result.StatusCode);
+                    return null;
+                }
+                return (sessionToken, true);
+            }
+
+            string? token = json["token"]?.ToString();
+            if (token == null)
+            {
+                _logger.Error("Failed to get auth token: " + result.StatusCode);
+                return null;
+            }
+            return (token, false);
         }
         catch (Exception ex)
         {
