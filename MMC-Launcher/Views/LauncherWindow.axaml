@@ -299,6 +299,47 @@
             </Grid>
             <!--#endregion-->
 
+            <!--#region TFA Panel-->
+            <Grid
+                Width="285"
+                Height="350"
+                Margin="0,-4.5,29,0"
+                HorizontalAlignment="Right"
+                Background="Transparent"
+                IsVisible="{Binding isTFA}"
+                RowDefinitions="Auto, Auto, Auto"
+                RowSpacing="8">
+                <!--  Password TextBox  -->
+                <TextBox
+                    Grid.Row="0"
+                    Width="230"
+                    Height="30"
+                    Classes="LoginBox"
+                    Text="{Binding TfaCode}"
+                    Watermark="Kétfaktoros hitelesítő" />
+
+                <!--  Login Button  -->
+                <Button
+                    Grid.Row="1"
+                    Height="72"
+                    Margin="0,5,0,0"
+                    Classes="LoginButton"
+                    Command="{Binding SubmitTFACommand}">
+                    <Image />
+                </Button>
+                
+                <!--  Back Button  -->
+                <Button
+                    Grid.Row="2"
+                    Height="72"
+                    Margin="26,-15,26,0"
+                    Classes="ErrorBackButton"
+                    Command="{Binding BackCommand}">
+                    <Image />
+                </Button>
+            </Grid>
+            <!--#endregion-->
+            
             <!--#region Auth Feedback-->
             <Grid
                 Width="285"
@@ -306,7 +347,7 @@
                 Margin="0,-4.5,29,0"
                 HorizontalAlignment="Right"
                 Background="Transparent"
-                IsVisible="{Binding isLoggingIn}"
+                IsVisible="{Binding shouldShowFeedback}"
                 RowDefinitions="Auto, Auto">
 
                 <!--  Status Image  -->

@@ -22,13 +22,16 @@ public partial class LauncherViewModel : ObservableObject
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(NewsPageDisplay))] private int selectedNewsIndex;
     [ObservableProperty] private NewsModel? selectedNewsItem;
     [ObservableProperty] private string? errorMessage;
-    
     [ObservableProperty] private string? username;
     [ObservableProperty] private string? password;
+    [ObservableProperty] private string? tfaCode;
+    [ObservableProperty] private string? tfaToken;
     [ObservableProperty] private bool offlineMode = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] [NotifyPropertyChangedFor(nameof(isError))] private ELoginStatus loginStatus;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] [NotifyPropertyChangedFor(nameof(isError))] [NotifyPropertyChangedFor(nameof(isTFA))] [NotifyPropertyChangedFor(nameof(shouldShowFeedback))] private ELoginStatus loginStatus;
     public ObservableCollection<string> SavedUsernames { get; set; } = new();
     public bool isLoggingIn => LoginStatus != ELoginStatus.NONE;
+    public bool shouldShowFeedback => LoginStatus != ELoginStatus.NONE && LoginStatus != ELoginStatus.TFA;
+    public bool isTFA => LoginStatus == ELoginStatus.TFA;
     public bool isError => LoginStatus == ELoginStatus.ERROR;
     public string NewsPageDisplay => $"{SelectedNewsIndex + 1} / {NewsItems.Count}";
     public Interaction<Unit, Unit> CloseWindowInteraction { get; } = new();
@@ -106,14 +109,34 @@ public partial class LauncherViewModel : ObservableObject
         }
 
         // 2FA required
-        if (result.Length == 0)
+        if (result.Value.Item2)
         {
-            // TODO
+            TfaToken = result.Value.Item1;
+            LoginStatus = ELoginStatus.TFA;
             return;
         }
         
         // Successful login
-        await PlayAsync(result, playerName);
+        await PlayAsync(result.Value.Item1, playerName);
+    }
+    
+    [RelayCommand]
+    public async Task SubmitTFA()
+    {
+        if (string.IsNullOrEmpty(TfaCode) && TfaCode!.Length != 6)
+            return;
+
+        LoginStatus = ELoginStatus.LOGGING_IN;
+        var result = await AuthHelper.SubmitTFA(TfaToken!, TfaCode); // TfaToken is guaranteed to be non-null here
+        if (string.IsNullOrEmpty(result))
+        {
+            LoginStatus = ELoginStatus.ERROR;
+            ErrorMessage = "Hiba történt a kétlépcsős azonosítás során. Kérlek, ellenőrizd a kódot, majd próbáld újra.";
+            return;
+        }
+
+        // Successful TFA
+        await PlayAsync(result, Username!); // Username is guaranteed to be non-null here
     }
 
     [RelayCommand]
