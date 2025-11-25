@@ -293,7 +293,12 @@ public class MinecraftInstance
         }
 
         var classPath = await MinecraftFileService.DownloadLibrariesAsync(GameDetails.Kind, VersionData, libraries, _classPath, PathDetails.CacheDir, PathDetails.LibrariesDir, _progressReporter);
-        _classPath.AddRange(classPath);
+        foreach (var cp in classPath)
+        {
+            if (_classPath.Contains(cp))
+                continue;
+            _classPath.Add(cp);
+        }
     }
 
     /// <summary>
@@ -327,7 +332,7 @@ public class MinecraftInstance
         // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
         // It is more readable this way
         if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
-            classpath = string.Join(";", _classPath).Replace("/", "\\");
+            classpath = string.Join(";", _classPath).Replace(@"\", @"\\");
         else
             classpath = string.Join(":", _classPath);
 
