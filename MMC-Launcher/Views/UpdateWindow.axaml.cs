@@ -120,7 +120,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             SetStatus("A Java ellenőrzése...");
             App.UpdateRPC("Fájlok ellenőrzése...");
             await Task.Delay(_stepDelay);
-            var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, settings.Java.IgnoreSystemJava);
+            var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, false, settings.Java.IgnoreSystemJava);
             bool wasJavaUpdated = false;
             int[] javaVersionsToDownload = [21];
             foreach (int javaVersion in javaVersionsToDownload)
@@ -160,7 +160,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                     }
                 }
 
-                javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, true);
+                javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, true, settings.Java.IgnoreSystemJava);
             }
 
             if (string.IsNullOrEmpty(settings.Java.JavaPath) && javaInstallations.Count > 0)

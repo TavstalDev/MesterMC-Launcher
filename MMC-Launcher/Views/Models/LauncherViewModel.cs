@@ -10,6 +10,7 @@ using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Helpers;
+using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
 using Tavstal.MesterMC.Launcher.Models;
 
@@ -18,6 +19,8 @@ namespace Tavstal.MesterMC.Launcher.Views.Models;
 [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class LauncherViewModel : ObservableObject
 {
+    private CoreLogger _logger = CoreLogger.WithModuleType(typeof(LauncherViewModel));
+    
     public ObservableCollection<NewsModel> NewsItems = [];
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(NewsPageDisplay))] private int selectedNewsIndex;
     [ObservableProperty] private NewsModel? selectedNewsItem;
@@ -217,7 +220,7 @@ public partial class LauncherViewModel : ObservableObject
         if (process is { HasExited: false })
         {
             await HideWindowInteraction.Handle(Unit.Default);
-            process.Exited += async (_, _) => await CloseWindowInteraction.Handle(Unit.Default);
+            process.Exited += async (_, _) => await CloseWindowInteraction.Handle(Unit.Default); 
         }
         else
         {
