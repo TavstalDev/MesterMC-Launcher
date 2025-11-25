@@ -58,16 +58,27 @@ public static class JavaProcessLauncher
         fullCommand = fullCommand.Replace("\"", "\\\"");
         
         // Configure the process start information
-        var psi = new ProcessStartInfo()
+        ProcessStartInfo psi;
+        var os = OSHelper.GetOperatingSystem();
+        if (os == EOperatingSystem.Windows)
         {
-#if DEBUG
-            UseShellExecute = false,
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
-#else
-            UseShellExecute = true,
-#endif
-        };
+            psi = new ProcessStartInfo
+            {
+                UseShellExecute = false,
+            };
+        }
+        else
+        {
+            psi = new ProcessStartInfo
+            {
+                #if DEBUG
+                UseShellExecute = false,
+                #else
+                UseShellExecute = true,
+                #endif
+            };
+        }
+        
         // Add environment variables if provided
         if (environmentVariables != null)
         {
@@ -78,7 +89,7 @@ public static class JavaProcessLauncher
         if (!string.IsNullOrEmpty(logFilePath) && File.Exists(logFilePath))
             File.Delete(logFilePath);
         
-        switch (OSHelper.GetOperatingSystem())
+        switch (os)
         {
             case EOperatingSystem.Windows:
             {
@@ -108,13 +119,10 @@ public static class JavaProcessLauncher
         }
         
         // Log the process start details
-        _logger.Debug($"Java Path: {javaPath}");
+        _logger.Debug($"Java Path: {finalJavaPath}");
         _logger.Debug("Starting Java process with arguments:");
         _logger.Debug("FileName: " + psi.FileName);
         _logger.Debug("Arguments: " + psi.Arguments);
-        //_logger.Debug("Log File Path: " + (string.IsNullOrEmpty(logFilePath) ? "No log file specified" : logFilePath));
-        _logger.Debug($"\n# START OF JAVA ARGUMENTS#\n{arguments.Replace(" ", "\n")}\n# END OF JAVA ARGUMENTS#");
-        
 
         var process = Process.Start(psi);
         if (process != null)
@@ -183,24 +191,6 @@ public static class JavaProcessLauncher
         if (process != null)
         {
             process.EnableRaisingEvents = true;
-#if DEBUG
-            process.OutputDataReceived += (_, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                {
-                    _logger.Debug($"Custom command: {e.Data}");
-                }
-            };
-            process.ErrorDataReceived += (_, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                {
-                    _logger.Error($"Custom command: {e.Data}");
-                }
-            };
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-#endif
         }
 
         // Start the process and return the Process object
