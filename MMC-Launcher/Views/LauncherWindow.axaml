@@ -51,7 +51,7 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 Opacity="1"
-                Source="avares://MMC-Launcher/Assets/aron.png" 
+                Source="avares://MMC-Launcher/Assets/characters/aron.png" 
                 PointerPressed="DragStart_PointerPressed"/>
 
             <!--#region Left Side Panel-->

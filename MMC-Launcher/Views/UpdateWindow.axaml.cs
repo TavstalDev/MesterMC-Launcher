@@ -220,14 +220,14 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             // 8. Update cache refresh date & fetch news
             if (DateTime.Now > settings.CacheRefreshDate)
             {
-                SetStatus("Hírek lekérése...");
+                /*SetStatus("Hírek lekérése...");
                 await Task.Delay(_stepDelay);
                 var newsItems = await NewsHelper.FetchNewsAsync();
                 if (newsItems is { Count: > 0 })
                 {
                     string newsPath = Path.Combine(settings.Launcher.CacheDirectoryPath, "news.json");
                     await JsonHelper.WriteJsonFileAsync(newsPath, newsItems, CommonJsonContext.Default.ListNewsData);
-                }
+                }*/
                 
                 settings.CacheRefreshDate = DateTime.Now.AddDays(1);
                 await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
