@@ -292,18 +292,18 @@ public static class JavaHelper
         {
             case EOperatingSystem.Windows:
             {
-                javaPaths = GetWindowsJavaPaths(instanceJavaDir);
+                javaPaths = GetWindowsJavaPaths(instanceJavaDir, ignoreSystemJava);
                 break;
             }
             case EOperatingSystem.MacOS:
             {
-                javaPaths = GetMacJavaPaths(instanceJavaDir);
+                javaPaths = GetMacJavaPaths(instanceJavaDir, ignoreSystemJava);
                 break;
             }
             case EOperatingSystem.Linux:
             case EOperatingSystem.Unknown:
             {
-                javaPaths = GetLinuxJavaPaths(instanceJavaDir);
+                javaPaths = GetLinuxJavaPaths(instanceJavaDir, ignoreSystemJava);
                 break;
             }
         }
