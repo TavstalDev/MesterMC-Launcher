@@ -262,7 +262,7 @@ public partial class App : Application
         }
         
         // Check if the Java version specified in the metadata is available, if not attempt to download it
-        var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath);
+        var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, false, true);
         if (javaInstallations.All(x => x.Major != meta.JavaVersionMeta.MajorVersion) && string.IsNullOrEmpty(defaultJavaPath))
         {
             _logger.Error("Required Java version not found and no default Java path set.");
