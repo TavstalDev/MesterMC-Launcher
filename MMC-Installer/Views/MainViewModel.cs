@@ -1,5 +1,4 @@
 using System;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -82,6 +81,9 @@ public partial class MainViewModel : ObservableObject
                 reviewBuilder.AppendLine("Parancsikonok létrehozása:");
                 reviewBuilder.AppendLine($"  Asztali parancsikon: {(CreateDesktopShortcut ? "Igen" : "Nem")}");
                 reviewBuilder.AppendLine($"  Start menü parancsikon: {(CreateStartMenuShortcut ? "Igen" : "Nem")}");
+                reviewBuilder.AppendLine("");
+                reviewBuilder.AppendLine("Figyelmeztetés:");
+                reviewBuilder.AppendLine(" A telepítési helyszín könyvtára mindenképpen új könyvtár legyen, mivel a telepítő felülírhatja a meglévő fájlokat!");
                 ReviewText = reviewBuilder.ToString();
                 break;
             }
@@ -195,10 +197,54 @@ public partial class MainViewModel : ObservableObject
 
     private async Task StartInstallProcessAsync()
     {
-        // TODO: Test on all platforms
         UpdateText("Előkészítés...");
         if (!Directory.Exists(GameDirectory))
             Directory.CreateDirectory(GameDirectory);
+        else
+        {
+            string fileName;
+            switch (OSHelper.GetOperatingSystem())
+            {
+                case EOperatingSystem.Windows:
+                {
+                    fileName = "MMC-Launcher.exe";
+                    break;
+                }
+                default:
+                {
+                    fileName = "MMC-Launcher";
+                    break;
+                }
+            }
+            string doubleCheckPath = Path.Combine(GameDirectory, "bin", fileName);
+            if (File.Exists(doubleCheckPath))
+            {
+                _logger.Warn("The target installation directory already contains an existing installation, deleting old data first.");
+                UpdateText("Létező telepítés eltávolítása...");
+                // Directories to delete: minecraftData/mods, minecraftData/config, minecraftData/.fabric, minecraftData/natives
+                // These directories contain data that should be removed to prevent conflicts
+                try
+                {
+                    string minecraftDataDir = Path.Combine(GameDirectory, "minecraftData");
+                    if (Directory.Exists(minecraftDataDir))
+                    {
+                        UpdateText("Létező modok eltávolítása...");
+                        FileSystemHelper.DeleteDirectory(Path.Combine(minecraftDataDir, "mods"));
+                        UpdateText("Létező konfigurációk eltávolítása...");
+                        FileSystemHelper.DeleteDirectory(Path.Combine(minecraftDataDir, "config"));
+                        UpdateText("Létező Fabric fájlok eltávolítása...");
+                        FileSystemHelper.DeleteDirectory(Path.Combine(minecraftDataDir, ".fabric"));
+                        UpdateText("Létező natív fájlok eltávolítása...");
+                        FileSystemHelper.DeleteDirectory(Path.Combine(minecraftDataDir, "natives"));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error($"Failed to delete existing installation data: {ex}");
+                    UpdateText("Nem sikerült eltávolítani a létező telepítést.");
+                }
+            }
+        }
 
         if (CreateStartMenuShortcut && !Directory.Exists(StartMenuDirectory))
             Directory.CreateDirectory(StartMenuDirectory);
