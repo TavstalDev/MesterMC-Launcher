@@ -60,6 +60,9 @@ public class CoreConfig
     [JsonProperty("environmentVariables"), JsonPropertyName("environmentVariables")]
     public Dictionary<string, string> EnvironmentVariables { get; set; }
     
+    [JsonProperty("lastPlayed"), JsonPropertyName("lastPlayed")]
+    public int LastUser { get; set; }
+    
     [JsonProperty("users"), JsonPropertyName("users")]
     public Dictionary<string, string> Users { get; set; }
 
@@ -82,10 +85,11 @@ public class CoreConfig
         CacheRefreshDate = DateTime.Now;
         EnableEnvironmentVariables = false;
         EnvironmentVariables = new Dictionary<string, string>();
+        LastUser = -1;
         Users = new Dictionary<string, string>();
     }
     
-    public CoreConfig(string clientId, LauncherConfig launcher, JavaConfig java, MinecraftConfig minecraft, MiscConfig misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables, Dictionary<string, string> users)
+    public CoreConfig(string clientId, LauncherConfig launcher, JavaConfig java, MinecraftConfig minecraft, MiscConfig misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables, int lastUser, Dictionary<string, string> users)
     {
         ClientId = clientId;
         Launcher = launcher;
@@ -95,6 +99,7 @@ public class CoreConfig
         CacheRefreshDate = cacheRefreshDate;
         EnableEnvironmentVariables = enableEnvironmentVariables;
         EnvironmentVariables = environmentVariables;
+        LastUser = lastUser;
         Users = users;
     }
 }
