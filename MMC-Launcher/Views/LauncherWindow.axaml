@@ -310,14 +310,15 @@
                 IsVisible="{Binding isTFA}"
                 RowDefinitions="Auto, Auto, Auto"
                 RowSpacing="8">
-                <!--  Password TextBox  -->
+                <!-- Code TextBox  -->
                 <TextBox
                     Grid.Row="0"
                     Width="230"
                     Height="30"
                     Classes="LoginBox"
                     Text="{Binding TfaCode}"
-                    Watermark="Kétfaktoros hitelesítő" />
+                    Watermark="Kétfaktoros hitelesítő"
+                    MaxLength="6"/>
 
                 <!--  Login Button  -->
                 <Button

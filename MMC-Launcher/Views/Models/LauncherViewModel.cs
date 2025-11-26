@@ -112,6 +112,7 @@ public partial class LauncherViewModel : ObservableObject
         // 2FA required
         if (result.Value.Item2)
         {
+            TfaCode = string.Empty;
             TfaToken = result.Value.Item1;
             LoginStatus = ELoginStatus.TFA;
             return;
@@ -143,7 +144,7 @@ public partial class LauncherViewModel : ObservableObject
     [RelayCommand]
     public async Task Back()
     {
-        LoginStatus = ELoginStatus.NONE;
+        LoginStatus = !string.IsNullOrEmpty(TfaCode) && LoginStatus == ELoginStatus.ERROR ? ELoginStatus.TFA : ELoginStatus.NONE;
         ErrorMessage = string.Empty;
         await Task.CompletedTask;
     }
