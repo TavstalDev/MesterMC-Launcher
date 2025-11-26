@@ -77,7 +77,13 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         {
             var settings = await LauncherHelper.GetLauncherSettingsAsync();
             if (settings.Users.Count > 0)
-                DataContext.Username = settings.Users.Keys.ElementAt(0);
+            {
+                var keys = settings.Users.Keys;
+                if (keys.Count - 1 >= settings.LastUser && settings.LastUser >= 0)
+                    DataContext.Username = keys.ElementAt(settings.LastUser);
+                else
+                    DataContext.Username = settings.Users.Keys.ElementAt(0);
+            }
             /* Disabled for BETA testing
              var items = await LauncherHelper.GetNewsAsync(settings.Launcher.CacheDirectoryPath);
             
