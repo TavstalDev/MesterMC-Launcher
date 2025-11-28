@@ -72,6 +72,12 @@ public static class LauncherHelper
         return readResult;
     }
     
+    /// <summary>
+    /// Retrieves the news data from the specified cache directory.
+    /// If the file does not exist or is invalid, a new empty list is created and saved.
+    /// </summary>
+    /// <param name="cacheDir">The directory where the news data is cached.</param>
+    /// <returns>A list of <see cref="NewsData"/> objects representing the news data.</returns>
     public static List<NewsData> GetNews(string cacheDir)
     {
         string newsPath = Path.Combine(cacheDir, "news.json");
@@ -94,6 +100,15 @@ public static class LauncherHelper
         return readResult;
     }
     
+    /// <summary>
+    /// Asynchronously retrieves the news data from the specified cache directory.
+    /// If the file does not exist or is invalid, a new empty list is created and saved.
+    /// </summary>
+    /// <param name="cacheDir">The directory where the news data is cached.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains a list of 
+    /// <see cref="NewsData"/> objects representing the news data.
+    /// </returns>
     public static async Task<List<NewsData>> GetNewsAsync(string cacheDir)
     {
         string newsPath = Path.Combine(cacheDir, "news.json");

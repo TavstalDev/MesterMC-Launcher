@@ -317,6 +317,17 @@ public static class OSHelper
         }
     }
 
+    /// <summary>
+    /// Collects hardware information about the system, including operating system, CPU, RAM, disk size, and GPU.
+    /// </summary>
+    /// <returns>
+    /// An object containing the following hardware details:
+    /// - <c>os</c>: The operating system as a string.
+    /// - <c>cpu</c>: The CPU identifier retrieved from the environment variable.
+    /// - <c>ram</c>: The total physical memory in gigabytes.
+    /// - <c>disksize</c>: The total disk size in gigabytes.
+    /// - <c>gpu</c>: The description of the first detected GPU, or "unknown" if no GPU is found.
+    /// </returns>
     public static object CollectHardwareInfo()
     {
         var hardwareInfo = new HardwareInfo();

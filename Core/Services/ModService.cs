@@ -104,6 +104,18 @@ public static class ModService
         }
     }
     
+    /// <summary>
+    /// Asynchronously downloads mods to the specified directory.
+    /// </summary>
+    /// <param name="modsDirectory">The directory where the mods will be downloaded.</param>
+    /// <param name="progress">
+    /// An optional progress reporter that reports the percentage of mods downloaded.
+    /// </param>
+    /// <remarks>
+    /// This method ensures that the specified directory exists, then downloads mods in parallel
+    /// with a maximum number of concurrent downloads. If a mod file already exists or is disabled,
+    /// it is skipped. The method verifies the hash of each downloaded mod and logs any discrepancies.
+    /// </remarks>
     public static async Task DownloadModsAsync(string modsDirectory, IProgress<double>? progress = null)
     {
         if (!Directory.Exists(modsDirectory))
