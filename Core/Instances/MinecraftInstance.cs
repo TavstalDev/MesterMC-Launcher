@@ -101,34 +101,43 @@ public class MinecraftInstance
     /// <returns>A <see cref="Process"/> object representing the launched game, or null if the process fails.</returns>
     public async Task<Process?> Start(bool downloadOnly = false)
     {
+        _logger.Debug("Starting minecraft instance...");
         _jvmArguments.Clear();
         _gameArguments.Clear();
         _jvmArgumentsBeforeClassPath.Clear();
         _classPath.Clear();
+        _logger.Debug("Setting up directories...");
         string tempDir = Path.Combine(Path.GetTempPath(), "mmclauncher_" + Path.GetRandomFileName());
         Directory.CreateDirectory(tempDir);
         Directory.CreateDirectory(VersionData.VersionDirectory);
 
         try
         {
+            _logger.Debug("Downloading core files...");
             await DownloadCoreFilesAsync();
 
+            _logger.Debug("Installing modded data if applicable...");
             var moddedData = await InstallModdedAsync(tempDir);
+            _logger.Debug("Getting launch parameters...");
             var (versionDetails, mainClass, customVersion) = GetLaunchParameters(moddedData);
 
+            _logger.Debug("Preparing game directory...");
             if (!Directory.Exists(versionDetails.GameDir))
                 Directory.CreateDirectory(versionDetails.GameDir);
 
+            _logger.Debug("Getting combined libraries...");
             var libraries = GetCombinedLibraries(moddedData);
+            _logger.Debug("Downloading dependencies...");
             await DownloadDependenciesAsync(versionDetails, libraries);
-
+            
             _classPath.Add(moddedData != null ? moddedData.VersionData.VersionJarPath : VersionData.VersionJarPath);
 
+            _logger.Debug("Building arguments...");
             string arguments = BuildArguments(versionDetails.GameDir, mainClass, versionDetails.NativesDir, customVersion);
-            await Task.Delay(250); // Ensure the progress reporter has time to update before launching
             _progressReporter?.Hide();
             
             // Copy custom natives if specified
+            _logger.Debug("Copying custom native files if specified...");
             foreach (string nativePath in PathDetails.CustomNativeFiles)
             {
                 if (!File.Exists(nativePath))
@@ -137,10 +146,15 @@ public class MinecraftInstance
                 File.Copy(nativePath, destPath, true);
             }
             
+            _logger.Debug("The process is ready to launch.");
             if (downloadOnly)
-                return null;
+            {
+                _logger.Debug("Download only flag is set. Exiting before launch.");
+                return null;    
+            }
 
             // Execute pre-launch command if specified
+            _logger.Debug("Executing pre-launch command if specified...");
             if (!string.IsNullOrEmpty(GameDetails.PreLaunchCommand))
             {
                var preLaunchProc = JavaProcessLauncher.StartCommand(GameDetails.PreLaunchCommand);
@@ -150,6 +164,7 @@ public class MinecraftInstance
             
             // Below 1.7 there is no dedicated logs directory
             // so this fixes this issue
+            _logger.Debug("Fixing logs for Minecraft versions below 1.7...");
             Version minecraftVersion = new Version(GameDetails.MinecraftVersion);
             Version seven = new Version(1, 7);
             string? logsFilePath = null;
@@ -176,12 +191,15 @@ public class MinecraftInstance
             }
             
             // Check mods
+            _logger.Debug("Verifying mods...");
             ModService.VerifyMods(Path.Combine(versionDetails.GameDir, "mods"));
             
             // Make commands_history readonly
+            _logger.Debug("Attempting to fix command history file leak...");
             FileSystemHelper.FixCommandHistoryFile(GameDetails.CustomGameDirectory);
             
             // Launch the Minecraft game process with the constructed arguments
+            _logger.Debug("Starting java virtual machine...");
             var process = JavaProcessLauncher.StartJava(GameDetails.JavaPath, arguments, logsFilePath, GameDetails.WrapperCommand,
                 GameDetails.EnvironmentVariables);
             
@@ -200,11 +218,14 @@ public class MinecraftInstance
                     _watcher?.Dispose();
                 };
             
+            _logger.Debug("Deleting temporary directory...");
+            FileSystemHelper.DeleteDirectory(tempDir);
             return process;
         }
         finally
         {
-            FileSystemHelper.DeleteDirectory(tempDir);
+            if (Directory.Exists(tempDir))
+                FileSystemHelper.DeleteDirectory(tempDir);
         }
     }
 
@@ -282,6 +303,7 @@ public class MinecraftInstance
             return;
         }
         
+        _logger.Debug("Downloading logging...");
         var loggingArg = await MinecraftFileService.DownloadLoggingAsync(MinecraftVersionMeta, versionDetails.VersionDirectory, versionDetails.GameDir, _progressReporter);
         if (loggingArg != null)
             _jvmArgumentsBeforeClassPath.Add(loggingArg);
@@ -292,6 +314,7 @@ public class MinecraftInstance
             return;
         }
 
+        _logger.Debug("Downloading libraries...");
         var classPath = await MinecraftFileService.DownloadLibrariesAsync(GameDetails.Kind, VersionData, libraries, _classPath, PathDetails.CacheDir, PathDetails.LibrariesDir, _progressReporter);
         foreach (var cp in classPath)
         {

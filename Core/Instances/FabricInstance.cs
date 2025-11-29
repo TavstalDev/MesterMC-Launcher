@@ -32,12 +32,14 @@ public class FabricInstance(
     protected override async Task<ModdedData?> InstallModdedAsync(string tempDir)
     {
         _progressReporter?.SetStatus("A fabric manifest ellenőrzése...");
+        _logger.Debug("Checking Fabric manifest at path: " + PathDetails.CustomManifestPath);
         if (!File.Exists(PathDetails.CustomManifestPath))
         {
             _logger.Error("Fabric manifest file not found at path: " + PathDetails.CustomManifestPath);
             return null;
         }
 
+        _logger.Debug("Retrieving version details for Fabric installation...");
         VersionDetails fabricVersion = GameHelper.GetVersionDetails(PathDetails.VersionsDir, MinecraftVersion.Id, EMinecraftKind.FABRIC, GameDetails.CustomVersion, GameDetails.CustomGameDirectory);
 
         // Create versionDir in the versions folder
@@ -53,6 +55,7 @@ public class FabricInstance(
         FabricVersionMeta? fabricVersionMeta;
         List<LibraryMeta> localLibraries = new List<LibraryMeta>();
 
+        _logger.Debug("Checking for Fabric version JSON at path: " + fabricVersion.VersionJsonPath);
         if (!File.Exists(fabricVersion.VersionJsonPath))
         {
             Progress<double> progress = new Progress<double>();
