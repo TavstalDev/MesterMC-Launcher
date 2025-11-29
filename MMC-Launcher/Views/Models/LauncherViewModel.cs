@@ -5,6 +5,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReactiveUI;
@@ -215,12 +216,26 @@ public partial class LauncherViewModel : ObservableObject
         LoginStatus = ELoginStatus.LAUNCHING;
         //await Task.Run(async () => await MetricsHelper.SendMetricAsync()); // Send metrics in the background, tracks basic hardware info (cpu, ram, gpu, sum of disk space), so we can track what to optimize for and how our userbase looks like
         var process = await instance.Start();
-        App.ClearRPC();
-        await Task.Delay(5000); // Wait for a bit to ensure the process has started
-        if (process is { HasExited: false })
+        if (process != null)
         {
-            await HideWindowInteraction.Handle(Unit.Default);
-            process.Exited += async (_, _) => await CloseWindowInteraction.Handle(Unit.Default); 
+            App.ClearRPC();
+            process.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data == null)
+                    return;
+
+                if (e.Data.Contains("Render thread") ||
+                    e.Data.Contains("LWJGL Version") ||
+                    e.Data.Contains("Backend library") ||
+                    e.Data.Contains("Starting Minecraft"))
+                {
+                    Dispatcher.UIThread.InvokeAsync(async () =>
+                    {
+                        await HideWindowInteraction.Handle(Unit.Default);
+                    });
+                }
+            };
+            process.Exited += async (_, _) => await Dispatcher.UIThread.InvokeAsync(async () =>  await CloseWindowInteraction.Handle(Unit.Default));
         }
         else
         {
