@@ -64,6 +64,8 @@ public static class ModService
         new("yosbr-0.1.2.jar", "db4c744fd71f5617639cb0fdff72378b08d2852004f4045c62090de1bf53afcb", "https://cdn.modrinth.com/data/WwbubTsV/versions/KMOzdYko/yosbr-0.1.2.jar"),
         new("Zoomify-2.14.6+1.21.6.jar", "f730fc2f5e2b0a5f285f9ed01a307f2c5cecb13e5527fcb6971b4b398c85549a", "https://cdn.modrinth.com/data/w7ThoJFB/versions/qMqviL3t/Zoomify-2.14.6%2B1.21.6.jar"),
     
+        new("splashscreen-1.1.1.jar", "4db8d45dfd719bc2ac8f9d997b6f5245fa7fbdec744491ffa8218b5e16a3e06f", "https://cdn.modrinth.com/data/cxe0fRnA/versions/gWPlubql/splashscreen-1.1.1.jar"),
+        
         // Custom
         new("MMCAuth-1.0-SNAPSHOT.jar", "da110b033d96e75049f5df7252f2bde3d14ccf3cb34f576b056f467a08657b00", ""),
         
@@ -81,27 +83,27 @@ public static class ModService
     {
         if (!Directory.Exists(modsDirectory))
             return;
-        
-        foreach (var file in Directory.GetFiles(modsDirectory))
+
+        Parallel.ForEach(Directory.GetFiles(modsDirectory), file =>
         {
             string fileName = Path.GetFileName(file);
             if (!(fileName.EndsWith(".jar") || fileName.EndsWith(".zip")))
-                continue;
-                
+                return;
+
             var modEntry = Mods.FirstOrDefault(m => m.Name == fileName);
             if (modEntry == null)
             {
                 _logger.Info("Deleting unknown mod file: " + fileName);
                 File.Delete(file);
-                continue;
+                return;
             }
-            
+
             if (!FileSystemHelper.CheckSHA256(file, modEntry.Sha256Hash))
             {
                 _logger.Info("Deleting invalid mod file: " + fileName);
                 File.Delete(file);
             }
-        }
+        });
     }
     
     /// <summary>
