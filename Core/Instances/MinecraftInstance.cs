@@ -210,14 +210,14 @@ public class MinecraftInstance
                 {
                     if (!string.IsNullOrEmpty(GameDetails.PostExitCommand))
                         JavaProcessLauncher.StartCommand(GameDetails.PostExitCommand);
-                    
+
                     if (_watcher == null)
                         return;
-                    
+
                     _watcher.Changed -= HandleFileWatcherChanged;
                     _watcher?.Dispose();
                 };
-            
+
             _logger.Debug("Deleting temporary directory...");
             FileSystemHelper.DeleteDirectory(tempDir);
             return process;

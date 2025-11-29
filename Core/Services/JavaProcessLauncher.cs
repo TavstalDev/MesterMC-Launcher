@@ -58,27 +58,14 @@ public static class JavaProcessLauncher
         fullCommand = fullCommand.Replace("\"", "\\\"");
         
         // Configure the process start information
-        ProcessStartInfo psi;
         var os = OSHelper.GetOperatingSystem();
-        if (os == EOperatingSystem.Windows)
+        var psi = new ProcessStartInfo
         {
-            psi = new ProcessStartInfo
-            {
-                UseShellExecute = false,
-            };
-        }
-        else
-        {
-            psi = new ProcessStartInfo
-            {
-                #if DEBUG
-                UseShellExecute = false,
-                #else
-                UseShellExecute = true,
-                #endif
-            };
-        }
-        
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+        };
+
         // Add environment variables if provided
         if (environmentVariables != null)
         {
@@ -127,6 +114,8 @@ public static class JavaProcessLauncher
         var process = Process.Start(psi);
         if (process != null)
         {
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
             process.EnableRaisingEvents = true;
             process.Exited += (_, _) =>
             {
