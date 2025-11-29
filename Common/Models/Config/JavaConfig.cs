@@ -64,7 +64,7 @@ public class JavaConfig
         PermaGen = 128;
         IgnoreSystemJava = true;
         JavaPath = string.Empty;
-        JvmArguments = "-XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=16M -Djava.net.preferIPv4Stack=true";
+        JvmArguments = "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=50 -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:+OptimizeStringConcat -XX:+UseStringDeduplication -Dfml.ignoreInvalidMinecraftCertificates=true -Dfml.ignorePatchDiscrepancies=true -XX:ParallelGCThreads=4 -Dlog4j2.formatMsgNoLookups=true -Djava.net.preferIPv4Stack=true";
     }
 
     /// <summary>
