@@ -237,6 +237,12 @@ public partial class MainViewModel : ObservableObject
                         UpdateText("Létező natív fájlok eltávolítása...");
                         FileSystemHelper.DeleteDirectory(Path.Combine(minecraftDataDir, "natives"));
                     }
+                    string configFilePath = Path.Combine(GameDirectory, "config.json");
+                    if (File.Exists(configFilePath))
+                    {
+                        UpdateText("Létező konfigurációs fájl eltávolítása...");
+                        File.Delete(configFilePath);
+                    }
                 }
                 catch (Exception ex)
                 {
