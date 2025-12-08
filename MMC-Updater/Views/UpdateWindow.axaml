@@ -17,7 +17,8 @@
         TransparencyLevelHint="Transparent"
         WindowStartupLocation="CenterScreen"
         Icon="avares://MMC-Updater/Assets/icons/favicon.png">
-    <Grid>
+    <Viewbox x:Name="RootViewbox" Stretch="Uniform">
+        <Grid IsHitTestVisible="True" Height="665" Width="1150">
         <!-- Background Image -->
         <Image Source="avares://MMC-Updater/Assets/screens/screen-update.png" 
                Stretch="Fill" 
@@ -79,4 +80,5 @@
             <Image />
         </Button>
     </Grid>
+    </Viewbox>
 </Window>

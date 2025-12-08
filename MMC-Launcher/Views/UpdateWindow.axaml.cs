@@ -61,6 +61,8 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             }).DisposeWith(disposables);
         });
         
+        FitToDisplay();
+        
         DateTime now = DateTime.Now;
         switch (now.Month)
         {
@@ -366,6 +368,31 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         return Task.CompletedTask;
     }
 
+    private void FitToDisplay()
+    {
+        double screenWidth = (double)App.ScreenWidth;
+        double screenHeight = (double)App.ScreenHeight;
+        
+        // Base design resolution
+        double baseWidth = 1150;
+        double baseHeight = 665;
+
+        // Calculate scale factor relative to screen
+        double scaleX = screenWidth / baseWidth;
+        double scaleY = screenHeight / baseHeight;
+        double scale = Math.Min(scaleX, scaleY) * 0.6;
+
+        // Apply scaled window size
+        Width = baseWidth * scale;
+        Height = baseHeight * scale;
+
+        // Center window on screen
+        Position = new PixelPoint(
+            (int)((screenWidth - Width) / 2),
+            (int)((screenHeight - Height) / 2)
+        );
+    }
+    
     #region IProgressReporter Implementation
 
     /// <summary>
