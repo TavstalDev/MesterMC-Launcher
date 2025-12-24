@@ -282,7 +282,7 @@
                         Foreground="White"
                         IsChecked="{Binding OfflineMode, Mode=TwoWay}"
                         IsEnabled="False">
-                          <Border Width="205">
+                          <Border Width="205" CornerRadius="4">
                             <TextBlock Text="Offline mód" />
                         </Border>
                     </CheckBox>

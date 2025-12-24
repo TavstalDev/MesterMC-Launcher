@@ -5,7 +5,7 @@
         <Style Selector="ComboBox.LoginBox">
                 <Setter Property="Background" Value="#f9f9f9"/>
                 <Setter Property="Foreground" Value="#333"/>
-                <Setter Property="CornerRadius" Value="6"/>
+                <Setter Property="CornerRadius" Value="2"/>
                 <Setter Property="BorderBrush" Value="#ccc"/>
                 <Setter Property="BorderThickness" Value="1.5"/>
                 <Setter Property="Padding" Value="10,6"/>
