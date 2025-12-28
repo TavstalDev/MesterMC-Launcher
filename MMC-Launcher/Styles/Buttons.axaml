@@ -280,6 +280,38 @@
     </Style>
     <!-- #endregion Login Button Style -->
     
+    <!-- #region Settings Button Style -->
+    <Style Selector="Button.SettingsButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    
+    <!-- Remove default button hover background -->
+    <Style Selector="Button.SettingsButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"></Setter>
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="Button.SettingsButton > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/settings-bnt-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="Button.SettingsButton:pointerover > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/settings-bnt-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="Button.SettingsButton:pressed > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/settings-bnt-active.png" />
+    </Style>
+    <!-- #endregion Settings Button Style -->
+    
     <!-- #region PrevPage Button Style -->
     <Style Selector="Button.PrevPageButton">
         <Setter Property="Background" Value="Transparent" />
