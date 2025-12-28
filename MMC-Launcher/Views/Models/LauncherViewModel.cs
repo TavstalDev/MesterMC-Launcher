@@ -29,6 +29,7 @@ public partial class LauncherViewModel : ObservableObject
     [ObservableProperty] private string? tfaCode;
     [ObservableProperty] private string? tfaToken;
     [ObservableProperty] private bool offlineMode = true;
+    [ObservableProperty] private bool settingsOpened = true;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] [NotifyPropertyChangedFor(nameof(isError))] [NotifyPropertyChangedFor(nameof(isTFA))] [NotifyPropertyChangedFor(nameof(shouldShowFeedback))] private ELoginStatus loginStatus;
     public ObservableCollection<string> SavedUsernames { get; set; } = new();
     public bool isLoggingIn => LoginStatus != ELoginStatus.NONE;
@@ -145,6 +146,7 @@ public partial class LauncherViewModel : ObservableObject
     [RelayCommand]
     public async Task Back()
     {
+        SettingsOpened = false;
         LoginStatus = !string.IsNullOrEmpty(TfaCode) && LoginStatus == ELoginStatus.ERROR ? ELoginStatus.TFA : ELoginStatus.NONE;
         ErrorMessage = string.Empty;
         await Task.CompletedTask;
@@ -196,6 +198,13 @@ public partial class LauncherViewModel : ObservableObject
         {
             await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CommonJsonContext.Default.CoreConfig);
         }
+    }
+
+    [RelayCommand]
+    public async Task Settings()
+    {
+        SettingsOpened = true;
+        await Task.CompletedTask;
     }
     #endregion
     

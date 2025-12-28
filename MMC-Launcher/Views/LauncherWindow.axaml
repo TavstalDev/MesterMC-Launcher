@@ -54,7 +54,7 @@
                 Source="avares://MMC-Launcher/Assets/characters/aron.png" 
                 PointerPressed="DragStart_PointerPressed"/>
 
-            <!--#region Left Side Panel-->
+            <!--#region Left Buttons -->
             <Grid
                 Width="400"
                 Height="574"
@@ -111,284 +111,351 @@
                 </HyperlinkButton>
             </Grid>
             <!--#endregion-->
-
-            <!--#region News Panel-->
-            <Grid
-                Height="571"
-                Margin="405,-4.5,315,0"
-                PointerPressed="DragStart_PointerPressed">
-                <!--  News Title  -->
-                <StackPanel Margin="25,40,0,0" Orientation="Horizontal">
-                    <TextBlock
-                        FontSize="36"
-                        FontWeight="300"
-                        Foreground="#ffff00"
-                        Text="FRISS" />
-                    <TextBlock
-                        FontSize="36"
-                        FontWeight="600"
-                        Foreground="White"
-                        Text=" HÍREINK" />
-                </StackPanel>
-
-                <!--  Pages  -->
-                <Grid
-                    Margin="0,-15,25,0"
-                    HorizontalAlignment="Right"
-                    ColumnDefinitions="Auto, Auto"
-                    ColumnSpacing="10"
-                    RowDefinitions="Auto, Auto"
-                    RowSpacing="5"
-                    PointerPressed="DragStart_PointerPressed">
-                    <!--  PrevPage Button  -->
-                    <Button
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        Height="35"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Background="Transparent"
-                        Classes="PrevPageButton"
-                        Command="{Binding PreviousNewsCommand}">
-                        <Image />
-                    </Button>
-                    <!--  NextPage Button  -->
-                    <Button
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Height="35"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Background="Transparent"
-                        Classes="NextPageButton"
-                        Command="{Binding NextNewsCommand}">
-                        <Image />
-                    </Button>
-                    <!--  Page Text  -->
-                    <TextBlock
-                        Grid.Row="1"
-                        Grid.Column="0"
-                        Grid.ColumnSpan="2"
-                        HorizontalAlignment="Center"
-                        FontWeight="600"
-                        Foreground="#727170"
-                        Text="{Binding NewsPageDisplay}" />
-                </Grid>
-
-                <!--  News Content  -->
-                <Grid
-                    Height="435"
-                    Margin="25,115,25,25"
-                    VerticalAlignment="Top"
-                    RowDefinitions="Auto, Auto, *"
-                    RowSpacing="8"
-                    PointerPressed="DragStart_PointerPressed">
-                    <!--  Content Title  -->
-                    <TextBlock
-                        FontWeight="600"
-                        Foreground="#ffb400"
-                        Text="{Binding SelectedNewsItem.Title}" />
-
-                    <!--  Content Banner  -->
-                    <Image Grid.Row="1" Source="{Binding SelectedNewsItem.Banner}" />
-
-                    <!--  Content Text  -->
-                    <TextBlock
-                        Grid.Row="2"
-                        FontWeight="300"
-                        Foreground="White"
-                        Text="{Binding SelectedNewsItem.Content}"
-                        TextWrapping="Wrap" />
-                </Grid>
-
-            </Grid>
-            <!--#endregion-->
-
-            <!--#region Login Panel-->
-            <Grid
-                Width="285"
-                Height="350"
-                Margin="0,-4.5,29,0"
-                HorizontalAlignment="Right"
-                Background="Transparent"
-                IsVisible="{Binding !isLoggingIn}"
-                RowDefinitions="Auto, Auto, Auto, Auto"
-                RowSpacing="8">
-
-                <!--  Username TextBox  -->
-                <ComboBox
-                    Grid.Row="0"
-                    Width="230"
-                    Height="30"
-                    Classes="LoginBox"
-                    IsEditable="True"
-                    GotFocus="Username_GotFocus"
-                    ItemsSource="{Binding SavedUsernames}"
-                    SelectedItem="{Binding Username}"
-                    Text="{Binding Username}"
-                    PlaceholderText="Felhasználónév"
-                    >
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Grid.Column="0" 
-                                           Text="{Binding}" 
-                                           VerticalAlignment="Center" />
-                                <Button Grid.Column="1" 
-                                        Content="×" 
-                                        Command="{Binding $parent[ComboBox].((vm:LauncherViewModel)DataContext).RemoveUserCommand}"
-                                        CommandParameter="{Binding}"
-                                        Tag="{Binding}"
-                                        Margin="5,0,0,0"
-                                        Padding="5,0"
-                                        Background="Transparent"
-                                        FontSize="16"
-                                        BorderThickness="0" />
-                            </Grid>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-
-                <!--  Password TextBox  -->
-                <TextBox
-                    Grid.Row="1"
-                    Width="230"
-                    Height="30"
-                    Classes="LoginBox"
-                    IsEnabled="{Binding !OfflineMode}"
-                    RevealPassword="False"
-                    PasswordChar="●"
-                    Text="{Binding Password}"
-                    Watermark="Jelszó" />
-
-                <!--  Offline Login CheckBox  -->
-                <Border
-                    Grid.Row="2"
-                    Margin="30,0,30,0"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Left"
-                    ToolTip.Placement="Left">
-                     <ToolTip.Tip>
-                        <StackPanel>
-                            <TextBlock>Jelenleg csak az offline mód elérhető.</TextBlock>
-                        </StackPanel>
-                    </ToolTip.Tip>
-
-                    <CheckBox
-                        Padding="0"
-                        Classes="OfflineCheckBox"
-                        FontSize="18"
-                        FontWeight="500"
-                        Foreground="White"
-                        IsChecked="{Binding OfflineMode, Mode=TwoWay}"
-                        IsEnabled="False">
-                          <Border Width="205" CornerRadius="4">
-                            <TextBlock Text="Offline mód" />
-                        </Border>
-                    </CheckBox>
-                </Border>
-
-                <!--  Login Button  -->
-                <Button
-                    Grid.Row="3"
-                    Height="72"
-                    Margin="0,5,0,0"
-                    Classes="LoginButton"
-                    Command="{Binding LoginCommand}">
-                    <Image />
-                </Button>
-            </Grid>
-            <!--#endregion-->
-
-            <!--#region TFA Panel-->
-            <Grid
-                Width="285"
-                Height="350"
-                Margin="0,-4.5,29,0"
-                HorizontalAlignment="Right"
-                Background="Transparent"
-                IsVisible="{Binding isTFA}"
-                RowDefinitions="Auto, Auto, Auto"
-                RowSpacing="8">
-                <!-- Code TextBox  -->
-                <TextBox
-                    Grid.Row="0"
-                    Width="230"
-                    Height="30"
-                    Classes="LoginBox"
-                    Text="{Binding TfaCode}"
-                    Watermark="Kétfaktoros hitelesítő"
-                    MaxLength="6"/>
-
-                <!--  Login Button  -->
-                <Button
-                    Grid.Row="1"
-                    Height="72"
-                    Margin="0,5,0,0"
-                    Classes="LoginButton"
-                    Command="{Binding SubmitTFACommand}">
-                    <Image />
-                </Button>
-                
-                <!--  Back Button  -->
-                <Button
-                    Grid.Row="2"
-                    Height="72"
-                    Margin="26,-15,26,0"
-                    Classes="ErrorBackButton"
-                    Command="{Binding BackCommand}">
-                    <Image />
-                </Button>
-            </Grid>
-            <!--#endregion-->
             
-            <!--#region Auth Feedback-->
-            <Grid
-                Width="285"
-                Height="350"
-                Margin="0,-4.5,29,0"
-                HorizontalAlignment="Right"
-                Background="Transparent"
-                IsVisible="{Binding shouldShowFeedback}"
-                RowDefinitions="Auto, Auto">
+            <!-- Content -->
+            <Grid Margin="405, 45, 30, 50">
+                <!-- Main Content  -->
+                <Grid IsVisible="{Binding !SettingsOpened}">
+                     <!--#region News Panel-->
+                    <Grid
+                        Height="571"
+                        Margin="0,0, 295,0"
+                        PointerPressed="DragStart_PointerPressed">
+                        <!--  News Title  -->
+                        <StackPanel Margin="25,40,0,0" Orientation="Horizontal">
+                            <TextBlock
+                                FontSize="36"
+                                FontWeight="300"
+                                Foreground="#ffff00"
+                                Text="FRISS" />
+                            <TextBlock
+                                FontSize="36"
+                                FontWeight="600"
+                                Foreground="White"
+                                Text=" HÍREINK" />
+                        </StackPanel>
 
-                <!--  Status Image  -->
-                <Image
-                    Grid.Row="0"
-                    IsVisible="{Binding !isError}"
-                    Source="{Binding LoginStatus, Converter={StaticResource LoginConverter}}" />
+                        <!--  Pages  -->
+                        <Grid
+                            Margin="0,-15,25,0"
+                            HorizontalAlignment="Right"
+                            ColumnDefinitions="Auto, Auto"
+                            ColumnSpacing="10"
+                            RowDefinitions="Auto, Auto"
+                            RowSpacing="5"
+                            PointerPressed="DragStart_PointerPressed">
+                            <!--  PrevPage Button  -->
+                            <Button
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Height="35"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Background="Transparent"
+                                Classes="PrevPageButton"
+                                Command="{Binding PreviousNewsCommand}">
+                                <Image />
+                            </Button>
+                            <!--  NextPage Button  -->
+                            <Button
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Height="35"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Background="Transparent"
+                                Classes="NextPageButton"
+                                Command="{Binding NextNewsCommand}">
+                                <Image />
+                            </Button>
+                            <!--  Page Text  -->
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="2"
+                                HorizontalAlignment="Center"
+                                FontWeight="600"
+                                Foreground="#727170"
+                                Text="{Binding NewsPageDisplay}" />
+                        </Grid>
 
-                <!--  Error Background Image  -->
-                <Image
-                    Grid.Row="0"
-                    Margin="20,-10,20,0"
-                    IsVisible="{Binding isError}"
-                    Source="avares://MMC-Launcher/Assets/zone/zone-error.png" />
+                        <!--  News Content  -->
+                        <Grid
+                            Height="435"
+                            Margin="25,115,25,25"
+                            VerticalAlignment="Top"
+                            RowDefinitions="Auto, Auto, *"
+                            RowSpacing="8"
+                            PointerPressed="DragStart_PointerPressed">
+                            <!--  Content Title  -->
+                            <TextBlock
+                                FontWeight="600"
+                                Foreground="#ffb400"
+                                Text="{Binding SelectedNewsItem.Title}" />
 
-                <!--  Error TextBox  -->
-                <TextBlock
-                    Grid.Row="0"
-                    Width="230"
-                    MaxHeight="125"
-                    Margin="0"
-                    VerticalAlignment="Top"
-                    Foreground="Red"
-                    IsVisible="{Binding isError}"
-                    Text="{Binding ErrorMessage}"
-                    TextWrapping="Wrap" />
+                            <!--  Content Banner  -->
+                            <Image Grid.Row="1" Source="{Binding SelectedNewsItem.Banner}" />
 
-                <!--  Back Button  -->
-                <Button
-                    Grid.Row="1"
-                    Height="72"
-                    Margin="20,-15,20,0"
-                    Classes="ErrorBackButton"
-                    Command="{Binding BackCommand}"
-                    IsVisible="{Binding isError}">
-                    <Image />
-                </Button>
+                            <!--  Content Text  -->
+                            <TextBlock
+                                Grid.Row="2"
+                                FontWeight="300"
+                                Foreground="White"
+                                Text="{Binding SelectedNewsItem.Content}"
+                                TextWrapping="Wrap" />
+                        </Grid>
+
+                    </Grid>
+                    <!--#endregion-->
+
+                    <!--#region Login Panel-->
+                    <Grid
+                        Width="285"
+                        Height="350"
+                        HorizontalAlignment="Right"
+                        Background="Transparent"
+                        IsVisible="{Binding !isLoggingIn}"
+                        RowDefinitions="Auto, Auto, Auto, Auto, Auto"
+                        RowSpacing="8">
+
+                        <!--  Username TextBox  -->
+                        <ComboBox
+                            Grid.Row="0"
+                            Width="230"
+                            Height="30"
+                            Classes="LoginBox"
+                            IsEditable="True"
+                            GotFocus="Username_GotFocus"
+                            ItemsSource="{Binding SavedUsernames}"
+                            SelectedItem="{Binding Username}"
+                            Text="{Binding Username}"
+                            PlaceholderText="Felhasználónév"
+                            >
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" 
+                                                   Text="{Binding}" 
+                                                   VerticalAlignment="Center" />
+                                        <Button Grid.Column="1" 
+                                                Content="×" 
+                                                Command="{Binding $parent[ComboBox].((vm:LauncherViewModel)DataContext).RemoveUserCommand}"
+                                                CommandParameter="{Binding}"
+                                                Tag="{Binding}"
+                                                Margin="5,0,0,0"
+                                                Padding="5,0"
+                                                Background="Transparent"
+                                                FontSize="16"
+                                                BorderThickness="0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!--  Password TextBox  -->
+                        <TextBox
+                            Grid.Row="1"
+                            Width="230"
+                            Height="30"
+                            Classes="LoginBox"
+                            IsEnabled="{Binding !OfflineMode}"
+                            RevealPassword="False"
+                            PasswordChar="●"
+                            Text="{Binding Password}"
+                            Watermark="Jelszó" />
+
+                        <!--  Offline Login CheckBox  -->
+                        <Border
+                            Grid.Row="2"
+                            Margin="30,0,30,0"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Left"
+                            ToolTip.Placement="Left">
+                             <ToolTip.Tip>
+                                <StackPanel>
+                                    <TextBlock>Jelenleg csak az offline mód elérhető.</TextBlock>
+                                </StackPanel>
+                            </ToolTip.Tip>
+
+                            <CheckBox
+                                Padding="0"
+                                Classes="OfflineCheckBox"
+                                FontSize="18"
+                                FontWeight="500"
+                                Foreground="White"
+                                IsChecked="{Binding OfflineMode, Mode=TwoWay}"
+                                IsEnabled="False">
+                                  <Border Width="205" CornerRadius="4">
+                                    <TextBlock Text="Offline mód" />
+                                </Border>
+                            </CheckBox>
+                        </Border>
+
+                        <!--  Login Button  -->
+                        <Button
+                            Grid.Row="3"
+                            Height="72"
+                            Margin="0,5,0,0"
+                            Classes="LoginButton"
+                            Command="{Binding LoginCommand}">
+                            <Image />
+                        </Button>
+                        
+                        <!-- Settings Button -->
+                        <Button
+                            Grid.Row="4"
+                            Height="32"
+                            Margin="0,0,27,0"
+                            Classes="SettingsButton"
+                            HorizontalAlignment="Right"
+                            Command="{Binding SettingsCommand}">
+                            <Image />
+                        </Button>
+                    </Grid>
+                    <!--#endregion-->
+
+                    <!--#region TFA Panel-->
+                    <Grid
+                        Width="285"
+                        Height="350"
+                        Margin="0,0,0,0"
+                        HorizontalAlignment="Right"
+                        Background="Transparent"
+                        IsVisible="{Binding isTFA}"
+                        RowDefinitions="Auto, Auto, Auto"
+                        RowSpacing="8">
+                        <!-- Code TextBox  -->
+                        <TextBox
+                            Grid.Row="0"
+                            Width="230"
+                            Height="30"
+                            Classes="LoginBox"
+                            Text="{Binding TfaCode}"
+                            Watermark="Kétfaktoros hitelesítő"
+                            MaxLength="6"/>
+
+                        <!--  Login Button  -->
+                        <Button
+                            Grid.Row="1"
+                            Height="72"
+                            Margin="0,5,0,0"
+                            Classes="LoginButton"
+                            Command="{Binding SubmitTFACommand}">
+                            <Image />
+                        </Button>
+                        
+                        <!--  Back Button  -->
+                        <Button
+                            Grid.Row="2"
+                            Height="72"
+                            Margin="26,-15,26,0"
+                            Classes="ErrorBackButton"
+                            Command="{Binding BackCommand}">
+                            <Image />
+                        </Button>
+                    </Grid>
+                    <!--#endregion-->
+                    
+                    <!--#region Auth Feedback-->
+                    <Grid
+                        Width="285"
+                        Height="350"
+                        Margin="0,0,0,0"
+                        HorizontalAlignment="Right"
+                        Background="Transparent"
+                        IsVisible="{Binding shouldShowFeedback}"
+                        RowDefinitions="Auto, Auto">
+
+                        <!--  Status Image  -->
+                        <Image
+                            Grid.Row="0"
+                            IsVisible="{Binding !isError}"
+                            Source="{Binding LoginStatus, Converter={StaticResource LoginConverter}}" />
+
+                        <!--  Error Background Image  -->
+                        <Image
+                            Grid.Row="0"
+                            Margin="20,-10,20,0"
+                            IsVisible="{Binding isError}"
+                            Source="avares://MMC-Launcher/Assets/zone/zone-error.png" />
+
+                        <!--  Error TextBox  -->
+                        <TextBlock
+                            Grid.Row="0"
+                            Width="230"
+                            MaxHeight="125"
+                            Margin="0"
+                            VerticalAlignment="Top"
+                            Foreground="Red"
+                            IsVisible="{Binding isError}"
+                            Text="{Binding ErrorMessage}"
+                            TextWrapping="Wrap" />
+
+                        <!--  Back Button  -->
+                        <Button
+                            Grid.Row="1"
+                            Height="72"
+                            Margin="20,-15,20,0"
+                            Classes="ErrorBackButton"
+                            Command="{Binding BackCommand}"
+                            IsVisible="{Binding isError}">
+                            <Image />
+                        </Button>
+                    </Grid>
+                    <!--#endregion-->
+                </Grid>
+                <!-- Settings --> 
+                <Grid IsVisible="{Binding SettingsOpened}">
+                    <!--#region Left Panel-->
+                    <Grid
+                        Height="571"
+                        Margin="0,0, 295,0"
+                        PointerPressed="DragStart_PointerPressed">
+                        <!-- Settings Title  -->
+                        <TextBlock
+                            FontSize="36"
+                            FontWeight="600"
+                            Foreground="White"
+                            Text="BEÁLLÍTÁSOK"
+                            Margin="25,40,0,0" />
+
+                        <!--  Content  -->
+                        <Grid
+                            Height="435"
+                            Margin="25,115,25,25"
+                            VerticalAlignment="Top"
+                            RowDefinitions="Auto, Auto, *"
+                            RowSpacing="8"
+                            PointerPressed="DragStart_PointerPressed">
+                            
+                        </Grid>
+
+                    </Grid>
+                    <!--#endregion-->
+                    
+                    <!--#region Right Panel-->
+                    <Grid
+                        Width="285"
+                        Height="350"
+                        HorizontalAlignment="Right"
+                        Background="Transparent"
+                        IsVisible="{Binding !isLoggingIn}"
+                        RowDefinitions="Auto, Auto, Auto, Auto, Auto"
+                        RowSpacing="8">
+
+                        <!--  Back Button  -->
+                        <Button
+                            Grid.Row="4"
+                            Height="72"
+                            Margin="20,0,20,0"
+                            Classes="ErrorBackButton"
+                            Command="{Binding BackCommand}">
+                            <Image />
+                        </Button>
+                    </Grid>
+                    <!--#endregion-->
+                </Grid>
             </Grid>
-            <!--#endregion-->
 
             <!--  Close Button  -->
             <Button
