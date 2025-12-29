@@ -12,5 +12,9 @@
         <StyleInclude Source="Styles/Checkboxes.axaml" />
         <StyleInclude Source="Styles/Textboxes.axaml" />
         <StyleInclude Source="Styles/Comboboxes.axaml" />
+        <StyleInclude Source="Styles/Settings.axaml" />
+        
+        <!--  Components  -->
+        <StyleInclude Source="Styles/Components/NumericInput.axaml" />
     </Application.Styles>
 </Application>
