@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reactive;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
@@ -62,6 +64,11 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                 Hide();
                 action.SetOutput(Unit.Default);
                 return Task.CompletedTask;
+            }).DisposeWith(disposables);
+            DataContext.OpenFolderPicker.RegisterHandler(async action =>
+            {
+                var result = await OpenFolderPickerAsync();
+                action.SetOutput(result);
             }).DisposeWith(disposables);
         });
         
@@ -204,5 +211,46 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             (int)((screenWidth - Width) / 2),
             (int)((screenHeight - Height) / 2)
         );
+    }
+    
+    private async Task<string?> OpenFolderPickerAsync()
+    {
+        // Ensure the VisualRoot is a TopLevel object
+        if (VisualRoot is not TopLevel topLevel)
+            return null;
+
+        var storageProvider = topLevel.StorageProvider;
+
+        // Check if folder picking is supported on the current platform
+        if (!storageProvider.CanPickFolder)
+        {
+            _logger.Error("Folder picking is not supported on this platform.");
+            return null;
+        }
+    
+        // Configure folder picker options
+        var options = new FolderPickerOpenOptions
+        {
+            Title = "Válassz egy mappát",
+            AllowMultiple = false
+        };
+
+        // Open the folder picker dialog
+        IReadOnlyList<IStorageFolder> folders = await storageProvider.OpenFolderPickerAsync(options);
+
+        // Return null if no folders were selected
+        if (!folders.Any())
+            return null;
+    
+        // Get the first selected folder
+        IStorageFolder? selectedFolder = folders.FirstOrDefault();
+        if (selectedFolder == null)
+        {
+            _logger.Error("No folder was selected.");
+            return null;
+        }
+    
+        // Return the local path of the selected folder
+        return selectedFolder.Path.LocalPath;
     }
 }

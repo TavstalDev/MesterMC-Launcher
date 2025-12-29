@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reactive;
@@ -10,16 +11,25 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
+using Tavstal.KonkordLauncher.Common.Models.Config;
 using Tavstal.KonkordLauncher.Common.Models.Json;
+using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
 using Tavstal.MesterMC.Launcher.Models;
+using Tavstal.MesterMC.Launcher.Models.Config;
 
 namespace Tavstal.MesterMC.Launcher.Views.Models;
 
 [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class LauncherViewModel : ObservableObject
 {
+    private readonly bool _isInitialized;
+    public bool IsLinux => OSHelper.GetOperatingSystem() == EOperatingSystem.Linux;
+    
+    #region Observable Properties
+    [ObservableProperty] private ESettingsCategory _currentSettingsCategory = ESettingsCategory.Performance;
+    [ObservableProperty] private CoreConfigModel _coreConfig;
     public ObservableCollection<NewsModel> NewsItems = [];
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(NewsPageDisplay))] private int selectedNewsIndex;
     [ObservableProperty] private NewsModel? selectedNewsItem;
@@ -32,16 +42,21 @@ public partial class LauncherViewModel : ObservableObject
     [ObservableProperty] private bool settingsOpened = true;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] [NotifyPropertyChangedFor(nameof(isError))] [NotifyPropertyChangedFor(nameof(isTFA))] [NotifyPropertyChangedFor(nameof(shouldShowFeedback))] private ELoginStatus loginStatus;
     public ObservableCollection<string> SavedUsernames { get; set; } = new();
+    #endregion
     public bool isLoggingIn => LoginStatus != ELoginStatus.NONE;
     public bool shouldShowFeedback => LoginStatus != ELoginStatus.NONE && LoginStatus != ELoginStatus.TFA;
     public bool isTFA => LoginStatus == ELoginStatus.TFA;
     public bool isError => LoginStatus == ELoginStatus.ERROR;
     public string NewsPageDisplay => $"{SelectedNewsIndex + 1} / {NewsItems.Count}";
+    #region Interactions
     public Interaction<Unit, Unit> CloseWindowInteraction { get; } = new();
     public Interaction<Unit, Unit> HideWindowInteraction { get; } = new();
+    public Interaction<Unit, string?> OpenFolderPicker { get; } = new();
+    #endregion
 
     public LauncherViewModel()
     {
+        _coreConfig = new CoreConfigModel(LauncherHelper.GetLauncherSettings());
         NewsItems.CollectionChanged += (_, _) =>
         {
             // 3. Manually notify that the property needs recalculation
@@ -51,6 +66,9 @@ public partial class LauncherViewModel : ObservableObject
         var settings = LauncherHelper.GetLauncherSettings();
         foreach (var user in settings.Users.Keys)
             SavedUsernames.Add(user);
+        
+        _isInitialized = true;
+        SubscribeToCoreConfigChildren(_coreConfig);
     }
 
     #region Relay Commands
@@ -201,10 +219,33 @@ public partial class LauncherViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task Settings()
+    public async Task OpenSettings()
     {
+        if (SettingsOpened)
+            return;
+        
         SettingsOpened = true;
         await Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    public async Task HandleSettingsCategory(ESettingsCategory category)
+    {
+        if (category == CurrentSettingsCategory)
+            return;
+        
+        CurrentSettingsCategory = category;
+        await Task.CompletedTask;
+    }
+    
+    [RelayCommand]
+    public async Task ConfigDirSelectAsync()
+    {
+        var directoryResult = await OpenFolderPicker.Handle(Unit.Default);
+        if (string.IsNullOrEmpty(directoryResult))
+            return;
+        
+        CoreConfig.Java.DefaultJavaPath = directoryResult;
     }
     #endregion
     
@@ -252,4 +293,85 @@ public partial class LauncherViewModel : ObservableObject
             LoginStatus = ELoginStatus.ERROR;
         }
     }
+    
+    #region Config Management
+    
+    private void SubscribeToCoreConfigChildren(CoreConfigModel config)
+    {
+        config.Java.PropertyChanged += OnChildConfigPropertyChanged;
+        config.Window.PropertyChanged += OnChildConfigPropertyChanged;
+        config.Performance.PropertyChanged += OnChildConfigPropertyChanged;
+    }
+    
+    private void UnsubscribeFromCoreConfigChildren(CoreConfigModel config)
+    {
+        config.Java.PropertyChanged -= OnChildConfigPropertyChanged;
+        config.Window.PropertyChanged -= OnChildConfigPropertyChanged;
+        config.Performance.PropertyChanged -= OnChildConfigPropertyChanged;
+    }
+    
+    partial void OnCoreConfigChanged(CoreConfigModel? oldValue, CoreConfigModel newValue)
+    {
+        if (oldValue != null)
+            UnsubscribeFromCoreConfigChildren(oldValue);
+
+        SubscribeToCoreConfigChildren(newValue);
+
+        if (!_isInitialized)
+            return;
+        SaveCoreConfigToFile(newValue);
+    }
+    
+    private void OnChildConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!_isInitialized)
+            return;
+
+        SaveCoreConfigToFile(CoreConfig);
+    }
+    
+    private void SaveCoreConfigToFile(CoreConfigModel newValue)
+    {
+        var oldSettings = LauncherHelper.GetLauncherSettings(); // Fetch to preserve non-observable properties
+
+        if (newValue.Java.MinMemory > newValue.Java.MaxMemory)
+            newValue.Java.MinMemory = newValue.Java.MaxMemory;
+
+        var settings = new CoreConfig
+        {
+            Launcher = oldSettings.Launcher, // Preserve non-observable properties
+            Java = new JavaConfig
+            {
+                MinMemory = newValue.Java.MinMemory,
+                MaxMemory = newValue.Java.MaxMemory,
+                PermaGen = newValue.Java.PermaGen,
+                JavaPath = newValue.Java.DefaultJavaPath,
+                JvmArguments = newValue.Java.JvmArguments,
+            },
+            Minecraft = new MinecraftConfig
+            {
+                StartMaximized = newValue.Window.StartMaximized,
+                WindowHeight = newValue.Window.WindowHeight,
+                WindowWidth = newValue.Window.WindowWidth,
+            },
+            Misc = new MiscConfig
+            {
+                PreLaunchCommand = newValue.Performance.PreLaunchCommand,
+                WrapperCommand = newValue.Performance.WrapperCommand,
+                PostExitCommand = newValue.Performance.PostExitCommand,
+                UseCustomGlfw = newValue.Performance.UseCustomGlfw,
+                CustomGlfwPath = newValue.Performance.CustomGlfwPath,
+                UseCustomOpenAl = newValue.Performance.UseCustomOpenAl,
+                CustomOpenAlPath = newValue.Performance.CustomOpenAlPath,
+                UseDedicatedGpu = newValue.Performance.UseDedicatedGpu,
+                EnableMangoHud = newValue.Performance.EnableMangoHud,
+                EnableFeralGameMode = newValue.Performance.EnableFeralGameMode,
+            },
+            CacheRefreshDate = oldSettings.CacheRefreshDate
+        };
+
+        JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
+    }
+
+    #endregion
 }

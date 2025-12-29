@@ -6,6 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:Tavstal.MesterMC.Launcher.Models"
     xmlns:vm="clr-namespace:Tavstal.MesterMC.Launcher.Views.Models"
+    xmlns:local="clr-namespace:Tavstal.MesterMC.Launcher"
     Title="MMC Launcher"
     Width="1280"
     Height="665"
@@ -308,7 +309,7 @@
                             Margin="0,0,27,0"
                             Classes="SettingsButton"
                             HorizontalAlignment="Right"
-                            Command="{Binding SettingsCommand}">
+                            Command="{Binding OpenSettingsCommand}">
                             <Image />
                         </Button>
                     </Grid>
@@ -427,7 +428,222 @@
                             RowDefinitions="Auto, Auto, *"
                             RowSpacing="8"
                             PointerPressed="DragStart_PointerPressed">
-                            
+                            <Carousel SelectedIndex="{Binding CurrentSettingsCategory}">
+                                <Carousel.PageTransition>
+                                    <CompositePageTransition>
+                                        <PageSlide Orientation="Vertical" Duration="0:00:00.200" />
+                                    </CompositePageTransition>
+                                </Carousel.PageTransition>
+                                <Carousel.Items>
+                                    <!-- Java Settings -->
+                                    <Grid MaxHeight="425">
+                                    <ScrollViewer Margin="0">
+                                        <WrapPanel Classes="SettingsWrapper">
+                                            <!--  Minimum Memory  -->
+                                            <Grid ColumnDefinitions="Auto, *">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="NumericInput" Text="Minimum memória" />
+                                                <!--  Input  -->
+                                                <NumericUpDown
+                                                    Grid.Column="1"
+                                                    Classes="NumericInput"
+                                                    FormatString="0\ MB"
+                                                    Increment="128"
+                                                    Maximum="{Binding CoreConfig.Java.MaxMemory}"
+                                                    Minimum="512"
+                                                    Value="{Binding CoreConfig.Java.MinMemory, Mode=TwoWay}" />
+                                            </Grid>
+                                            <!--  Maximum Memory  -->
+                                            <Grid ColumnDefinitions="Auto, *">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="NumericInput" Text="Maximum memória" />
+                                                <!--  Input  -->
+                                                <NumericUpDown
+                                                    Grid.Column="1"
+                                                    Classes="NumericInput"
+                                                    FormatString="0\ MB"
+                                                    Increment="128"
+                                                    Maximum="131072"
+                                                    Minimum="512"
+                                                    Value="{Binding CoreConfig.Java.MaxMemory, Mode=TwoWay}" />
+                                            </Grid>
+                                            <!--  PermGen  -->
+                                            <Grid ColumnDefinitions="Auto, *">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="NumericInput" Text="PermaGen" />
+                                                <!--  Input  -->
+                                                <NumericUpDown
+                                                    Grid.Column="1"
+                                                    Classes="NumericInput"
+                                                    FormatString="0\ MB"
+                                                    Increment="128"
+                                                    Maximum="1024"
+                                                    Minimum="8"
+                                                    Value="{Binding CoreConfig.Java.PermaGen, Mode=TwoWay}" />
+                                            </Grid>
+                                            <!--  Java Path  -->
+                                            <Grid ColumnDefinitions="Auto, *, Auto" RowDefinitions="Auto">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="TextInput" Text="Java útvonal" />
+                                                <!--  Input  -->
+                                                <TextBox
+                                                    Grid.Column="1"
+                                                    Classes="TextInput"
+                                                    Text="{Binding CoreConfig.Java.DefaultJavaPath, Mode=TwoWay}"
+                                                    Watermark="Könyvtár kiválasztása" />
+                                                <StackPanel  Grid.Column="2" Orientation="Horizontal" Spacing="5">
+                                                    <Button
+                                                        Classes="IconBtn"
+                                                        Command="{Binding ConfigDirSelectCommand}"
+                                                        CommandParameter="9">
+                                                        <TextBlock Classes="FontAwesome" Text="&#xf07c;" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                            <!--  JVM Arguments  -->
+                                            <TextBlock Classes="SettingsCategory" Text="JVM Argumentumok" />
+                                            <TextBox
+                                                MinHeight="128"
+                                                MaxLines="512"
+                                                Classes="TextInput"
+                                                Text="{Binding CoreConfig.Java.JvmArguments, Mode=TwoWay}"
+                                                TextWrapping="Wrap" />
+                                        </WrapPanel>
+                                    </ScrollViewer>
+                                    </Grid>
+                                    <!-- Performance Settings -->
+                                    <Grid MaxHeight="425">
+                                    <ScrollViewer Margin="0">
+                                        <WrapPanel Classes="SettingsWrapper">
+                                            <!--  Subtitle  -->
+                                            <TextBlock Classes="SettingsCategory" Text="Saját Parancsok" />
+                                            <!--  Pre-launch Command  -->
+                                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="TextInput" Text="Indítás előtti parancs" />
+                                                <!--  Input  -->
+                                                <TextBox
+                                                    Grid.Column="1"
+                                                    Classes="TextInput"
+                                                    Text="{Binding CoreConfig.Performance.PreLaunchCommand, Mode=TwoWay}" />
+                                            </Grid>
+                                            <TextBlock Classes="Muted" Text="A játék indulása előtt lefut. A minecraft nem indul el, amíg a parancs be nem fejeződik." />
+                                            <!--  Wrapper Command  -->
+                                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="TextInput" Text="Csomagoló parancs" />
+                                                <!--  Input  -->
+                                                <TextBox
+                                                    Grid.Column="1"
+                                                    Classes="TextInput"
+                                                    Text="{Binding CoreConfig.Performance.WrapperCommand, Mode=TwoWay}" />
+                                            </Grid>
+                                            <TextBlock Classes="Muted" Text="Becsomagolja a Java virtuális gépet. A %command% helyőrzőt a Java futtatható fájl elérési útja és az összes Minecraft argumentum helyettesíti. A %command% paraméter nem kötelező." />
+                                            <!--  Post-exit Command  -->
+                                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="TextInput" Text="Kilépő parancs" />
+                                                <!--  Input  -->
+                                                <TextBox
+                                                    Grid.Column="1"
+                                                    Classes="TextInput"
+                                                    Text="{Binding CoreConfig.Performance.PostExitCommand, Mode=TwoWay}" />
+                                            </Grid>
+                                            <TextBlock Classes="Muted" Text="A játék leállítása után fut." />
+                                            <!--  Subtitle  -->
+                                            <TextBlock Classes="SettingsCategory" Text="Natív könyvtár fájlok" />
+                                            <!--  Use custom GLFW  -->
+                                            <CheckBox Classes="SettingsCheckBox" IsChecked="{Binding CoreConfig.Performance.UseCustomGlfw, Mode=TwoWay}">
+                                                <TextBlock Text="Saját GLFW használata" />
+                                            </CheckBox>
+                                            <!--  GLFW library path  -->
+                                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="TextInput" Text="GLFW útvonal" />
+                                                <!--  Input  -->
+                                                <TextBox
+                                                    Grid.Column="1"
+                                                    Classes="TextInput"
+                                                    IsEnabled="{Binding CoreConfig.Performance.UseCustomGlfw}"
+                                                    Text="{Binding CoreConfig.Performance.CustomGlfwPath, Mode=TwoWay}"
+                                                    Watermark="Fájl kiválasztása" />
+                                            </Grid>
+                                            <!--  Use custom OpenAL  -->
+                                            <CheckBox Classes="SettingsCheckBox" IsChecked="{Binding CoreConfig.Performance.UseCustomOpenAl, Mode=TwoWay}">
+                                                <TextBlock Text="Saját OpenAL használata" />
+                                            </CheckBox>
+                                            <!--  OpenAL library path  -->
+                                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="TextInput" Text="OpenAL útvonal" />
+                                                <!--  Input  -->
+                                                <TextBox
+                                                    Grid.Column="1"
+                                                    Classes="TextInput"
+                                                    IsEnabled="{Binding CoreConfig.Performance.UseCustomOpenAl}"
+                                                    Text="{Binding CoreConfig.Performance.CustomOpenAlPath, Mode=TwoWay}"
+                                                    Watermark="Fájl kiválasztása" />
+                                            </Grid>
+                                            <!--  Subtitle  -->
+                                            <TextBlock Classes="SettingsCategory" Text="Teljesítmény" />
+                                            <!--  Enable Feral GameMode  -->
+                                            <CheckBox Classes="SettingsCheckBox" IsChecked="{Binding CoreConfig.Performance.EnableFeralGameMode, Mode=TwoWay}" IsVisible="{Binding IsLinux}">
+                                                <TextBlock Text="Gamemode bekapcsolása" />
+                                            </CheckBox>
+                                            <!--  Enable MangoHud  -->
+                                            <CheckBox Classes="SettingsCheckBox" IsChecked="{Binding CoreConfig.Performance.EnableMangoHud, Mode=TwoWay}" IsVisible="{Binding IsLinux}">
+                                                <TextBlock Text="MangoHUD bekapcsolása" />
+                                            </CheckBox>
+                                            <!--  Use dedicated GPU  -->
+                                            <CheckBox Classes="SettingsCheckBox" IsChecked="{Binding CoreConfig.Performance.UseDedicatedGpu, Mode=TwoWay}">
+                                                <TextBlock Text="Dedikált GPU használata" />
+                                            </CheckBox>
+                                        </WrapPanel>
+                                    </ScrollViewer>
+                                    </Grid>
+                                    <!-- Window Settings -->
+                                    <Grid MaxHeight="425">
+                                    <ScrollViewer Margin="0">
+                                        <WrapPanel Classes="SettingsWrapper">
+                                            <!--  Minecraft Maximized  -->
+                                            <CheckBox Classes="SettingsCheckBox" IsChecked="{Binding CoreConfig.Window.StartMaximized, Mode=TwoWay}">
+                                                <TextBlock Text="Teljesképernyős indítás" />
+                                            </CheckBox>
+                                            <!--  Window Width  -->
+                                            <Grid ColumnDefinitions="Auto, *">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="NumericInput" Text="Ablak szélesség" />
+                                                <!--  Input  -->
+                                                <NumericUpDown
+                                                    Grid.Column="1"
+                                                    Classes="NumericInput"
+                                                    FormatString="0"
+                                                    Increment="10"
+                                                    IsEnabled="{Binding !CoreConfig.Window.StartMaximized}"
+                                                    Maximum="{x:Static local:App.ScreenWidth}"
+                                                    Minimum="100"
+                                                    Value="{Binding CoreConfig.Window.WindowWidth, Mode=TwoWay}" />
+                                            </Grid>
+                                            <!--  Window Height  -->
+                                            <Grid ColumnDefinitions="Auto, *">
+                                                <!--  Text  -->
+                                                <TextBlock Classes="NumericInput" Text="Ablak magasság" />
+                                                <!--  Input  -->
+                                                <NumericUpDown
+                                                    Grid.Column="1"
+                                                    Classes="NumericInput"
+                                                    FormatString="0"
+                                                    Increment="10"
+                                                    IsEnabled="{Binding !CoreConfig.Window.StartMaximized}"
+                                                    Maximum="{x:Static local:App.ScreenHeight}"
+                                                    Minimum="100"
+                                                    Value="{Binding CoreConfig.Window.WindowHeight, Mode=TwoWay}" />
+                                            </Grid>
+                                        </WrapPanel>
+                                    </ScrollViewer>
+                                   </Grid>
+                                </Carousel.Items>
+                            </Carousel>
                         </Grid>
 
                     </Grid>
@@ -440,17 +656,58 @@
                         HorizontalAlignment="Right"
                         Background="Transparent"
                         IsVisible="{Binding !isLoggingIn}"
-                        RowDefinitions="Auto, Auto, Auto, Auto, Auto"
-                        RowSpacing="8">
+                        RowDefinitions="Auto, Auto, Auto, Auto"
+                        RowSpacing="4">
+                        
+                        <!-- Window Category Button -->
+                        <Button
+                            Grid.Row="0"
+                            Height="38"
+                            Classes="CategoryButton"
+                            Command="{Binding HandleSettingsCategoryCommand}"
+                            CommandParameter="{x:Static models:ESettingsCategory.Window}">
+                            <Grid>
+                                <Image Stretch="Fill" />
+                                <TextBlock Classes="CategoryButton" Text="ABLAK" />
+                            </Grid>
+                        </Button>
+                        
+                        <!-- Java Category Button -->
+                        <Button
+                            Grid.Row="1"
+                            Height="38"
+                            Classes="CategoryButton"
+                            Command="{Binding HandleSettingsCategoryCommand}"
+                            CommandParameter="{x:Static models:ESettingsCategory.Java}">
+                            <Grid>
+                                <Image Stretch="Fill" />
+                                <TextBlock Classes="CategoryButton" Text="JAVA" />
+                            </Grid>
+                        </Button>
+                        
+                        <!-- Performance Category Button -->
+                        <Button
+                            Grid.Row="2"
+                            Height="38"
+                            Classes="CategoryButton"
+                            Command="{Binding HandleSettingsCategoryCommand}"
+                            CommandParameter="{x:Static models:ESettingsCategory.Performance}">
+                            <Grid>
+                                <Image Stretch="Fill" />
+                                <TextBlock Classes="CategoryButton" Text="TELJESÍTMÉNY" />
+                            </Grid>
+                        </Button>
 
                         <!--  Back Button  -->
                         <Button
-                            Grid.Row="4"
-                            Height="72"
-                            Margin="20,0,20,0"
-                            Classes="ErrorBackButton"
+                            Grid.Row="3"
+                            Height="38"
+                            Classes="CategoryButton"
                             Command="{Binding BackCommand}">
-                            <Image />
+                            <Grid>
+                                <Image Stretch="Fill" />
+                                <TextBlock Classes="CategoryButton" Text="VISSZA" />
+                            </Grid>
                         </Button>
                     </Grid>
                     <!--#endregion-->
