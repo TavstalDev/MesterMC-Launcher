@@ -43,4 +43,45 @@
         <Setter Property="Foreground" Value="#999" />
     </Style>
     <!-- End Offline CheckBox Style -->
+    
+    <!-- Settings Checkbox -->
+    <Style Selector="CheckBox.SettingsCheckBox">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="16" />
+    </Style>
+    
+    <Style Selector="CheckBox.SettingsCheckBox:pointerover > TextBlock">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="16" />
+    </Style>
+    
+    <Style Selector="CheckBox.SettingsCheckBox:disabled > TextBlock">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="16" />
+    </Style>
+    
+    <Style Selector="CheckBox.SettingsCheckBox:unchecked /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="#ad8e46"/>
+        <Setter Property="Background" Value="#4d331c" />
+    </Style>
+    
+    <Style Selector="CheckBox.SettingsCheckBox:checked /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="#ffa314"/>
+        <Setter Property="Background" Value="#4d331c" />
+    </Style>
+    
+    <Style Selector="CheckBox.SettingsCheckBox:checked /template/ Path#CheckGlyph">
+        <Setter Property="Fill" Value="#ffa314" />
+    </Style>
+    
+    <Style Selector="CheckBox.SettingsCheckBox:pointerover /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="#ffcf61"/>
+        <Setter Property="Background" Value="#69472c" />
+    </Style>
+    
+    <Style Selector="CheckBox.SettingsCheckBox > Border">
+        <Setter Property="Background" Value="#4e341d" />
+        <Setter Property="CornerRadius" Value="4" />
+
+    </Style>
 </Styles>

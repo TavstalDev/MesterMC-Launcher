@@ -1,66 +1,120 @@
-<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-        <!-- Base Style -->
-        <Style Selector="TextBox.LoginBox">
-                <Setter Property="Background" Value="#f9f9f9"/>
-                <Setter Property="Foreground" Value="#333"/>
-                <Setter Property="CornerRadius" Value="2"/>
-                <Setter Property="BorderBrush" Value="#ccc"/>
-                <Setter Property="BorderThickness" Value="1.5"/>
-                <Setter Property="Padding" Value="10,6"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="FontWeight" Value="600" />
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                <Setter Property="Transitions">
-                        <Transitions>
-                                <BrushTransition Property="Background" Duration="0:0:0.15"/>
-                                <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
-                        </Transitions>
-                </Setter>
-                <Setter Property="Effect">
-                        <DropShadowEffect BlurRadius="4" Opacity="0.05"/>
-                </Setter>
-        </Style>
+    <!--  LoginBox  -->
+    <Style Selector="TextBox.LoginBox">
+        <Setter Property="Background" Value="#f9f9f9" />
+        <Setter Property="Foreground" Value="#333" />
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="BorderBrush" Value="#ccc" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="600" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+        <Setter Property="Effect">
+            <DropShadowEffect BlurRadius="4" Opacity="0.05" />
+        </Setter>
+    </Style>
 
-        <!-- Disabled -->
-        <Style Selector="TextBox.LoginBox:disabled">
-                <Setter Property="Background" Value="#eeeeee"/>
-                <Setter Property="Foreground" Value="#999"/>
-                <Setter Property="BorderBrush" Value="#ddd"/>
-                <Setter Property="Opacity" Value="0.8"/>
-        </Style>
-        
-        <Style Selector="TextBox.LoginBox:disabled /template/ TextBlock#PART_Watermark">
-                <Setter Property="Foreground" Value="#111"/>
-        </Style>
-        
-        <Style Selector="TextBox.LoginBox:disabled /template/ Border#PART_BorderElement">
-                <Setter Property="Background" Value="#eeeeee"/>
-                <Setter Property="BorderBrush" Value="#ddd"/>
-                <Setter Property="Opacity" Value="0.8"/>
-        </Style>
+    <!--  Disabled  -->
+    <Style Selector="TextBox.LoginBox:disabled">
+        <Setter Property="Background" Value="#eeeeee" />
+        <Setter Property="Foreground" Value="#999" />
+        <Setter Property="BorderBrush" Value="#ddd" />
+        <Setter Property="Opacity" Value="0.8" />
+    </Style>
+    <Style Selector="TextBox.LoginBox:disabled /template/ TextBlock#PART_Watermark">
+        <Setter Property="Foreground" Value="#111" />
+    </Style>
+    <Style Selector="TextBox.LoginBox:disabled /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="#eeeeee" />
+        <Setter Property="BorderBrush" Value="#ddd" />
+        <Setter Property="Opacity" Value="0.8" />
+    </Style>
 
-        <!-- Pointer Over -->
-        <Style Selector="TextBox.LoginBox:pointerover /template/ TextBlock#PART_Watermark">
-                <Setter Property="Foreground" Value="#333"/>
-        </Style>
-        <Style Selector="TextBox.LoginBox:pointerover /template/ Border#PART_BorderElement">
-                <Setter Property="BorderBrush" Value="#ffcf61"/>
-                <Setter Property="Background" Value="#f0f0f0"/>
-        </Style>
+    <!--  Pointer Over  -->
+    <Style Selector="TextBox.LoginBox:pointerover /template/ TextBlock#PART_Watermark">
+        <Setter Property="Foreground" Value="#333" />
+    </Style>
+    <Style Selector="TextBox.LoginBox:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="#ffcf61" />
+        <Setter Property="Background" Value="#f0f0f0" />
+    </Style>
 
-        <!-- Focused -->
-        <Style Selector="TextBox.LoginBox:focus /template/ TextBlock#PART_Watermark">
-                <Setter Property="Foreground" Value="#333"/>
-        </Style>
-        <Style Selector="TextBox.LoginBox:focus /template/ Border#PART_BorderElement">
-                <Setter Property="BorderBrush" Value="#ffa314"/>
-                <Setter Property="Background" Value="White"/>
-                <Setter Property="Effect">
-                        <DropShadowEffect Color="#ffa314" BlurRadius="10" Opacity="0.25"/>
-                </Setter>
-        </Style>
-        
+    <!--  Focused  -->
+    <Style Selector="TextBox.LoginBox:focus /template/ TextBlock#PART_Watermark">
+        <Setter Property="Foreground" Value="#333" />
+    </Style>
+    <Style Selector="TextBox.LoginBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="#ffa314" />
+        <Setter Property="Background" Value="White" />
+        <Setter Property="Effect">
+            <DropShadowEffect
+                BlurRadius="10"
+                Opacity="0.25"
+                Color="#ffa314" />
+        </Setter>
+    </Style>
+    <!--  LoginBox  -->
+
+    <!--  Muted Text  -->
+    <Style Selector="TextBlock.Muted">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontWeight" Value="300" />
+        <Setter Property="Opacity" Value="0.8" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <!--  Text Input  -->
+    <Style Selector="TextBlock.TextInput">
+        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="16" />
+    </Style>
+
+    <Style Selector="TextBox.TextInput">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="IsReadOnly" Value="False" />
+        <Setter Property="Background" Value="#4d331c" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="BorderBrush" Value="#ad8e46" />
+        <Setter Property="FontSize" Value="16" />
+    </Style>
+    
+    <Style Selector="TextBox.TextInput:pointerover">
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    
+    <Style Selector="TextBox.TextInput:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="#ffcf61" />
+        <Setter Property="Background" Value="#69472c" />
+    </Style>
+    
+    <Style Selector="TextBox.TextInput:focus">
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    
+    <Style Selector="TextBox.TextInput:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="#ffa314" />
+        <Setter Property="Background" Value="#4d331c" />
+    </Style>
+    
+    <Style Selector="TextBox.TextInput:disabled">
+        <Setter Property="Foreground" Value="#999999" />
+    </Style>
+    
+    <Style Selector="TextBox.TextInput:disabled /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="#3d2d1e" />
+        <Setter Property="BorderBrush" Value="#6b5d3a" />
+    </Style>
 </Styles>

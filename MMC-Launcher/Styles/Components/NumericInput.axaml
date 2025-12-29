@@ -1,0 +1,65 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!--  Numeric Input  -->
+    <Style Selector="TextBlock.NumericInput"> 
+        <Setter Property="Margin" Value="0,0,10,0" /> 
+        <Setter Property="VerticalAlignment" Value="Center" /> 
+        <Setter Property="Foreground" Value="White" /> 
+        <Setter Property="FontSize" Value="16" /> 
+    </Style> 
+    
+    <Style Selector="NumericUpDown.NumericInput"> 
+        <Setter Property="ParsingNumberStyle" Value="Integer" /> 
+        <Setter Property="ShowButtonSpinner" Value="True" /> 
+        <Setter Property="Foreground" Value="White" /> 
+        <Setter Property="BorderBrush" Value="#ad8e46" /> 
+        <Setter Property="Background" Value="#4d331c" /> 
+        <Setter Property="FontSize" Value="16" /> 
+    </Style>
+
+    <!--  Inner TextBox  -->
+    <Style Selector="NumericUpDown.NumericInput /template/ TextBox#PART_TextBox">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="#4d331c" />
+        <Setter Property="BorderBrush" Value="#ad8e46" />
+    </Style>
+    <Style Selector="NumericUpDown.NumericInput /template/ ButtonSpinner#PART_Spinner /template/ RepeatButton#PART_IncreaseButton PathIcon">
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="NumericUpDown.NumericInput /template/ ButtonSpinner#PART_Spinner /template/ RepeatButton#PART_DecreaseButton PathIcon">
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!--  Hover  -->
+    <Style Selector="NumericUpDown.NumericInput:pointerover">
+        <Setter Property="BorderBrush" Value="#ffcf61" />
+        <Setter Property="Background" Value="#69472c" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="NumericUpDown.NumericInput:pointerover /template/ TextBox#PART_TextBox /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="#ffcf61" />
+        <Setter Property="Background" Value="#69472c" />
+    </Style>
+
+    <!--  Focused  -->
+    <Style Selector="NumericUpDown.NumericInput:focus">
+        <Setter Property="BorderBrush" Value="#ffa314" />
+        <Setter Property="Background" Value="#4d331c" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="NumericUpDown.NumericInput /template/ TextBox#PART_TextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="#ffa314" />
+        <Setter Property="Background" Value="#4d331c" />
+    </Style>
+
+    <!--  Disabled  -->
+    <Style Selector="NumericUpDown.NumericInput:disabled">
+        <Setter Property="Background" Value="#4e341d" />
+        <Setter Property="Foreground" Value="#bbbbbb" />
+    </Style>
+    <Style Selector="NumericUpDown.NumericInput:disabled /template/ TextBox#PART_TextBox">
+        <Setter Property="Background" Value="#4e341d" />
+        <Setter Property="Foreground" Value="#bbbbbb" />
+    </Style>
+</Styles>

@@ -11,7 +11,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="Button.CloseButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -40,7 +40,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="Button.UpdatePlayButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -75,7 +75,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="Button.ExitButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -106,7 +106,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="HyperlinkButton.FacebookButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -136,7 +136,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="HyperlinkButton.BanyakozpontButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -166,7 +166,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="HyperlinkButton.BanyaszermeButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -196,7 +196,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="HyperlinkButton.ServerListButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -227,7 +227,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="HyperlinkButton.HelpButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -260,7 +260,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="Button.LoginButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -292,7 +292,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="Button.SettingsButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -324,7 +324,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="Button.PrevPageButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -356,7 +356,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="Button.NextPageButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -388,7 +388,7 @@
     
     <!-- Remove default button hover background -->
     <Style Selector="Button.ErrorBackButton:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"></Setter>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
     
     <!-- Apply normal image -->
@@ -407,4 +407,48 @@
         <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/back-btn-active.png" />
     </Style>
     <!-- #endregion ErrorBack Button Style -->
+    
+    <!-- #region Category Button Style -->
+    <Style Selector="Button.CategoryButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="20, 0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    
+    <Style Selector="Button.CategoryButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    
+    <!-- Apply normal image -->
+    <Style Selector="Button.CategoryButton > Grid > Image">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Stretch" Value="Fill" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/blank-btn-normal.png" />
+    </Style>
+
+    <!-- Apply hover image -->
+    <Style Selector="Button.CategoryButton:pointerover > Grid > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/blank-btn-hover.png" />
+    </Style>
+
+    <!-- Apply pressed image -->
+    <Style Selector="Button.CategoryButton:pressed > Grid > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/blank-btn-active.png" />
+    </Style>
+    
+    <Style Selector="TextBlock.CategoryButton">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="600" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Effect">
+            <DropShadowEffect Color="Black" OffsetX="1" OffsetY="1" BlurRadius="6" Opacity="0.85"/>
+        </Setter>
+    </Style>
+    <!-- #endregion Category Button Style -->
 </Styles>
