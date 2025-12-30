@@ -451,4 +451,35 @@
         </Setter>
     </Style>
     <!-- #endregion Category Button Style -->
+    
+    <!--  Icon Button  -->
+    <Style Selector="Button.IconBtn">
+        <Setter Property="Opacity" Value="0.8" />
+        <Setter Property="Padding" Value="5" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="#4d331c" />
+        <Setter Property="BorderBrush" Value="#ad8e46" />
+    </Style>
+    <!--  Icon Button Hover  -->
+    <Style Selector="Button.IconBtn:pointerover /template/ ContentPresenter">
+        <Setter Property="Opacity" Value="0.9" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="BorderBrush" Value="#ffcf61" />
+        <Setter Property="Background" Value="#69472c" />
+        <Setter Property="Foreground" Value="#ffcf61" />
+    </Style>
+    <!--  Icon Button Active  -->
+    <Style Selector="Button.IconBtn:pressed /template/ ContentPresenter">
+        <Setter Property="Opacity" Value="1.0" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="BorderBrush" Value="#ffa314" />
+        <Setter Property="Background" Value="#4d331c" />
+        <Setter Property="Foreground" Value="#ffa314" />
+    </Style>
 </Styles>

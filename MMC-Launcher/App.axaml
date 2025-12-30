@@ -4,6 +4,11 @@
              RequestedThemeVariant="Light">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
+             <Application.Resources>
+                 <ResourceDictionary>
+                     <FontFamily x:Key="FontAwesome">Assets/fonts/fa-solid-900.ttf#Font Awesome 6 Free</FontFamily>
+                 </ResourceDictionary>
+             </Application.Resources>
     <Application.Styles>
         <FluentTheme />
         
