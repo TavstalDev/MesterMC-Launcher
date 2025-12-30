@@ -15,6 +15,7 @@ using Tavstal.KonkordLauncher.Common.Models.Config;
 using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
+using Tavstal.KonkordLauncher.Core.Instances;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
 using Tavstal.MesterMC.Launcher.Models;
 using Tavstal.MesterMC.Launcher.Models.Config;
@@ -28,7 +29,7 @@ public partial class LauncherViewModel : ObservableObject
     public bool IsLinux => OSHelper.GetOperatingSystem() == EOperatingSystem.Linux;
     
     #region Observable Properties
-    [ObservableProperty] private ESettingsCategory _currentSettingsCategory = ESettingsCategory.Performance;
+    [ObservableProperty] private ESettingsCategory _currentSettingsCategory = ESettingsCategory.Window;
     [ObservableProperty] private CoreConfigModel _coreConfig;
     public ObservableCollection<NewsModel> NewsItems = [];
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(NewsPageDisplay))] private int selectedNewsIndex;
@@ -39,7 +40,7 @@ public partial class LauncherViewModel : ObservableObject
     [ObservableProperty] private string? tfaCode;
     [ObservableProperty] private string? tfaToken;
     [ObservableProperty] private bool offlineMode = true;
-    [ObservableProperty] private bool settingsOpened = true;
+    [ObservableProperty] private bool settingsOpened;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] [NotifyPropertyChangedFor(nameof(isError))] [NotifyPropertyChangedFor(nameof(isTFA))] [NotifyPropertyChangedFor(nameof(shouldShowFeedback))] private ELoginStatus loginStatus;
     public ObservableCollection<string> SavedUsernames { get; set; } = new();
     #endregion
@@ -251,8 +252,8 @@ public partial class LauncherViewModel : ObservableObject
     
     private async Task PlayAsync(string accessToken, string playerName)
     {
-        var instance = App.getInstance();
-        if (instance == null)
+        MinecraftInstance? instance = App.createMinecraftInstance(null);
+        if (instance == null) 
             return;
         
         LoginStatus = ELoginStatus.SUCCESS;

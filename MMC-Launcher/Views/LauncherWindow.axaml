@@ -114,7 +114,7 @@
             <!--#endregion-->
             
             <!-- Content -->
-            <Grid Margin="405, 45, 30, 50">
+            <Grid Margin="405, 45, 20, 50">
                 <!-- Main Content  -->
                 <Grid IsVisible="{Binding !SettingsOpened}">
                      <!--#region News Panel-->
@@ -217,7 +217,8 @@
                         Background="Transparent"
                         IsVisible="{Binding !isLoggingIn}"
                         RowDefinitions="Auto, Auto, Auto, Auto, Auto"
-                        RowSpacing="8">
+                        RowSpacing="8"
+                        Margin="0, 0, 10, 0">
 
                         <!--  Username TextBox  -->
                         <ComboBox
@@ -319,7 +320,7 @@
                     <Grid
                         Width="285"
                         Height="350"
-                        Margin="0,0,0,0"
+                        Margin="0,0,10,0"
                         HorizontalAlignment="Right"
                         Background="Transparent"
                         IsVisible="{Binding isTFA}"
@@ -361,7 +362,7 @@
                     <Grid
                         Width="285"
                         Height="350"
-                        Margin="0,0,0,0"
+                        Margin="0,0,10,0"
                         HorizontalAlignment="Right"
                         Background="Transparent"
                         IsVisible="{Binding shouldShowFeedback}"
@@ -423,7 +424,7 @@
                         <!--  Content  -->
                         <Grid
                             Height="435"
-                            Margin="25,115,25,25"
+                            Margin="25,115,15,25"
                             VerticalAlignment="Top"
                             RowDefinitions="Auto, Auto, *"
                             RowSpacing="8"
@@ -439,6 +440,8 @@
                                     <Grid MaxHeight="425">
                                     <ScrollViewer Margin="0">
                                         <WrapPanel Classes="SettingsWrapper">
+                                            <!--  Subtitle  -->
+                                            <TextBlock Classes="SettingsCategory" Text="Java beállítások" />
                                             <!--  Minimum Memory  -->
                                             <Grid ColumnDefinitions="Auto, *">
                                                 <!--  Text  -->
@@ -491,14 +494,13 @@
                                                     Classes="TextInput"
                                                     Text="{Binding CoreConfig.Java.DefaultJavaPath, Mode=TwoWay}"
                                                     Watermark="Könyvtár kiválasztása" />
-                                                <StackPanel  Grid.Column="2" Orientation="Horizontal" Spacing="5">
-                                                    <Button
-                                                        Classes="IconBtn"
-                                                        Command="{Binding ConfigDirSelectCommand}"
-                                                        CommandParameter="9">
-                                                        <TextBlock Classes="FontAwesome" Text="&#xf07c;" />
-                                                    </Button>
-                                                </StackPanel>
+                                                <Button
+                                                    Grid.Column="2"
+                                                    Classes="IconBtn"
+                                                    Command="{Binding ConfigDirSelectCommand}"
+                                                    CommandParameter="9">
+                                                    <TextBlock Classes="FontAwesome" Text="&#xf07c;" />
+                                                </Button>
                                             </Grid>
                                             <!--  JVM Arguments  -->
                                             <TextBlock Classes="SettingsCategory" Text="JVM Argumentumok" />
@@ -605,6 +607,8 @@
                                     <Grid MaxHeight="425">
                                     <ScrollViewer Margin="0">
                                         <WrapPanel Classes="SettingsWrapper">
+                                            <!--  Subtitle  -->
+                                            <TextBlock Classes="SettingsCategory" Text="Ablak beállítások" />
                                             <!--  Minecraft Maximized  -->
                                             <CheckBox Classes="SettingsCheckBox" IsChecked="{Binding CoreConfig.Window.StartMaximized, Mode=TwoWay}">
                                                 <TextBlock Text="Teljesképernyős indítás" />
@@ -657,7 +661,8 @@
                         Background="Transparent"
                         IsVisible="{Binding !isLoggingIn}"
                         RowDefinitions="Auto, Auto, Auto, Auto"
-                        RowSpacing="4">
+                        RowSpacing="4"
+                        Margin="0, 0, 10, 0">
                         
                         <!-- Window Category Button -->
                         <Button

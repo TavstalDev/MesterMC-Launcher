@@ -10,6 +10,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using DiscordRPC;
 using Tavstal.KonkordLauncher.Common.Helpers;
+using Tavstal.KonkordLauncher.Common.Models.Config;
 using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
@@ -135,13 +136,9 @@ public partial class App : Application
     }
     
     //#region Game Instance
-    public static MinecraftInstance createMinecraftInstance(IProgressReporter progressReporter)
+    public static MinecraftInstance createMinecraftInstance(IProgressReporter? progressReporter)
     {
-        if (_instance != null)
-            return _instance;
-
-        var launcherSettings = LauncherHelper.GetLauncherSettings();
-        
+        CoreConfig launcherSettings = LauncherHelper.GetLauncherSettings();
         string wrapperCommand = launcherSettings.Misc.WrapperCommand;
         // Add gamemoderun if enabled
         if (launcherSettings.Misc.EnableFeralGameMode && !wrapperCommand.Contains("gamemoderun"))
@@ -247,8 +244,6 @@ public partial class App : Application
         _instance.OnSetupDefaultJava += SetupDefaultJavaPath;
         return _instance;
     }
-    
-    public static MinecraftInstance? getInstance() => _instance;
     
     private static void SetupDefaultJavaPath(VersionMeta? meta)
     {
