@@ -117,4 +117,13 @@
         <Setter Property="Background" Value="#3d2d1e" />
         <Setter Property="BorderBrush" Value="#6b5d3a" />
     </Style>
+    
+    <!--  FontAwesome Icon Style  -->
+    <Style Selector="TextBlock.FontAwesome">
+        <Setter Property="FontFamily" Value="{DynamicResource FontAwesome}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="Padding" Value="2" />
+    </Style>
 </Styles>
