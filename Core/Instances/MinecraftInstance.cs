@@ -114,10 +114,16 @@ public class MinecraftInstance
         try
         {
             _logger.Debug("Downloading core files...");
+            DateTime startTime = DateTime.Now;
             await DownloadCoreFilesAsync();
+            DateTime endTime = DateTime.Now;
+            _logger.Info($"Core files downloaded in {(endTime - startTime).TotalMilliseconds}ms.");
 
             _logger.Debug("Installing modded data if applicable...");
+            startTime = DateTime.Now;
             var moddedData = await InstallModdedAsync(tempDir);
+            endTime = DateTime.Now;
+            _logger.Info($"Modded data installation completed in {(endTime - startTime).TotalMilliseconds}ms.");
             _logger.Debug("Getting launch parameters...");
             var (versionDetails, mainClass, customVersion) = GetLaunchParameters(moddedData);
 
@@ -128,7 +134,10 @@ public class MinecraftInstance
             _logger.Debug("Getting combined libraries...");
             var libraries = GetCombinedLibraries(moddedData);
             _logger.Debug("Downloading dependencies...");
+            startTime = DateTime.Now;
             await DownloadDependenciesAsync(versionDetails, libraries);
+            endTime = DateTime.Now;
+            _logger.Info($"Dependencies downloaded in {(endTime - startTime).TotalMilliseconds}ms.");
             
             _classPath.Add(moddedData != null ? moddedData.VersionData.VersionJarPath : VersionData.VersionJarPath);
 
@@ -138,6 +147,7 @@ public class MinecraftInstance
             
             // Copy custom natives if specified
             _logger.Debug("Copying custom native files if specified...");
+            startTime = DateTime.Now;
             foreach (string nativePath in PathDetails.CustomNativeFiles)
             {
                 if (!File.Exists(nativePath))
@@ -145,6 +155,8 @@ public class MinecraftInstance
                 string destPath = Path.Combine(versionDetails.NativesDir, Path.GetFileName(nativePath));
                 File.Copy(nativePath, destPath, true);
             }
+            endTime = DateTime.Now;
+            _logger.Info($"Custom native files copied in {(endTime - startTime).TotalMilliseconds}ms.");
             
             _logger.Debug("The process is ready to launch.");
             if (downloadOnly)
@@ -159,7 +171,12 @@ public class MinecraftInstance
             {
                var preLaunchProc = JavaProcessLauncher.StartCommand(GameDetails.PreLaunchCommand);
                if (preLaunchProc != null)
+               {
+                   startTime = DateTime.Now;
                    await preLaunchProc.WaitForExitAsync();
+                   endTime = DateTime.Now;
+                   _logger.Info($"Pre-launch command executed in {(endTime - startTime).TotalMilliseconds}ms.");
+               }
             }
             
             // Below 1.7 there is no dedicated logs directory
@@ -192,7 +209,10 @@ public class MinecraftInstance
             
             // Check mods
             _logger.Debug("Verifying mods...");
+            startTime = DateTime.Now;
             ModService.VerifyMods(Path.Combine(versionDetails.GameDir, "mods"));
+            endTime = DateTime.Now;
+            _logger.Info($"Mods verified in {(endTime - startTime).TotalMilliseconds}ms.");
             
             // Make commands_history readonly
             _logger.Debug("Attempting to fix command history file leak...");

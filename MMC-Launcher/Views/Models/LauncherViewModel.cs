@@ -1,5 +1,7 @@
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reactive;
@@ -16,6 +18,7 @@ using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Instances;
+using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
 using Tavstal.MesterMC.Launcher.Models;
 using Tavstal.MesterMC.Launcher.Models.Config;
@@ -25,7 +28,10 @@ namespace Tavstal.MesterMC.Launcher.Views.Models;
 [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class LauncherViewModel : ObservableObject
 {
+    private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(LauncherViewModel));
     private readonly bool _isInitialized;
+    private Process? gameProcess;
+    private DateTime startTime = DateTime.Now;
     public bool IsLinux => OSHelper.GetOperatingSystem() == EOperatingSystem.Linux;
     
     #region Observable Properties
@@ -266,32 +272,38 @@ public partial class LauncherViewModel : ObservableObject
         await Task.Delay(250); // Small delay to ensure status update is visible
         LoginStatus = ELoginStatus.LAUNCHING;
         //await Task.Run(async () => await MetricsHelper.SendMetricAsync()); // Send metrics in the background, tracks basic hardware info (cpu, ram, gpu, sum of disk space), so we can track what to optimize for and how our userbase looks like
-        var process = await instance.Start();
-        if (process != null)
+        startTime = DateTime.Now;
+        gameProcess = await instance.Start();
+        if (gameProcess != null)
         {
             App.ClearRPC();
-            process.OutputDataReceived += (_, e) =>
-            {
-                if (e.Data == null)
-                    return;
-
-                if (e.Data.Contains("Render thread") ||
-                    e.Data.Contains("LWJGL Version") ||
-                    e.Data.Contains("Backend library") ||
-                    e.Data.Contains("Starting Minecraft"))
-                {
-                    Dispatcher.UIThread.InvokeAsync(async () =>
-                    {
-                        await HideWindowInteraction.Handle(Unit.Default);
-                    });
-                }
-            };
-            process.Exited += async (_, _) => await Dispatcher.UIThread.InvokeAsync(async () =>  await CloseWindowInteraction.Handle(Unit.Default));
+            gameProcess.OutputDataReceived += HandleGameOutput;
+            gameProcess.Exited += async (_, _) => await Dispatcher.UIThread.InvokeAsync(async () =>  await CloseWindowInteraction.Handle(Unit.Default));
         }
         else
         {
             ErrorMessage = "Váratlan hiba történt a játék elindítása során.";
             LoginStatus = ELoginStatus.ERROR;
+        }
+    }
+    
+    private void HandleGameOutput(object? sender, DataReceivedEventArgs e)
+    {
+        if (gameProcess == null || e.Data == null)
+            return;
+
+        if (e.Data.Contains("Render thread") ||
+            e.Data.Contains("LWJGL Version") ||
+            e.Data.Contains("Backend library") ||
+            e.Data.Contains("Starting Minecraft"))
+        {
+            Dispatcher.UIThread.Invoke(async () =>
+            {
+                DateTime endTime = DateTime.Now;
+                _logger.Info("Minecraft launched in " + (endTime - startTime).TotalMilliseconds + "ms.");
+                await HideWindowInteraction.Handle(Unit.Default);
+                gameProcess.OutputDataReceived -= HandleGameOutput;
+            });
         }
     }
     
