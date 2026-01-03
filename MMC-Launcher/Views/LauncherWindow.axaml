@@ -198,12 +198,13 @@
                             <Image Grid.Row="1" Source="{Binding SelectedNewsItem.Banner}" />
 
                             <!--  Content Text  -->
-                            <TextBlock
-                                Grid.Row="2"
-                                FontWeight="300"
-                                Foreground="White"
-                                Text="{Binding SelectedNewsItem.Content}"
-                                TextWrapping="Wrap" />
+                            <ScrollViewer Grid.Row="2" Margin="0">
+                                <TextBlock
+                                    FontWeight="300"
+                                    Foreground="White"
+                                    Text="{Binding SelectedNewsItem.Content}"
+                                    TextWrapping="Wrap" />
+                            </ScrollViewer>
                         </Grid>
 
                     </Grid>
