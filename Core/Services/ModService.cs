@@ -26,7 +26,7 @@ public static class ModService
         new("continuity-3.0.1-beta.1+1.21.6.jar", "80b03195bbfdc805a3280d6b6354e3ecdeb6a3c936fd2928a71fac8bee619708", "https://cdn.modrinth.com/data/1IjD5062/versions/m0cvWhzT/continuity-3.0.1-beta.1%2B1.21.6.jar"),
         new("CraftPresence-2.7.0+1.21.8-fabric.jar", "a08c55ac8cec21cee3bbfc1f939b374b31eaa084aa3ff2308be8f8fdc43a1738", "https://cdn.modrinth.com/data/DFqQfIBR/versions/4vj0xtr0/CraftPresence-2.7.0%2B1.21.8-fabric.jar"),
         new("cwb-fabric-3.0.0+mc1.21.5.jar", "0ffe5494c49758a5c3ba407aa25cb33962f7d1b00d1068cfbadf5104a219766a", "https://cdn.modrinth.com/data/ETlrkaYF/versions/wXhtL4fb/cwb-fabric-3.0.0%2Bmc1.21.5.jar"),
-        new("CustomSkinLoader_Fabric-14.26.1.jar", "733af00a53a9d66719f09f5cb3d630c4bb22ce043b2c66700a234c578f65c621", "https://cdn.modrinth.com/data/idMHQ4n2/versions/bLZg6wUJ/CustomSkinLoader_Fabric-14.26.1.jar"),
+        new("hdskins-6.14.6+1.21.7.jar", "897a31de63dfca41381112ce1834ada513b612fd659e5939dba12ade0ff5487a", "https://cdn.modrinth.com/data/FzE9gshV/versions/43qGf0x0/hdskins-6.14.6%2B1.21.7.jar"),
         new("debugify-1.21.8+1.0.jar", "5277a32bb4c21fbe0752bea28e90e6c365da82c6d6a0a7b26732f2a0ebd3a775", "https://cdn.modrinth.com/data/QwxR6Gcd/versions/WLSwJeXa/debugify-1.21.8%2B1.0.jar"),
         new("dynamic-fps-3.9.6+minecraft-1.21.6-fabric.jar", "bc1173b967b23368138ee8539ab12c7865339a7696486bfad61dd7062d33c4a2", "https://cdn.modrinth.com/data/LQ3K71Q1/versions/PqIDU2GY/dynamic-fps-3.9.6%2Bminecraft-1.21.6-fabric.jar"),
         new("e4mc_minecraft-fabric-5.4.1.jar", "42d722bceb020190509d1c228d3bd9714cf9090903ba80ad2fd525fe830e70bf", "https://cdn.modrinth.com/data/qANg5Jrr/versions/baNcxaPZ/e4mc_minecraft-fabric-5.4.1.jar"),
