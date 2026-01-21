@@ -425,7 +425,7 @@
                         <!--  Content  -->
                         <Grid
                             Height="435"
-                            Margin="25,115,15,25"
+                            Margin="25,85,15,25"
                             VerticalAlignment="Top"
                             RowDefinitions="Auto, Auto, *"
                             RowSpacing="8"
