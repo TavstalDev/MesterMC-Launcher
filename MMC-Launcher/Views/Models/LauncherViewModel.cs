@@ -45,7 +45,7 @@ public partial class LauncherViewModel : ObservableObject
     [ObservableProperty] private string? password;
     [ObservableProperty] private string? tfaCode;
     [ObservableProperty] private string? tfaToken;
-    [ObservableProperty] private bool offlineMode = true;
+    [ObservableProperty] private bool offlineMode;
     [ObservableProperty] private bool settingsOpened;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] [NotifyPropertyChangedFor(nameof(isError))] [NotifyPropertyChangedFor(nameof(isTFA))] [NotifyPropertyChangedFor(nameof(shouldShowFeedback))] private ELoginStatus loginStatus;
     public ObservableCollection<string> SavedUsernames { get; set; } = new();

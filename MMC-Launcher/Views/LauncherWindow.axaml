@@ -48,11 +48,11 @@
             <!--  Character Image  -->
             <Image
                 Height="250"
-                Margin="0,0,105,20"
+                Margin="0,0,30,0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 Opacity="1"
-                Source="avares://MMC-Launcher/Assets/characters/aron.png" 
+                Source="avares://MMC-Launcher/Assets/characters/pankix.png" 
                 PointerPressed="DragStart_PointerPressed"/>
 
             <!--#region Left Buttons -->
@@ -274,11 +274,6 @@
                             VerticalAlignment="Center"
                             HorizontalAlignment="Left"
                             ToolTip.Placement="Left">
-                             <ToolTip.Tip>
-                                <StackPanel>
-                                    <TextBlock>Jelenleg csak az offline mód elérhető.</TextBlock>
-                                </StackPanel>
-                            </ToolTip.Tip>
 
                             <CheckBox
                                 Padding="0"
@@ -286,8 +281,7 @@
                                 FontSize="18"
                                 FontWeight="500"
                                 Foreground="White"
-                                IsChecked="{Binding OfflineMode, Mode=TwoWay}"
-                                IsEnabled="False">
+                                IsChecked="{Binding OfflineMode, Mode=TwoWay}">
                                   <Border Width="205" CornerRadius="4">
                                     <TextBlock Text="Offline mód" />
                                 </Border>
