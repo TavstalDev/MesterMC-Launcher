@@ -16,7 +16,7 @@ public static class ControllerExtensions
             return authHeader.ToString();
         }
 
-        if (controller.Request.Cookies.TryGetValue("kmc-token", out var authCookie))
+        if (controller.Request.Cookies.TryGetValue("mmc-token", out var authCookie))
         {
             // If the Authorization header is not present, check for an Authorization cookie
             return authCookie;
