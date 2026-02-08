@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Models.Swagger;
 using Tavstal.MesterMC.Api.Services;
@@ -240,6 +241,10 @@ public class Startup
             });
         });
         #endregion
+        // JwtSettings
+        services.AddSingleton<JwtSettings>();
+        // Email Service
+        services.AddSingleton<EmailService>();
         #endregion
     }
     
