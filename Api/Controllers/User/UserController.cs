@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
-public class UserController
+[Route("/user")]
+public class UserController : Controller
 {
     
 }

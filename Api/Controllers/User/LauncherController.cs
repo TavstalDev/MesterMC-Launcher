@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
-public class LauncherController
+[Route("/launcher")]
+public class LauncherController : Controller
 {
     
 }
