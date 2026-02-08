@@ -6,12 +6,12 @@ namespace Tavstal.KonkordLauncher.Core.Models.Endpoints;
 public static class MesterMcEndpoints
 {
     /// <summary>
-    /// The URL for retrieving the latest release of Konkord.
+    /// The URL for retrieving the latest release
     /// </summary>
     public const string LatestRelease = "https://api.github.com/repos/TavstalDev/MMC-Launcher/releases/latest";
 
     /// <summary>
-    /// The URL for retrieving all releases of Konkord.
+    /// The URL for retrieving all releases
     /// </summary>
     public const string AllReleases = "https://api.github.com/repos/TavstalDev/MMC-Launcher/releases";
 
