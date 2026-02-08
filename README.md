@@ -7,7 +7,7 @@
 ![Issues](https://img.shields.io/github/issues/TavstalDev/MesterMC-Launcher?style=plastic-square)
 
 ## Description
-MesterMC Launcher is a custom Minecraft launcher was the offical launcher for MesterMC network. 
+MesterMC Launcher is a custom Minecraft launcher and it was the offical launcher for the MesterMC network. 
 The launcher is discontinued and is no longer maintained, but the source code is available for reference and educational purposes.
 The launcher uses the backend of my other launcher, [Konkord Launcher](https://github.com/TavstalDev/KonkordLauncher)
 It supports Windows 10/11 and Linux, MacOS was planned but was never tested and is not guaranteed to work.
@@ -20,7 +20,13 @@ My personal opinion is the best way to prevent cheating and unauthorized access 
 
 ## Screenshots
 
-TODO
+![Update Winodw](docs/images/launcher0.png)
+![Launcher Home](docs/images/launcher1.png)
+![Settings](docs/images/launcher2.png)
+![Starting](docs/images/launcher3.png)
+![Failed login example](docs/images/launcher4.png)
+![img5](docs/images/launcher5.png)
+![img6](docs/images/launcher6.png)
 
 ## Installation
 
