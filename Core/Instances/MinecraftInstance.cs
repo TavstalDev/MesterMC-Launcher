@@ -84,7 +84,7 @@ public class MinecraftInstance
         VersionData = GameHelper.GetVersionDetails(PathDetails.VersionsDir, GameDetails.MinecraftVersion,
             EMinecraftKind.VANILLA, null, GameDetails.CustomGameDirectory);
     }
-    
+
     public void UpdateUserDetails(ClientDetails clientDetails)
     {
         _client.DisplayName = clientDetails.DisplayName;
@@ -142,7 +142,7 @@ public class MinecraftInstance
             _classPath.Add(moddedData != null ? moddedData.VersionData.VersionJarPath : VersionData.VersionJarPath);
 
             _logger.Debug("Building arguments...");
-            string arguments = BuildArguments(versionDetails.GameDir, mainClass, versionDetails.NativesDir, customVersion);
+            var args = BuildArguments(versionDetails.GameDir, mainClass, versionDetails.NativesDir, customVersion);
             _progressReporter?.Hide();
             
             // Copy custom natives if specified
@@ -163,20 +163,6 @@ public class MinecraftInstance
             {
                 _logger.Debug("Download only flag is set. Exiting before launch.");
                 return null;    
-            }
-
-            // Execute pre-launch command if specified
-            _logger.Debug("Executing pre-launch command if specified...");
-            if (!string.IsNullOrEmpty(GameDetails.PreLaunchCommand))
-            {
-               var preLaunchProc = JavaProcessLauncher.StartCommand(GameDetails.PreLaunchCommand);
-               if (preLaunchProc != null)
-               {
-                   startTime = DateTime.Now;
-                   await preLaunchProc.WaitForExitAsync();
-                   endTime = DateTime.Now;
-                   _logger.Info($"Pre-launch command executed in {(endTime - startTime).TotalMilliseconds}ms.");
-               }
             }
             
             // Below 1.7 there is no dedicated logs directory
@@ -220,17 +206,12 @@ public class MinecraftInstance
             
             // Launch the Minecraft game process with the constructed arguments
             _logger.Debug("Starting java virtual machine...");
-            var process = JavaProcessLauncher.StartJava(GameDetails.JavaPath, arguments, logsFilePath, GameDetails.WrapperCommand,
-                GameDetails.EnvironmentVariables);
+            var process = JavaProcessLauncher.StartJava(GameDetails.JavaPath, args.Item1, args.Item2, logsFilePath, GameDetails.EnableGamemode, GameDetails.EnableMangoHud, GameDetails.EnvironmentVariables);
             
-            // Execute post-exit command if specified
             // Make sure to dispose the file watcher when the game process exits
             if (process != null)
                 process.Exited += (_, _) =>
                 {
-                    if (!string.IsNullOrEmpty(GameDetails.PostExitCommand))
-                        JavaProcessLauncher.StartCommand(GameDetails.PostExitCommand);
-
                     if (_watcher == null)
                         return;
 
@@ -342,6 +323,11 @@ public class MinecraftInstance
                 continue;
             _classPath.Add(cp);
         }
+        
+        _logger.Debug("Downloading launch wrapper...");
+        string? result = await MinecraftFileService.DownloadLaunchWrapperAsync(PathDetails.LibrariesDir, _progressReporter);
+        if (!string.IsNullOrEmpty(result))
+            _classPath.Add(result);
     }
 
     /// <summary>
@@ -355,22 +341,9 @@ public class MinecraftInstance
         return Task.FromResult<ModdedData?>(null);
     }
 
-    /// <summary>
-    /// Builds the arguments for launching the Minecraft process.
-    /// </summary>
-    /// <param name="gameDir">The game directory.</param>
-    /// <param name="mainClass">The main class to launch.</param>
-    /// <param name="nativesDir">The directory containing native libraries.</param>
-    /// <param name="modVersion">Optional mod version string.</param>
-    /// <returns>A string containing the launch arguments.</returns>
-    private string? BuildArguments(string gameDir, string mainClass, string nativesDir, string? modVersion = null)
+
+    private (string?, string?) BuildArguments(string gameDir, string mainClass, string nativesDir, string? modVersion = null)
     {
-        var arguments = new List<string>();
-
-        arguments.AddRange(BuildJvmArguments(gameDir));
-        arguments.AddRange(BuildGameArguments(mainClass));
-
-        string argumentString = string.Join(' ', arguments);
         string classpath;
         // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
         // It is more readable this way
@@ -381,8 +354,13 @@ public class MinecraftInstance
 
         _classPathFilePath = Path.Combine(gameDir, "classpath.txt");
         File.WriteAllText(_classPathFilePath, classpath);
+
+        string? jvmArgumentString = ReplacePlaceholders(string.Join(' ',BuildJvmArguments(gameDir)), gameDir, nativesDir, modVersion);
+        // TODO: Better way to add launchWrapper
+        jvmArgumentString += " net.minecraft.client.main.Launch";
         
-        return ReplacePlaceholders(argumentString, gameDir, nativesDir, modVersion);
+        string? gameArgumentString = ReplacePlaceholders(string.Join(' ', BuildGameArguments(mainClass)), gameDir, nativesDir, modVersion);
+        return (jvmArgumentString, gameArgumentString);
     }
 
     /// <summary>
@@ -411,15 +389,11 @@ public class MinecraftInstance
             jvmArgs.Add(GameDetails.JvmArgs);
 
         jvmArgs.Add("-DmmcToken=\"${auth_access_token}\"");
-        
-        // 1.16 offline mode fix
-        if (VersionData != null && VersionData.MinecraftVersion.StartsWith("1.16") && _client.IsOffline)
-        {
-            jvmArgs.Add("-Dminecraft.api.auth.host=https://nope.invalid ");
-            jvmArgs.Add("-Dminecraft.api.account.host=https://nope.invalid");
-            jvmArgs.Add("-Dminecraft.api.session.host=https://nope.invalid");
-            jvmArgs.Add("-Dminecraft.api.services.host=https://nope.invalid");
-        }
+        // TODO: Change this to an actual domain
+        //jvmArgs.Add("-Dminecraft.api.auth.host=https://nope.invalid");
+        jvmArgs.Add("-Dminecraft.api.account.host=https://localhost:36767");
+        jvmArgs.Add("-Dminecraft.api.session.host=https://localhost:36767");
+        //jvmArgs.Add("-Dminecraft.api.services.host=https://localhost:36767");
         
         var argsToAdd = _jvmArgumentsBeforeClassPath.OrderByDescending(x => x.Priority).Select(a => a.Arg);
         foreach (var arg in argsToAdd)
