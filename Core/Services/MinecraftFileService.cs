@@ -515,6 +515,57 @@ public static class MinecraftFileService
         return classPath;
     }
 
+    public static async Task<string?> DownloadLaunchWrapperAsync(string libsDir,
+        IProgressReporter? progressReporter = null)
+    {
+        string targetDir = Path.Combine(libsDir, "net", "minecraft", "client", "main");
+        if (!Directory.Exists(targetDir))
+            Directory.CreateDirectory(targetDir);
+        
+        string targetAssetName = "launchWrapper-1.0.jar";
+        string targetFile = Path.Combine(targetDir, targetAssetName);
+        bool shouldDownload = !File.Exists(targetFile) || !FileSystemHelper.CheckSHA256(targetFile, "1e6b53fb2b2244f768f4c4095fef5758190b2c8c60fb68d7c5080ac80d236d0f");
+        if (!shouldDownload)
+            return targetFile;
+        
+        Progress<double> progress = new Progress<double>();
+        progress.ProgressChanged += (_, e) =>
+        {
+            progressReporter?.SetProgress(e);
+            progressReporter?.SetStatus("A {0} fájl letöltése... {1}%", targetAssetName, e.ToString("0.00"));
+        };
+        
+         var response = await HttpHelper.GetStringAsync(MesterMcEndpoints.LatestRelease);
+         if (string.IsNullOrEmpty(response))
+             return null;
+         
+        JObject releaseObject = JObject.Parse(response);
+        if (!releaseObject.TryGetValue("assets", out var assetsToken))
+            return null;
+
+        string? version = releaseObject.Value<string>("tag_name")?.TrimStart('v');
+        if (string.IsNullOrEmpty(version))
+            return null;
+        
+        JArray assetsArray = (JArray)assetsToken;
+        // Find the target asset
+        string? downloadUrl = null;
+        foreach (var asset in assetsArray)
+        {
+            if (asset["name"]?.ToString() == targetAssetName)
+            {
+                downloadUrl = asset["browser_download_url"]?.ToString() ?? string.Empty;
+                break;
+            }
+        }
+
+        if (string.IsNullOrEmpty(downloadUrl))
+            return null;
+        
+        await HttpHelper.DownloadFileAsync(downloadUrl, targetFile, progress);
+        return targetFile;
+    }
+
     /// <summary>
     /// Downloads a library artifact and saves it locally.
     /// </summary>

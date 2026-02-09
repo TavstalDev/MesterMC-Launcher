@@ -9,6 +9,8 @@
  */
 
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
@@ -23,47 +25,40 @@ public static class JavaProcessLauncher
     // Logger instance for the JavaProcessLauncher module
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(JavaProcessLauncher));
     
-    /// <summary>
-    /// Starts a Java process with the specified parameters and logs its output.
-    /// </summary>
-    /// <param name="javaPath">The path to the Java executable. If null or empty, "java" is used by default.</param>
-    /// <param name="arguments">The arguments to pass to the Java process.</param>
-    /// <param name="logFilePath">The path to the log file where the process output will be redirected.</param>
-    /// <param name="wrapperCommand">
-    /// An optional wrapper command to execute the Java process. If it contains "%command%", 
-    /// it will be replaced with the Java executable path and arguments.
-    /// </param>
-    /// <param name="environmentVariables">
-    /// An optional dictionary of environment variables to set for the process.
-    /// </param>
-    /// <returns>
-    /// A <see cref="Process"/> object representing the started Java process, or null if the process could not be started.
-    /// </returns>
-    public static Process? StartJava(string javaPath, string arguments, string? logFilePath = null, string? wrapperCommand = null, Dictionary<string, string>? environmentVariables = null)
+    public static Process? StartJava(string javaPath, string jvmArguments, string gameArguments, string? logFilePath = null, bool enableGameMode = false, bool enableMangoHUd = false, Dictionary<string, string>? environmentVariables = null)
     {
         string finalJavaPath = string.IsNullOrEmpty(javaPath) ? "java" : javaPath;
     
         // Construct the full command string
-        string fullCommand;
-        if (!string.IsNullOrEmpty(wrapperCommand))
+        string finalProcessPath;
+        bool isLinux = OSHelper.GetOperatingSystem() == EOperatingSystem.Linux;
+        if (enableGameMode && isLinux)
         {
-            if (wrapperCommand.Contains("%command%"))
-                fullCommand = wrapperCommand.Replace("%command%", finalJavaPath) + " " + arguments;
+            finalProcessPath = "gamemoderun";
+            if (enableMangoHUd)
+                jvmArguments = $"mangohud {finalJavaPath} {jvmArguments}";
             else
-                fullCommand = wrapperCommand + (wrapperCommand.EndsWith(" ") ? "" : " ") + finalJavaPath + " " + arguments;
+                jvmArguments = finalJavaPath + " " + jvmArguments;
         }
-        else
-            fullCommand = finalJavaPath + " " + arguments;
-        
-        fullCommand = fullCommand.Replace("\"", "\\\"");
+        else if (enableMangoHUd && isLinux)
+        {
+            finalProcessPath = "mangohud";
+            jvmArguments = finalJavaPath + " " + jvmArguments;
+        }
+        else 
+            finalProcessPath = finalJavaPath;
         
         // Configure the process start information
-        var os = OSHelper.GetOperatingSystem();
         var psi = new ProcessStartInfo
         {
-            RedirectStandardError = true,
+            FileName = finalProcessPath,
+            Arguments = jvmArguments,
+
+            RedirectStandardInput = true,
             RedirectStandardOutput = true,
-            UseShellExecute = false,
+            RedirectStandardError = true,
+
+            UseShellExecute = false
         };
 
         // Add environment variables if provided
@@ -76,37 +71,7 @@ public static class JavaProcessLauncher
         if (!string.IsNullOrEmpty(logFilePath) && File.Exists(logFilePath))
             File.Delete(logFilePath);
         
-        switch (os)
-        {
-            case EOperatingSystem.Windows:
-            {
-                psi.FileName = finalJavaPath;
-                psi.Arguments = arguments;
-                break;
-            }
-            case EOperatingSystem.MacOS:
-            {
-                psi.FileName = "/bin/zsh";
-                psi.Arguments = string.IsNullOrEmpty(logFilePath) ? 
-                    $@"-c ""{fullCommand}""" 
-                    : 
-                    $@"-c ""{fullCommand} >> ""{logFilePath}"" 2>&1""";
-                break;
-            }
-            case EOperatingSystem.Unknown:
-            case EOperatingSystem.Linux:
-            {
-                psi.FileName = "/bin/sh";
-                psi.Arguments = string.IsNullOrEmpty(logFilePath) ? 
-                    $@"-c ""{fullCommand}""" 
-                    : 
-                    $@"-c ""{fullCommand} >> '{logFilePath}' 2>&1""";
-                break;
-            }
-        }
-        
         // Log the process start details
-        _logger.Debug($"Java Path: {finalJavaPath}");
         _logger.Debug("Starting Java process with arguments:");
         _logger.Debug("FileName: " + psi.FileName);
         _logger.Debug("Arguments: " + psi.Arguments);
@@ -121,68 +86,45 @@ public static class JavaProcessLauncher
             {
                 _logger.Debug($"Java process exited with code: {process.ExitCode}");
             };
+            var writer = process.StandardInput;
+            string[] gameArgs = gameArguments.Split(' ');
+            writer.WriteLine(gameArgs[0]); // Write the main class or jar file first
+            writer.WriteLine(Encrypt(gameArgs.Skip(1).Aggregate((a, b) => a + " " + b))); // Write the rest of the arguments as a single line
+            writer.Flush();
+            writer.Close();
         }
 
         // Start the process and return the Process object
         return process;
     }
     
-    /// <summary>
-    /// Starts a process to execute a custom command with optional environment variables.
-    /// </summary>
-    /// <param name="command">The command to execute.</param>
-    /// <param name="environmentVariables">
-    /// An optional dictionary of environment variables to set for the process.
-    /// </param>
-    /// <returns>
-    /// A <see cref="Process"/> object representing the started process, or null if the process could not be started.
-    /// </returns>
-    public static Process? StartCommand(string command, Dictionary<string, string>? environmentVariables = null)
+    private static string Encrypt(string plainText)
     {
-        // Configure the process start information
-        var psi = new ProcessStartInfo()
-        {
-            UseShellExecute = false,
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
-        };
-        // Add environment variables if provided
-        if (environmentVariables != null)
-        {
-            foreach (var kvp in environmentVariables)
-                psi.EnvironmentVariables[kvp.Key] = kvp.Value;
-        }
+        // same key derivation as Java
+        using var sha = SHA256.Create();
+        byte[] key = sha.ComputeHash("%#dGG1UkME&vj42kTgVi9*N%J!yE"u8.ToArray());
 
-        switch (OSHelper.GetOperatingSystem())
-        {
-            case EOperatingSystem.Windows:
-            {
-                psi.FileName = "cmd.exe";
-                psi.Arguments = $"/C \"{command}\"";
-                break;
-            }
-            case EOperatingSystem.MacOS:
-            {
-                psi.FileName = "/bin/zsh";
-                psi.Arguments = $"-c \"{command}\"";
-                break;
-            }
-            case EOperatingSystem.Unknown:
-            case EOperatingSystem.Linux:
-            {
-                psi.FileName = "/bin/sh";
-                psi.Arguments = $"-c \"{command}\"";
-                break;
-            }
-        }
-        
-        var process = Process.Start(psi);
-        if (process != null)
-        {
-            process.EnableRaisingEvents = true;
-        }
+        using var aes = Aes.Create();
+        aes.Mode = CipherMode.CBC;
+        aes.Padding = PaddingMode.PKCS7;
+        aes.KeySize = 256;
+        aes.Key = key;
 
-        // Start the process and return the Process object
-        return process;
+        // generate random IV (16 bytes)
+        aes.GenerateIV();
+        byte[] iv = aes.IV;
+
+        using var encryptor = aes.CreateEncryptor();
+
+        byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+        byte[] cipherBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
+
+        // combine IV + ciphertext
+        byte[] result = new byte[iv.Length + cipherBytes.Length];
+
+        Buffer.BlockCopy(iv, 0, result, 0, iv.Length);
+        Buffer.BlockCopy(cipherBytes, 0, result, iv.Length, cipherBytes.Length);
+
+        return Convert.ToBase64String(result);
     }
 }
