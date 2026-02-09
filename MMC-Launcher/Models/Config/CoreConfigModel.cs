@@ -28,9 +28,7 @@ public partial class CoreConfigModel : ObservableObject
             coreConfig.Java.PermaGen,
             coreConfig.Java.JavaPath,
             coreConfig.Java.JvmArguments);
-        _performance = new PerformanceConfigModel(coreConfig.Misc.PreLaunchCommand, 
-            coreConfig.Misc.WrapperCommand,
-            coreConfig.Misc.PostExitCommand,
+        _performance = new PerformanceConfigModel(
             coreConfig.Misc.UseCustomGlfw,
             coreConfig.Misc.CustomGlfwPath,
             coreConfig.Misc.UseCustomOpenAl,

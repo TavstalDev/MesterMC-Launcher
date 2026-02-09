@@ -513,41 +513,6 @@
                                     <ScrollViewer Margin="0">
                                         <WrapPanel Classes="SettingsWrapper">
                                             <!--  Subtitle  -->
-                                            <TextBlock Classes="SettingsCategory" Text="Saját Parancsok" />
-                                            <!--  Pre-launch Command  -->
-                                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto">
-                                                <!--  Text  -->
-                                                <TextBlock Classes="TextInput" Text="Indítás előtti parancs" />
-                                                <!--  Input  -->
-                                                <TextBox
-                                                    Grid.Column="1"
-                                                    Classes="TextInput"
-                                                    Text="{Binding CoreConfig.Performance.PreLaunchCommand, Mode=TwoWay}" />
-                                            </Grid>
-                                            <TextBlock Classes="Muted" Text="A játék indulása előtt lefut. A minecraft nem indul el, amíg a parancs be nem fejeződik." />
-                                            <!--  Wrapper Command  -->
-                                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto">
-                                                <!--  Text  -->
-                                                <TextBlock Classes="TextInput" Text="Csomagoló parancs" />
-                                                <!--  Input  -->
-                                                <TextBox
-                                                    Grid.Column="1"
-                                                    Classes="TextInput"
-                                                    Text="{Binding CoreConfig.Performance.WrapperCommand, Mode=TwoWay}" />
-                                            </Grid>
-                                            <TextBlock Classes="Muted" Text="Becsomagolja a Java virtuális gépet. A %command% helyőrzőt a Java futtatható fájl elérési útja és az összes Minecraft argumentum helyettesíti. A %command% paraméter nem kötelező." />
-                                            <!--  Post-exit Command  -->
-                                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto">
-                                                <!--  Text  -->
-                                                <TextBlock Classes="TextInput" Text="Kilépő parancs" />
-                                                <!--  Input  -->
-                                                <TextBox
-                                                    Grid.Column="1"
-                                                    Classes="TextInput"
-                                                    Text="{Binding CoreConfig.Performance.PostExitCommand, Mode=TwoWay}" />
-                                            </Grid>
-                                            <TextBlock Classes="Muted" Text="A játék leállítása után fut." />
-                                            <!--  Subtitle  -->
                                             <TextBlock Classes="SettingsCategory" Text="Natív könyvtár fájlok" />
                                             <!--  Use custom GLFW  -->
                                             <CheckBox Classes="SettingsCheckBox" IsChecked="{Binding CoreConfig.Performance.UseCustomGlfw, Mode=TwoWay}">

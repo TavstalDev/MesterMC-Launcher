@@ -58,20 +58,9 @@ public class GameDetails
     /// </summary>
     public string? CustomGameDirectory { get; set; }
     
-    /// <summary>
-    /// Gets or sets the command to execute before launching the game.
-    /// </summary>
-    public string PreLaunchCommand { get; set; }
-
-    /// <summary>
-    /// Gets or sets the command wrapper to use when launching the game.
-    /// </summary>
-    public string WrapperCommand { get; set; }
-
-    /// <summary>
-    /// Gets or sets the command to execute after the game exits.
-    /// </summary>
-    public string PostExitCommand { get; set; }
+    public bool EnableGamemode { get; set; }
+    
+    public bool EnableMangoHud { get; set; }
 
     /// <summary>
     /// Gets or sets the environment variables to be used when launching the game.
@@ -94,12 +83,11 @@ public class GameDetails
     /// <param name="kind">The kind of Minecraft (e.g., Vanilla, Modded).</param>
     /// <param name="customVersion">The custom version of Minecraft, if specified.</param>
     /// <param name="customGameDirectory">The custom game directory, if specified.</param>
-    /// <param name="preLaunchCommand">The command to execute before launching the game.</param>
-    /// <param name="wrapperCommand">The command wrapper to use when launching the game.</param>
-    /// <param name="postExitCommand">The command to execute after the game exits.</param>
+    /// <param name="enableGamemode"></param>
+    /// <param name="enableMangoHud"></param>
     /// <param name="environmentVariables">The environment variables to be used when launching the game.</param>
     /// <param name="serverAddressToJoin">The server address to join automatically when launching the game, if specified.</param>
-    public GameDetails(string javaPath, uint minMemory, uint maxMemory, string jvmArgs, string minecraftVersion, EMinecraftKind kind, string? customVersion, string? customGameDirectory, string preLaunchCommand, string wrapperCommand, string postExitCommand, Dictionary<string, string> environmentVariables, string? serverAddressToJoin)
+    public GameDetails(string javaPath, uint minMemory, uint maxMemory, string jvmArgs, string minecraftVersion, EMinecraftKind kind, string? customVersion, string? customGameDirectory, bool enableGamemode, bool enableMangoHud, Dictionary<string, string> environmentVariables, string? serverAddressToJoin)
     {
         JavaPath = javaPath;
         MinMemory = minMemory;
@@ -109,9 +97,8 @@ public class GameDetails
         Kind = kind;
         CustomVersion = customVersion;
         CustomGameDirectory = customGameDirectory;
-        PreLaunchCommand = preLaunchCommand;
-        WrapperCommand = wrapperCommand;
-        PostExitCommand = postExitCommand;
+        EnableGamemode = enableGamemode;
+        EnableMangoHud = enableMangoHud;
         EnvironmentVariables = environmentVariables;
         ServerAddressToJoin = serverAddressToJoin;
     }

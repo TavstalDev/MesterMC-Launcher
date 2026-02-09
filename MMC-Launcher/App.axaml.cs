@@ -139,14 +139,6 @@ public partial class App : Application
     public static MinecraftInstance createMinecraftInstance(IProgressReporter? progressReporter)
     {
         CoreConfig launcherSettings = LauncherHelper.GetLauncherSettings();
-        string wrapperCommand = launcherSettings.Misc.WrapperCommand;
-        // Add gamemoderun if enabled
-        if (launcherSettings.Misc.EnableFeralGameMode && !wrapperCommand.Contains("gamemoderun"))
-            wrapperCommand = "gamemoderun " + wrapperCommand;
-
-        // Add mangohud if enabled
-        if (launcherSettings.Misc.EnableMangoHud && !wrapperCommand.Contains("mangohud"))
-            wrapperCommand = "mangohud " + wrapperCommand;
 
         // Attempt to force the use of a dedicated GPU if configured
         var environmentVariables = launcherSettings.EnableEnvironmentVariables
@@ -213,9 +205,8 @@ public partial class App : Application
             EMinecraftKind.FABRIC, 
             "0.17.3", 
             launcherSettings.Launcher.MinecraftDataDirectoryPath,
-            launcherSettings.Misc.PreLaunchCommand, 
-            wrapperCommand, 
-            launcherSettings.Misc.PostExitCommand, 
+            launcherSettings.Misc.EnableFeralGameMode,
+            launcherSettings.Misc.EnableMangoHud,
             environmentVariables, 
             null
             );
