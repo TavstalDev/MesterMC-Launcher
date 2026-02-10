@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-
-namespace Tavstal.MesterMC.Api.Models.Database.User.Claims;
+﻿namespace Tavstal.MesterMC.Api.Models.Database.User.Claims;
 
 public class UserClaim
 {

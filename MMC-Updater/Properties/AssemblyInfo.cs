@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("MMC-Updater")]
-[assembly: AssemblyDescription("The official launcher updater for MesterMC server network.")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("MesterMC")]
+[assembly: AssemblyCompany("Tavstal")]
 [assembly: AssemblyProduct("MMC-Updater")]
-[assembly: AssemblyCopyright("Copyright © 2025-2026 MesterMC")]
+[assembly: AssemblyCopyright("Copyright © 2025-2026 Tavstal")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

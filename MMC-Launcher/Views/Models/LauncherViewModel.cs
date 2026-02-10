@@ -369,9 +369,6 @@ public partial class LauncherViewModel : ObservableObject
             },
             Misc = new MiscConfig
             {
-                PreLaunchCommand = newValue.Performance.PreLaunchCommand,
-                WrapperCommand = newValue.Performance.WrapperCommand,
-                PostExitCommand = newValue.Performance.PostExitCommand,
                 UseCustomGlfw = newValue.Performance.UseCustomGlfw,
                 CustomGlfwPath = newValue.Performance.CustomGlfwPath,
                 UseCustomOpenAl = newValue.Performance.UseCustomOpenAl,

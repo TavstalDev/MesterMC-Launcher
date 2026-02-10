@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 
 [assembly: AssemblyTitle("Core")]
-[assembly: AssemblyDescription("Core used for KonkordLauncher.")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tavstal")]
 [assembly: AssemblyProduct("Core")]
