@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MesterMC")]
 [assembly: AssemblyProduct("MMC-Updater")]
-[assembly: AssemblyCopyright("Copyright © 2025 MesterMC")]
+[assembly: AssemblyCopyright("Copyright © 2025-2026 MesterMC")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

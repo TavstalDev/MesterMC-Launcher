@@ -5,6 +5,6 @@
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tavstal")]
 [assembly: AssemblyProduct("Core")]
-[assembly: AssemblyCopyright("Copyright © 2025 Tavstal")]
+[assembly: AssemblyCopyright("Copyright © 2025-2026 Tavstal")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyVersion("1.0.*")]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Zoltan 'Tavstal' Solymosi. All rights reserved.
+ * Copyright (c) 2025-2026 Zoltan 'Tavstal' Solymosi. All rights reserved.
  * * This file is sourced from: https://github.com/TavstalDev/KonkordLauncher
  * * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
