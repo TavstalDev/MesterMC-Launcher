@@ -26,9 +26,13 @@ public static class ControllerExtensions
         return string.Empty;
     }
     
+    public static IActionResult ReturnResponseCode(this ControllerBase controller, HttpStatusCode status)
+    {
+        return controller.StatusCode((int)status);
+    }
+    
     public static IActionResult ReturnResponseCode(this ControllerBase controller, HttpStatusCode status, string message, object value)
     {
-        //return controller.StatusCode((int)status, JsonConvert.SerializeObject(new { Message = message, Value = value }, Formatting.None));
         return controller.StatusCode((int)status, JObject.FromObject(new { Message = message, Value = value }).ToString(Formatting.None));
     }
     
