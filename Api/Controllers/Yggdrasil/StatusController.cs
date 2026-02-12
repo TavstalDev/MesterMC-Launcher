@@ -1,37 +1,39 @@
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Mvc;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Utils.Extensions;
 
-namespace Tavstal.MesterMC.Api.Controllers.Yiggdrasil;
+namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
-[Route("/yiggdrasil")]
+[Route("/yggdrasil")]
 public class StatusController : Controller
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
+    private readonly Settings _settings;
     
-    public StatusController(IConfiguration configuration, ILogger<StatusController> logger)
+    public StatusController(IConfiguration configuration, ILogger<StatusController> logger, Settings settings)
     {
         _configuration = configuration;
         _logger = logger;
+        _settings = settings;
     }
     
-    [HttpGet("")] 
+    [HttpGet()] 
     public IActionResult Root()
     {
+        var signature =  X509CertificateLoader.LoadCertificate(_settings.PfxCert).GetRSAPrivateKey()!.ExportSubjectPublicKeyInfoPem();
         return this.ReturnJson(HttpStatusCode.OK, new
         {
-            skinDomains = new[]
-            {
-                "localhost"
-            },
-            signaturePublicKey = "", // TODO: Add a public key for signature verification
+            skinDomains = _settings.SkinDomains,
+            signaturePublicKey =signature,
             meta = new Dictionary<string, object>
             {
-                { "serverName", "MMC's yiggdrasil server" },
-                { "implementationVersion", "1.0.0" },
+                { "serverName", _settings.ServerName },
+                { "implementationVersion", _settings.ImplementationVersion },
                 { "feature.non_email_login", true },
-                { "implementationName", "yiggdrasil-mock-server" }
+                { "implementationName", _settings.ImplementationName }
             }
         });
     }
