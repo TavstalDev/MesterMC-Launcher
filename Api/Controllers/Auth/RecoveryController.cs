@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
 using Tavstal.MesterMC.Api.Models.Claims;
@@ -21,15 +22,17 @@ public class RecoveryController : Controller
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
+    private readonly Settings _settings;
     // TODO: Test Recovery System
     
-    public RecoveryController(IConfiguration configuration, ILogger logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService)
+    public RecoveryController(IConfiguration configuration, ILogger logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings)
     {
         _configuration = configuration;
         _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;
         _emailService = emailService;
+        _settings = settings;
     }
     
     
@@ -52,7 +55,7 @@ public class RecoveryController : Controller
             if (userClaim != null)
             {
                 DateTime delayDate = DateTime.Parse(userClaim.ClaimValue!);
-                if (delayDate > DateTime.Now)
+                if (delayDate > DateTimeOffset.UtcNow)
                     return this.ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
             }
 
@@ -60,7 +63,7 @@ public class RecoveryController : Controller
             {
                 UserId = user.Id,
                 ClaimType = CustomClaimTypes.EmailRecoveryExpiration,
-                ClaimValue = DateTime.Now.AddMinutes(15).ToString(CultureInfo.InvariantCulture)
+                ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture)
             });
 
             var recoveryToken = DatabaseHelper.GenerateRecoveryToken(_dbContext);
@@ -75,9 +78,9 @@ public class RecoveryController : Controller
             
             await _emailService.SendEmailAsync(user.Email, "Account Recovery",
                 $"<h1>Account Recovery</h1><p>To recover your account, please use the following link: " +
-                $"<strong>{_configuration.GetValue<string>("Servers:Website")}/reset-password?recoveryToken={recoveryToken}</strong></p><p>The link is valid for 15 minutes.</p>");
+                $"<strong>{_settings.WebsiteUrl}/reset-password?recoveryToken={recoveryToken}</strong></p><p>The link is valid for 15 minutes.</p>");
             
-            return this.ReturnJson(HttpStatusCode.Created, "Recovery email sent successfully.");
+            return this.ReturnResponseCode(HttpStatusCode.Created, "Recovery email sent successfully.");
         }
         catch (Exception ex)
         {
@@ -103,9 +106,9 @@ public class RecoveryController : Controller
             if (recoveryAttemptExpirationClaim != null && DateTime.TryParse(recoveryAttemptExpirationClaim.ClaimValue, out DateTime recoveryAttemptExpiration))
             {
                 // Reset the attempts
-                if (recoveryAttemptExpiration < DateTime.Now)
+                if (recoveryAttemptExpiration < DateTimeOffset.UtcNow)
                 {
-                    recoveryAttemptExpirationClaim.ClaimValue = DateTime.Now.AddMinutes(15).ToString(CultureInfo.InvariantCulture);
+                    recoveryAttemptExpirationClaim.ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture);
                     await _dbContext.UpdateUserClaimAsync(recoveryAttemptExpirationClaim);
                     await _dbContext.SetUserClaimAsync(new CustomUserClaim
                     {
@@ -121,7 +124,7 @@ public class RecoveryController : Controller
                 {
                     UserId = user.Id,
                     ClaimType = CustomClaimTypes.EmailRecoveryAttemptExpiration,
-                    ClaimValue = DateTime.Now.AddMinutes(15).ToString(CultureInfo.InvariantCulture)
+                    ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture)
                 });
             }
             
@@ -163,10 +166,10 @@ public class RecoveryController : Controller
                 return this.ReturnResponseCode(HttpStatusCode.NotFound, "Failed to find expiration claim.");
             
             DateTime expirationDate = DateTime.Parse(expirationClaim.ClaimValue!);
-            if (expirationDate < DateTime.Now)
+            if (expirationDate < DateTimeOffset.UtcNow)
                 return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Recovery token has expired.");
             
-            user.PasswordHash = StringChiper.GetEncryptedSha256Hash(request.NewPassword, _configuration.GetValue<string>("EncryptionKey")!);
+            user.PasswordHash = StringChiper.GetEncryptedSha256Hash(request.NewPassword, _settings.EncryptionKey);
             await _dbContext.UpdateUserAsync(user);
 
             await _dbContext.RemoveUserClaimAsync(recoveryTokenClaim);
@@ -205,9 +208,9 @@ public class RecoveryController : Controller
             if (recoveryAttemptExpirationClaim != null && DateTime.TryParse(recoveryAttemptExpirationClaim.ClaimValue, out DateTime recoveryAttemptExpiration))
             {
                 // Reset the attempts
-                if (recoveryAttemptExpiration < DateTime.Now)
+                if (recoveryAttemptExpiration < DateTimeOffset.UtcNow)
                 {
-                    recoveryAttemptExpirationClaim.ClaimValue = DateTime.Now.AddMinutes(15).ToString(CultureInfo.InvariantCulture);
+                    recoveryAttemptExpirationClaim.ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture);
                     await _dbContext.UpdateUserClaimAsync(recoveryAttemptExpirationClaim);
                     await _dbContext.SetUserClaimAsync(new CustomUserClaim
                     {
@@ -223,7 +226,7 @@ public class RecoveryController : Controller
                 {
                     UserId = user.Id,
                     ClaimType = CustomClaimTypes.TwoFactorRecoveryAttemptExpiry,
-                    ClaimValue = DateTime.Now.AddMinutes(15).ToString(CultureInfo.InvariantCulture)
+                    ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture)
                 });
             }
             

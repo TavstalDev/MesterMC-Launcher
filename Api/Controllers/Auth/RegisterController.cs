@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
 using Tavstal.MesterMC.Api.Models.Claims;
@@ -21,14 +22,16 @@ public class RegisterController : Controller
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
+    private readonly Settings _settings;
     
-    public RegisterController(IConfiguration configuration, ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, EmailService emailService)
+    public RegisterController(IConfiguration configuration, ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, EmailService emailService, Settings settings)
     {
         _configuration = configuration;
         _logger = logger;
         _dbContext = dbContext;
         _userManager = userManager;
         _emailService = emailService;
+        _settings = settings;
     }
     
     [HttpPost("")]
@@ -54,7 +57,8 @@ public class RegisterController : Controller
             if (user != null)
                 return this.ReturnResponseCode(HttpStatusCode.Conflict, "User already exists.");
 
-            string? avatarPath = null;
+            // TODO: Handle avatar upload and saving
+            /*string? avatarPath = null;
             if (request.Avatar is { Length: > 0 })
             {
                 avatarPath = $"~/wwwroot/avatars/{normalizedUsername}.png";
@@ -63,29 +67,40 @@ public class RegisterController : Controller
                 byte[] fileBytes = memoryStream.ToArray();
                 if (!await IOHelper.SaveFileAsync(avatarPath, fileBytes, ["image/png"]))
                     avatarPath = null;
-            }
+            }*/
             
             user = await _dbContext.AddUserAsync(
                 new CustomUser(request.Username, normalizedUsername, request.EmailAddress, normalizedEmail, 
-                    StringChiper.GetEncryptedSha256Hash(request.Password, _configuration.GetValue<string>("EncryptionKey")!), avatarPath, 
-                    null, string.Empty, DateTime.Now, DateTime.Now, DateTime.Now),
+                    StringChiper.GetEncryptedSha256Hash(request.Password, _settings.EncryptionKey), ESkinType.WIDE,
+                    null, string.Empty, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
                 true);
             
-            // Add the user to the customer role
-            await _dbContext.AddUserRoleAsync(new CustomUserRole { UserId = user.Id, RoleId = 1, });
+            // Add the user to the default role
+            var defaultRole = _dbContext.FindRole(x => x.NormalizedName == "DEFAULT");
+            if (defaultRole != null)
+            {
+                await _dbContext.AddUserRoleAsync(new CustomUserRole { UserId = user.Id, RoleId = defaultRole.Id, });
+            }
             // Add customer role claim to the user
             await _dbContext.AddUserClaimAsync(new CustomUserClaim { UserId = user.Id, ClaimType = ClaimTypes.Role, ClaimValue = "default" });
             // Save changes
             await _dbContext.SaveChangesAsync();
             
             // Send registration confirmation email
-            await SendConfirmEmail(user);
-            
+            try
+            {
+                await SendConfirmEmail(user);
+            }
+            catch (Exception eex)
+            {
+                _logger.LogCritical("Failed to send confirmation email: {Message}", eex);
+            }
+
             return this.ReturnResponseCode(HttpStatusCode.Created, "User registered successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Error during registration: {Message}", ex.Message);
+            _logger.LogCritical("Error during registration: {Message}", ex);
             return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
@@ -130,7 +145,7 @@ public class RegisterController : Controller
         catch (Exception ex)
         {
             // Log critical errors and return an internal server error response
-            _logger.LogCritical("Error during email confirmation: {Message}", ex.Message);
+            _logger.LogCritical("Error during email confirmation: {Message}", ex);
             return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
@@ -157,6 +172,6 @@ public class RegisterController : Controller
             token = claim.ClaimValue;
         
         await _emailService.SendEmailAsync(user.Email, "Registration Confirmation",
-            $"<h1>Confirm your email</h1><p>Click <a href=\"{_configuration.GetValue<string>("Servers:Website")}/register/confirm?userId={user.Id}&token={Uri.EscapeDataString(token)}\">here</a> to confirm your email.</p>");
+            $"<h1>Confirm your email</h1><p>Click <a href=\"{_settings.WebsiteUrl}/register/confirm?userId={user.Id}&token={Uri.EscapeDataString(token)}\">here</a> to confirm your email.</p>");
     }
 }

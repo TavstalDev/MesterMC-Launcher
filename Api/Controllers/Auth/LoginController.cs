@@ -51,9 +51,10 @@ public class LoginController : Controller
             // Check if the user is locked out
             if (user.LockoutEnabled)
             {
-                if (user.LockoutEnd > DateTime.Now)
-                    return this.ReturnJson(HttpStatusCode.Locked, new
+                if (user.LockoutEnd > DateTimeOffset.UtcNow)
+                    return this.ReturnJson(new
                     {
+                        statusCode = HttpStatusCode.Locked,
                         message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
                         lockoutExpires = user.LockoutEnd.ToString()
                     });
@@ -65,7 +66,7 @@ public class LoginController : Controller
             }
             
             // Check password
-            if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, _configuration.GetValue<string>("EncryptionKey")!))
+            if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, _settings.EncryptionKey))
                 return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
 
             // Check two-factor authentication
@@ -74,7 +75,7 @@ public class LoginController : Controller
                 if (request.TwoFactorCode == null)
                 {
                     string sessionSecret = TokenHelper.GenerateTwoFactorSessionToken();
-                    DateTime expiry = DateTime.Now.AddMinutes(5);
+                    DateTimeOffset expiry = DateTimeOffset.UtcNow.AddMinutes(5);
 
                     await _dbContext.SetUserClaimAsync(new CustomUserClaim
                     {
@@ -100,11 +101,12 @@ public class LoginController : Controller
                         Expires = expiry
                     });
                     
-                    return this.ReturnJson(HttpStatusCode.Redirect, new
+                    return this.ReturnJson(new
                     {
+                        statusCode = HttpStatusCode.Redirect,
                         message = "Redirect to 2FA page",
                         email = user.Email,
-                        url = $"{_configuration.GetValue<string>("Servers:Website")}/2fa?rememberMe={request.RememberMe}"
+                        url = $"{_settings.WebsiteUrl}/2fa?rememberMe={request.RememberMe}"
                     });
                 }
 
@@ -121,18 +123,18 @@ public class LoginController : Controller
             string browser = HttpHelper.GetBrowser(userAgent);
             
             IpInfo ipInfo = await DatabaseHelper.GetIpInformation(ipv4);
-            DateTime expireDate = request.RememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(60);
+            DateTimeOffset expireDate = request.RememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddMinutes(60);
             var userToken = await _dbContext.AddUserTokenAsync(
                 new CustomUserToken(
                     user.Id, 
                     "AccessToken", 
                     TokenHelper.GenerateJwtToken(_settings.EncryptionKey, _settings.Issuer, _settings.Audience, expireDate), 
                     "MesterMC", 
-                    DateTime.Now), 
+                    DateTimeOffset.UtcNow), 
                 true);
             
             var userLogin = await _dbContext.AddUserLoginAsync(new CustomUserLogin(user.Id,  userToken.Id, "MesterMC", 
-                "MesterMC", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTime.Now, expireDate), true);
+                "MesterMC", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate), true);
             
             Response.Cookies.Append("mmc-token", userToken.Value, new CookieOptions
             {
@@ -142,8 +144,9 @@ public class LoginController : Controller
                 Expires = userLogin.ExpireDate
             });
             
-            return this.ReturnJson(HttpStatusCode.OK, new LoginResponse
+            return this.ReturnJson(new
             {
+                statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
                 UserId = userToken.UserId,
                 Expires = userLogin.ExpireDate.ToString(CultureInfo.InvariantCulture)
@@ -173,10 +176,10 @@ public class LoginController : Controller
                 return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret.");
             
             var expiryClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorSessionExpiration && x.UserId == sessionClaim.UserId);
-            if (expiryClaim == null || !DateTime.TryParse(expiryClaim.ClaimValue, out DateTime expiry))
+            if (expiryClaim == null || !DateTimeOffset.TryParse(expiryClaim.ClaimValue, out DateTimeOffset expiry))
                 return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret expiry.");
             
-            if (DateTime.Now > expiry)
+            if (DateTimeOffset.UtcNow > expiry)
                 return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Session token expired.");
             
             CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == sessionClaim.UserId);
@@ -185,9 +188,10 @@ public class LoginController : Controller
 
             if (user.LockoutEnabled)
             {
-                if (user.LockoutEnd > DateTime.Now)
-                    return this.ReturnJson(HttpStatusCode.Locked, new
+                if (user.LockoutEnd > DateTimeOffset.UtcNow)
+                    return this.ReturnJson(new
                     {
+                        statusCode = HttpStatusCode.Locked,
                         message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
                         lockoutEnd = user.LockoutEnd.ToString()
                     });
@@ -199,13 +203,15 @@ public class LoginController : Controller
             }
             
             var sessionAttemptClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorSessionAttempt && x.UserId == user.Id);
-            if (sessionAttemptClaim == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "Session attempt claim not found.");
-            
-            int sessionAttempt = int.Parse(sessionAttemptClaim.ClaimValue!);
-            if (sessionAttempt >= 3)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "To many failed attempts. Please try reauthorizing again.");
-            
+            int sessionAttempt = 0;
+            if (sessionAttemptClaim != null)
+            {
+                sessionAttempt = int.Parse(sessionAttemptClaim.ClaimValue!);
+                if (sessionAttempt >= 3)
+                    return this.ReturnResponseCode(HttpStatusCode.Forbidden,
+                        "To many failed attempts. Please try reauthorizing again.");
+            }
+
             var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
             if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
             {
@@ -227,25 +233,28 @@ public class LoginController : Controller
             string browser = HttpHelper.GetBrowser(userAgent);
             
             IpInfo ipInfo = await DatabaseHelper.GetIpInformation(ipv4);
-            DateTime expireDate = request.RememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(60);
+            DateTimeOffset expireDate = request.RememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddMinutes(60);
             var userToken = await _dbContext.AddUserTokenAsync(new CustomUserToken(
                 user.Id, 
                 "AccessToken", 
                 TokenHelper.GenerateJwtToken(_settings.EncryptionKey, _settings.Issuer, _settings.Audience, expireDate), 
                 "MesterMC", 
-                DateTime.Now), 
+                DateTimeOffset.UtcNow), 
                 true);
             
             var userLogin = await _dbContext.AddUserLoginAsync(new CustomUserLogin(user.Id,  userToken.Id, "MesterMC", 
-                "MesterMC", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTime.Now, expireDate));
+                "MesterMC", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate));
 
             await _dbContext.RemoveUserClaimAsync(sessionClaim);
             await _dbContext.RemoveUserClaimAsync(expiryClaim);
+            if (sessionAttemptClaim != null)
+                await _dbContext.RemoveUserClaimAsync(sessionAttemptClaim);
             
             await _dbContext.SaveChangesAsync();
             
-            return this.ReturnJson(HttpStatusCode.OK, new LoginResponse
+            return this.ReturnJson(new
             {
+                statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
                 UserId = userToken.UserId,
                 Token = userToken.Value,
@@ -258,7 +267,202 @@ public class LoginController : Controller
             return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
+    
+    [HttpPost("/login/launcher")]
+    [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
+     TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
+     TextResponse(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> LoginLauncherAsync([BindRequired, FromBody] LauncherLoginRequestBody request)
+    {
+        try
+        {
+            var normalizedUsername = request.Username.Normalize();
+            CustomUser? user = await _dbContext.FindUserAsync(x => x.NormalizedUserName.Equals(normalizedUsername));
+            if (user == null)
+                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
+            // Check if the user is locked out
+            if (user.LockoutEnabled)
+            {
+                if (user.LockoutEnd > DateTimeOffset.UtcNow)
+                    return this.ReturnJson(new
+                    {
+                        statusCode = HttpStatusCode.Locked,
+                        message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
+                        lockoutExpires = user.LockoutEnd.ToString()
+                    });
+            
+                user.LockoutEnabled = false;
+                user.LockoutReason = string.Empty;
+                await _dbContext.UpdateUserAsync(user);
+                await _dbContext.SaveChangesAsync();
+            }
+            
+            // Check password
+            if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, _settings.EncryptionKey))
+                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
+
+            // Check two-factor authentication
+            if (user.TwoFactorEnabled)
+            {
+                if (string.IsNullOrEmpty(request.TwoFactorCode))
+                {
+                    string sessionSecret = TokenHelper.GenerateTwoFactorSessionToken();
+                    DateTimeOffset expiry = DateTimeOffset.UtcNow.AddMinutes(5);
+
+                    await _dbContext.SetUserClaimAsync(new CustomUserClaim
+                    {
+                        UserId = user.Id,
+                        ClaimType = CustomClaimTypes.TwoFactorLauncherSessionToken,
+                        ClaimValue = sessionSecret
+                    });
+                    
+                    await _dbContext.SetUserClaimAsync(new CustomUserClaim
+                    {
+                        UserId = user.Id,
+                        ClaimType = CustomClaimTypes.TwoFactorLauncherSessionExpiration,
+                        ClaimValue = expiry.ToString(CultureInfo.InvariantCulture)
+                    });
+
+                    await _dbContext.SaveChangesAsync();
+                    
+                    return this.ReturnJson(new
+                    {
+                        statusCode = HttpStatusCode.Redirect,
+                        message = "Redirect to 2FA",
+                        userId = user.Id,
+                        token = sessionSecret,
+                        url = $"{_settings.ApiUrl}/2fa/launcher"
+                    });
+                }
+
+
+                var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
+                if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
+                    return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+            }
+
+            string host = HttpContext.Request.Host.Host;
+            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            {
+                UserId = user.Id,
+                UserIp = host,
+                Token = TokenHelper.GenerateToken(),
+                CreatedAt =  DateTimeOffset.UtcNow,
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
+            }, true);
+            
+            return this.ReturnJson(new
+            {
+                statusCode = HttpStatusCode.OK,
+                Message = "Login successful",
+                UserId = userPlaySession.UserId,
+                Token = userPlaySession.Token,
+                Expires = userPlaySession.ExpiresAt.ToString(CultureInfo.InvariantCulture)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical("Error during login: {Message}", ex.Message);
+            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+        }
+    }
+
+    [HttpPatch("/login/launcher/2fa")]
+    [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
+     TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
+     TextResponse(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> LoginTwoFactorAsync([BindRequired, FromBody] LauncherLoginTFASessionRequestBody request)
+    {
+        try
+        {
+            var sessionClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionToken && x.ClaimValue == request.SessionToken);
+            if (sessionClaim == null)
+                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret.");
+            
+            var expiryClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionExpiration && x.UserId == sessionClaim.UserId);
+            if (expiryClaim == null || !DateTimeOffset.TryParse(expiryClaim.ClaimValue, out DateTimeOffset expiry))
+                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret expiry.");
+            
+            if (DateTimeOffset.UtcNow > expiry)
+                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Session token expired.");
+            
+            CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == sessionClaim.UserId);
+            if (user == null)
+                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+
+            if (user.LockoutEnabled)
+            {
+                if (user.LockoutEnd > DateTimeOffset.UtcNow)
+                    return this.ReturnJson(new
+                    {
+                        statusCode = HttpStatusCode.Locked,
+                        message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
+                        lockoutEnd = user.LockoutEnd.ToString()
+                    });
+            
+                user.LockoutEnabled = false;
+                user.LockoutReason = string.Empty;
+                await _dbContext.UpdateUserAsync(user);
+                await _dbContext.SaveChangesAsync();
+            }
+            
+            var sessionAttemptClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionAttempt && x.UserId == user.Id);
+            int sessionAttempt = 0;
+            if (sessionAttemptClaim != null)
+            {
+                sessionAttempt = int.Parse(sessionAttemptClaim.ClaimValue!);
+                if (sessionAttempt >= 3)
+                    return this.ReturnResponseCode(HttpStatusCode.Forbidden,
+                        "To many failed attempts. Please try reauthorizing again.");
+            }
+
+            var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
+            if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
+            {
+                sessionAttempt += 1;
+                await _dbContext.SetUserClaimAsync(new CustomUserClaim
+                {
+                    ClaimType = CustomClaimTypes.TwoFactorLauncherSessionAttempt,
+                    ClaimValue = sessionAttempt.ToString(),
+                    UserId = user.Id
+                });
+                await _dbContext.SaveChangesAsync();
+                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+            }
+            
+            await _dbContext.RemoveUserClaimAsync(sessionClaim);
+            await _dbContext.RemoveUserClaimAsync(expiryClaim);
+            if (sessionAttemptClaim != null)
+                await _dbContext.RemoveUserClaimAsync(sessionAttemptClaim);
+            
+            await _dbContext.SaveChangesAsync();
+            
+            string host = HttpContext.Request.Host.Host;
+            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            {
+                UserId = user.Id,
+                UserIp = host,
+                Token = TokenHelper.GenerateToken(),
+                CreatedAt =  DateTimeOffset.UtcNow,
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
+            }, true);
+            
+            return this.ReturnJson(new
+            {
+                statusCode = HttpStatusCode.OK,
+                Message = "Login successful",
+                UserId = userPlaySession.UserId,
+                Token = userPlaySession.Token,
+                Expires = userPlaySession.ExpiresAt.ToString(CultureInfo.InvariantCulture)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical("Error during login: {Message}", ex.Message);
+            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+        }
+    }
     
     [HttpGet("/login/check")]
     [TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status500InternalServerError)]
@@ -274,15 +478,17 @@ public class LoginController : Controller
             List<CustomRole> roles = _userManager.GetUserRoles(user.Id);
             var claims = _userManager.GetAllClaimsOfUser(user.Id);
 
-            bool hasAvatar = !string.IsNullOrEmpty(user.AvatarPath);
-            return this.ReturnJson(HttpStatusCode.OK, new LoggedInResponse
+            //bool hasAvatar = !string.IsNullOrEmpty(user.AvatarPath);
+            // TODO: Change how avatar works
+            return this.ReturnJson(new
             {
+                statusCode = HttpStatusCode.OK,
                 UserId = user.Id,
                 Username = user.UserName,
                 DisplayName = user.DisplayName ?? user.UserName,
                 Email = user.Email,
-                HasAvatar = hasAvatar,
-                Avatar = hasAvatar ? $"{_configuration.GetValue<string>("Servers:API")}/users/{user.Id}/avatar" : "",
+                //HasAvatar = hasAvatar,
+                //Avatar = hasAvatar ? $"{_settings.ApiUrl}/users/{user.Id}/avatar" : "",
                 Roles = roles,
                 Claims = claims,
             });

@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using OtpNet;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
@@ -19,15 +20,17 @@ public class TwoFactorController : Controller {
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
+    private readonly Settings _settings;
     // TODO: Test TwoFactor Auth System
     
-    public TwoFactorController(IConfiguration configuration, ILogger logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService)
+    public TwoFactorController(IConfiguration configuration, ILogger logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings)
     {
         _configuration = configuration;
         _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;
         _emailService = emailService;
+        _settings = settings;
     }
     
     [HttpPatch("enable")]
@@ -110,8 +113,9 @@ public class TwoFactorController : Controller {
             await _dbContext.UpdateUserAsync(user);
             await _dbContext.SaveChangesAsync();
             
-            return this.ReturnJson(HttpStatusCode.OK,new
+            return this.ReturnJson(new
             {
+                statusCode = HttpStatusCode.OK,
                 userId = user.Id,
                 email = user.Email,
                 secret = user.TwoFactorSecret,
@@ -146,7 +150,7 @@ public class TwoFactorController : Controller {
                 {
                     UserId = user.Id,
                     ClaimType = CustomClaimTypes.TwoFactorRecoveryCode,
-                    ClaimValue = StringChiper.GetEncryptedSha256Hash(recoveryCode, _configuration.GetValue<string>("EncryptionKey")!)
+                    ClaimValue = StringChiper.GetEncryptedSha256Hash(recoveryCode, _settings.EncryptionKey)
                 };
                 recoveryCodes.Add(recoveryCode);
                 await _dbContext.AddUserClaimAsync(claim);
@@ -154,8 +158,9 @@ public class TwoFactorController : Controller {
             
             await _dbContext.SaveChangesAsync();
             
-            return this.ReturnJson(HttpStatusCode.OK,new
+            return this.ReturnJson(new
             {
+                statusCode = HttpStatusCode.OK,
                 userId = user.Id,
                 email = user.Email,
                 recoveryCodes
