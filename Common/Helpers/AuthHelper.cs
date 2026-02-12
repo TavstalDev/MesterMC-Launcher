@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Newtonsoft.Json.Linq;
@@ -15,26 +16,15 @@ public static class AuthHelper
 {
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(AuthHelper));
 
-    /// <summary>
-    /// Attempts to log in a user with the provided username and password.
-    /// </summary>
-    /// <param name="username">The username of the user attempting to log in.</param>
-    /// <param name="password">The password of the user attempting to log in.</param>
-    /// <returns>
-    /// A tuple containing the authentication token and a boolean indicating if two-factor authentication is required,
-    /// or null if the login fails.
-    /// </returns>
-    /// <remarks>
-    /// This method uses code that may be removed during trimming.
-    /// </remarks>
     [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
-    public static async Task<(string, bool)?> LoginAsync(string username, string password)
+    public static async Task<(string, bool, string?)?> LoginAsync(string username, string password)
     {
         try
         {
             var result = await HttpHelper.PostJsonAsync(MesterMcEndpoints.AuthEndpoint, new
             {
-                username, password
+                Username = username, 
+                Password = password
             });
 
             if (result == null)
@@ -43,7 +33,7 @@ public static class AuthHelper
                 return null;
             }
 
-            if (!result.IsSuccessStatusCode)
+            if (!result.IsSuccessStatusCode && result.StatusCode != HttpStatusCode.Redirect)
             {
                 _logger.Error("Login failed with status code: " + result.StatusCode);
                 try
@@ -63,33 +53,34 @@ public static class AuthHelper
             }
 
             var content = await result.Content.ReadAsStringAsync();
+            _logger.Debug("Login response content: " + content);
             JObject json = JObject.Parse(content);
 
-            bool success = json["success"]?.ToObject<bool>() ?? false;
-            if (!success)
+            if (result.StatusCode == HttpStatusCode.Redirect) // When 2FA is required
             {
-                _logger.Error("Login unsuccessful: " + result.StatusCode);
-                return null;
-            }
-
-            if (json.ContainsKey("redirect")) // When 2FA is required
-            {
-                string? sessionToken = json["token"]?.ToString();
+                string? sessionToken = json["Token"]?.ToString();
                 if (sessionToken == null)
                 {
                     _logger.Error("Failed to get TFA session token: " + result.StatusCode);
                     return null;
                 }
-                return (sessionToken, true);
+                return (sessionToken, true, null);
             }
 
-            string? token = json["token"]?.ToString();
+            string? token = json["Token"]?.ToString();
             if (token == null)
             {
                 _logger.Error("Failed to get auth token: " + result.StatusCode);
                 return null;
             }
-            return (token, false);
+            string? userId = json["UserId"]?.ToString();
+            if (userId == null)
+            {
+                _logger.Error("Failed to get user ID: " + result.StatusCode);
+                return null;
+            }
+            
+            return (token, false, userId);
         }
         catch (Exception ex)
         {
@@ -97,28 +88,17 @@ public static class AuthHelper
             return null;
         }
     }
-
-    /// <summary>
-    /// Submits a two-factor authentication (TFA) code for verification.
-    /// </summary>
-    /// <param name="token">The session token obtained during login.</param>
-    /// <param name="code">The TFA code provided by the user.</param>
-    /// <returns>
-    /// The authentication token if the TFA code is successfully verified, or null if the verification fails.
-    /// </returns>
-    /// <remarks>
-    /// This method uses code that may be removed during trimming.
-    /// </remarks>
+    
     [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
-    public static async Task<string?> SubmitTFA(string token, string code)
+    public static async Task<(string, string)?> SubmitTFA(string token, string code)
     {
         try
         {
             var client = HttpHelper.GetHttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var result = await client.PostAsJsonAsync(new Uri(MesterMcEndpoints.TfaEndpoint), new
             {
-                code
+                SessionToken = token,
+                TwoFactorCode = code
             });
 
             if (!result.IsSuccessStatusCode)
@@ -140,13 +120,22 @@ public static class AuthHelper
             }
 
             var content = await result.Content.ReadAsStringAsync();
+            _logger.Debug("TFA submission response content: " + content);
             JObject json = JObject.Parse(content);
-
-            bool success = json["success"]?.ToObject<bool>() ?? false;
-            if (!success)
+            string? accessToken = json["Token"]?.ToString();
+            if (accessToken == null)
+            {
+                _logger.Error("Failed to get auth token: " + result.StatusCode);
                 return null;
-
-            return json["token"]?.ToString() ?? null;
+            }
+            string? userId = json["UserId"]?.ToString();
+            if (userId == null)
+            {
+                _logger.Error("Failed to get user ID: " + result.StatusCode);
+                return null;
+            }
+            
+            return (accessToken, userId);
         }
         catch (Exception ex)
         {
