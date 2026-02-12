@@ -6,7 +6,7 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
-[Route("/yggdrasil")]
+[Route("yggdrasil")]
 public class StatusController : Controller
 {
     private readonly IConfiguration _configuration;
@@ -20,14 +20,19 @@ public class StatusController : Controller
         _settings = settings;
     }
     
-    [HttpGet()] 
+    [HttpGet] 
     public IActionResult Root()
     {
-        var signature =  X509CertificateLoader.LoadCertificate(_settings.PfxCert).GetRSAPrivateKey()!.ExportSubjectPublicKeyInfoPem();
-        return this.ReturnJson(HttpStatusCode.OK, new
+        var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, "");
+        var rsa = cert.GetRSAPrivateKey();
+        if (rsa == null)
+            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to load RSA private key from certificate");
+
+        string signature = rsa.ExportSubjectPublicKeyInfoPem();
+        return this.ReturnJson(new
         {
             skinDomains = _settings.SkinDomains,
-            signaturePublicKey =signature,
+            signaturePublickey = signature,
             meta = new Dictionary<string, object>
             {
                 { "serverName", _settings.ServerName },
@@ -42,7 +47,7 @@ public class StatusController : Controller
     public IActionResult Status()
     {
         // TODO: Implement actual status checks for users, tokens, and pending authentications
-        return this.ReturnJson(HttpStatusCode.OK, new Dictionary<string, object>
+        return this.ReturnJson(new Dictionary<string, object>
         {
             { "user.count", 0 },
             { "token.count", 0 },
