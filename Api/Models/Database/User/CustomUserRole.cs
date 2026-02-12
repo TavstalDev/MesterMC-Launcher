@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;
 
-public class CustomUserRole : IdentityUserRole<ulong>
+public class CustomUserRole : IdentityUserRole<string>
 {
     /* ######################################################################
      *                         NAVIGATION PROPERTIES

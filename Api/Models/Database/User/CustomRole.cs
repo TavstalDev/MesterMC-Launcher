@@ -1,10 +1,16 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;
 
-public class CustomRole : IdentityRole<ulong>
+public class CustomRole : IdentityRole<string>
 {
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [StringLength(36)]
+    public override string Id { get; set; }
+    
     public byte Level { get; set; }
     
     [StringLength(32)]

@@ -1,11 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
-using Tavstal.MesterMC.Api.Models.Database.User;
+using Newtonsoft.Json;
 
-namespace Tavstal.MesterMC.Api.Models.Database.Server;
+namespace Tavstal.MesterMC.Api.Models.Database.User;
 
-public class ServerJoin
+public class UserPlaySession
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -14,11 +13,11 @@ public class ServerJoin
     [StringLength(36)]
     public required string UserId { get; set; }
     
+    [StringLength(64)]
+    public required string Token { get; set; }
+    
     [StringLength(50)]
     public required string UserIp { get; set; }
-    
-    [StringLength(100)]
-    public required string ServerId { get; set; }
     
     public required DateTimeOffset CreatedAt { get; set; }
     

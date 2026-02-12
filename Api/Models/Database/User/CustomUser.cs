@@ -7,8 +7,13 @@ using Newtonsoft.Json;
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;
 
-public sealed class CustomUser : IdentityUser<ulong>
+public sealed class CustomUser : IdentityUser<string>
 {
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [StringLength(36)]
+    public override string Id { get; set; }
+
     [StringLength(320)]
     [ProtectedPersonalData]
     [EmailAddress]
@@ -25,10 +30,6 @@ public sealed class CustomUser : IdentityUser<ulong>
     [JsonIgnore]
     public override string PasswordHash { get; set; }
     
-    [StringLength(36)]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public string Uuid { get; set; }
-    
     [StringLength(16)]
     public override string UserName { get; set; }
     
@@ -38,9 +39,7 @@ public sealed class CustomUser : IdentityUser<ulong>
     [StringLength(16)]
     public string? DisplayName { get; set; }
     
-    [StringLength(200)]
-    [JsonIgnore]
-    public string? AvatarPath { get; set; }
+    public ESkinType SkinModel { get; set; }
     
     public ulong? DiscordId { get; set; }
     
@@ -94,17 +93,16 @@ public sealed class CustomUser : IdentityUser<ulong>
     
     public CustomUser() { }
     
-    public CustomUser(ulong id, string uuid, string userName, string normalizedUserName, string email, string normalizedEmail, string password, string? avatarPath, ulong? discordId, string? lockoutReason, DateTimeOffset createDate, DateTimeOffset lastUpdate, DateTimeOffset lastLogin)
+    public CustomUser(string id, string userName, string normalizedUserName, string email, string normalizedEmail, string password, ESkinType skinModel, ulong? discordId, string? lockoutReason, DateTimeOffset createDate, DateTimeOffset lastUpdate, DateTimeOffset lastLogin)
     {
         Id = id;
-        Uuid = uuid;
         UserName = userName;
         NormalizedUserName = normalizedUserName;
+        SkinModel = skinModel;
         DisplayName = userName; // Default display name is the username
         Email = email;
         NormalizedEmail = normalizedEmail;
         PasswordHash = password;
-        AvatarPath = avatarPath;
         DiscordId = discordId;
         LockoutReason = lockoutReason;
         CreateDate = createDate;
@@ -112,7 +110,7 @@ public sealed class CustomUser : IdentityUser<ulong>
         LastLogin = lastLogin;
     }
     
-    public CustomUser(string userName, string normalizedUserName, string email, string normalizedEmail, string password, string? avatarPath, ulong? discordId, string? lockoutReason, DateTimeOffset createDate, DateTimeOffset lastUpdate, DateTimeOffset lastLogin) : base(userName)
+    public CustomUser(string userName, string normalizedUserName, string email, string normalizedEmail, string password, ESkinType skinModel, ulong? discordId, string? lockoutReason, DateTimeOffset createDate, DateTimeOffset lastUpdate, DateTimeOffset lastLogin) : base(userName)
     {
         UserName = userName;
         NormalizedUserName = normalizedUserName;
@@ -120,15 +118,25 @@ public sealed class CustomUser : IdentityUser<ulong>
         Email = email;
         NormalizedEmail = normalizedEmail;
         PasswordHash = password;
-        AvatarPath = avatarPath;
+        SkinModel = skinModel;
         DiscordId = discordId;
         LockoutReason = lockoutReason;
         CreateDate = createDate;
         LastUpdate = lastUpdate;
         LastLogin = lastLogin;
     }
-    
-    public bool HasAvatar => !string.IsNullOrEmpty(AvatarPath) && File.Exists(AvatarPath);
+
+    public string GetSkinVariant()
+    {
+        switch (SkinModel)
+        {
+            case ESkinType.WIDE:
+                return "classic";
+            case ESkinType.SLIM:
+                return "slim";
+        }
+        return "classic";
+    }
     
     public string HighestRole => UserRoles.OrderByDescending(x => x.Role?.Level).First().Role?.Name ?? "Anonymous";
     
@@ -145,4 +153,24 @@ public sealed class CustomUser : IdentityUser<ulong>
     
     [JsonIgnore]
     public UserBillingInformation? BillingInformation { get; set; }
+    
+    [JsonIgnore]
+    public ICollection<UserPlaySession> PlaySessions { get; set; }
+    
+    [JsonIgnore]
+    public ICollection<FileData> Files { get; set; }
+    
+    [JsonIgnore]
+    public ICollection<UserCape> OwnedCapes { get; set; }
+
+    [JsonIgnore] 
+    public FileData? Avatar => Files.FirstOrDefault(x => x.Type == EFileDataType.PROFILE_PICTURE);
+    
+    public bool HasAvatar => Files.Any(x => x.Type == EFileDataType.PROFILE_PICTURE);
+    
+    [JsonIgnore]
+    public FileData? Skin => Files.FirstOrDefault(x => x.Type == EFileDataType.SKIN);
+
+    [JsonIgnore] 
+    public FileData? Cape => OwnedCapes.FirstOrDefault(x => x.IsSelected)?.Cape?.FileData;
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Tavstal.MesterMC.Api.Models.Database;
+using Tavstal.MesterMC.Api.Models.Database.Server;
 using Tavstal.MesterMC.Api.Models.Database.User;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Local
@@ -14,8 +15,8 @@ namespace Tavstal.MesterMC.Api.Services.Database;
 /// <summary>
 /// Custom database context for the application, extending IdentityDbContext with custom user and role entities.
 /// </summary>
-public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, CustomUserClaim, CustomUserRole,
-    CustomUserLogin, IdentityRoleClaim<ulong>, CustomUserToken>
+public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string, CustomUserClaim, CustomUserRole,
+    CustomUserLogin, IdentityRoleClaim<string>, CustomUserToken>
 {
     private readonly ILogger<CustomDbContext> _logger;
 
@@ -52,11 +53,19 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     /// <remarks>
     /// DO NOT USE THIS PROPERTY DIRECTLY, USE THE CUSTOM METHODS IN THIS CONTEXT.
     /// </remarks>
-    public new DbSet<IdentityRoleClaim<ulong>> RoleClaims { get; private set; }
+    public new DbSet<IdentityRoleClaim<string>> RoleClaims { get; private set; }
 
     private DbSet<UserBillingInformation> UserBillingInformations { get; set; }
     
+    private DbSet<UserPlaySession> UserPlaySessions { get; set; }
+    
     private DbSet<FileData> Files { get; set; }
+
+    private DbSet<Cape> Capes { get; set; }
+    
+    private DbSet<UserCape> UserCapes { get; set; }
+    
+    private DbSet<ServerJoin> ServerJoins { get; set; }
     
     private DbSet<News> News { get; set; }
 
@@ -106,19 +115,42 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
             .IsRequired(); // Ensure the relationship is requir
 
         // Ensure that the foreign key is correctly mapped
-        builder.Entity<CustomUserLogin>()
-            .HasOne(cul => cul.User)
-            .WithMany(cu => cu.UserLogins)
-            .HasForeignKey(cul => cul.UserId)
-            .IsRequired(); // If UserId is required, otherwise you can omit this
+        builder.Entity<CustomUserLogin>(entity =>
+        {
+            entity.HasKey(cul => cul.Id);
+            entity.Property(cul => cul.Id)
+                .ValueGeneratedOnAdd();
 
-        builder.Entity<CustomUserLogin>()
-            .HasKey(x => x.ProviderKey);
+            entity.HasOne(cul => cul.User)
+                .WithMany(cu => cu.UserLogins)
+                .HasForeignKey(cul => cul.UserId)
+                .IsRequired();
+            
+            entity.ToTable("AspNetUserLogins"); 
+        });
 
         builder.Entity<UserBillingInformation>()
             .HasOne(b => b.User)
             .WithOne(u => u.BillingInformation)
             .HasForeignKey<UserBillingInformation>(b => b.UserId)
+            .IsRequired();
+        
+        builder.Entity<UserPlaySession>()
+            .HasOne(p => p.User)
+            .WithMany(u => u.PlaySessions) 
+            .HasForeignKey(p => p.UserId) 
+            .IsRequired();
+        
+        builder.Entity<FileData>()
+            .HasOne(f => f.User)
+            .WithMany(u => u.Files)
+            .HasForeignKey(f => f.UserId)
+            .IsRequired();
+
+        builder.Entity<UserCape>()
+            .HasOne(c => c.User)
+            .WithMany(u => u.OwnedCapes)
+            .HasForeignKey(c => c.UserId)
             .IsRequired();
     }
 
@@ -382,7 +414,7 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     /// <param name="value">The role claim to add.</param>
     /// <param name="shouldSave">Whether to save changes after adding the role claim.</param>
     /// <returns>The added role claim.</returns>
-    public async Task<IdentityRoleClaim<ulong>> AddRoleClaimAsync(IdentityRoleClaim<ulong> value,
+    public async Task<IdentityRoleClaim<string>> AddRoleClaimAsync(IdentityRoleClaim<string> value,
         bool shouldSave = false)
     {
         var result = await RoleClaims.AddAsync(value);
@@ -395,7 +427,7 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     /// </summary>
     /// <param name="value">The list of role claims to add.</param>
     /// <param name="shouldSave">Whether to save changes after adding the role claims.</param>
-    public async Task AddRoleClaimsAsync(List<IdentityRoleClaim<ulong>> value, bool shouldSave = false)
+    public async Task AddRoleClaimsAsync(List<IdentityRoleClaim<string>> value, bool shouldSave = false)
     {
         await RoleClaims.AddRangeAsync(value);
         if (shouldSave) await SaveChangesAsync();
@@ -406,7 +438,7 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     /// </summary>
     /// <param name="value">The role claim to update.</param>
     /// <param name="shouldSave">Whether to save changes after updating the role claim.</param>
-    public async Task UpdateRoleClaimAsync(IdentityRoleClaim<ulong> value, bool shouldSave = false)
+    public async Task UpdateRoleClaimAsync(IdentityRoleClaim<string> value, bool shouldSave = false)
     {
         RoleClaims.Update(value);
         if (shouldSave) await SaveChangesAsync();
@@ -417,7 +449,7 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     /// </summary>
     /// <param name="value">The role claim to remove.</param>
     /// <param name="shouldSave">Whether to save changes after removing the role claim.</param>
-    public async Task RemoveRoleClaimAsync(IdentityRoleClaim<ulong> value, bool shouldSave = false)
+    public async Task RemoveRoleClaimAsync(IdentityRoleClaim<string> value, bool shouldSave = false)
     {
         RoleClaims.Remove(value);
         if (shouldSave) await SaveChangesAsync();
@@ -429,8 +461,8 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     /// </summary>
     /// <param name="predicate">An optional predicate to filter the role claims.</param>
     /// <returns>A list of role claims.</returns>
-    public List<IdentityRoleClaim<ulong>> GetRoleClaims(
-        Expression<Func<IdentityRoleClaim<ulong>, bool>>? predicate = null)
+    public List<IdentityRoleClaim<string>> GetRoleClaims(
+        Expression<Func<IdentityRoleClaim<string>, bool>>? predicate = null)
     {
         if (predicate != null)
             return RoleClaims.Where(predicate).ToList();
@@ -443,7 +475,7 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     /// </summary>
     /// <param name="predicate">The predicate to filter the role claim.</param>
     /// <returns>The found role claim, or null if no role claim is found.</returns>
-    public IdentityRoleClaim<ulong>? FindRoleClaim(Expression<Func<IdentityRoleClaim<ulong>, bool>> predicate)
+    public IdentityRoleClaim<string>? FindRoleClaim(Expression<Func<IdentityRoleClaim<string>, bool>> predicate)
     {
         return RoleClaims.FirstOrDefault(predicate);
     }
@@ -696,14 +728,88 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     }
 
     #endregion
+    
+    #region User Play Sessions
 
+    public async Task<UserPlaySession> AddUserPlaySessionAsync(UserPlaySession value,
+        bool shouldSave = false)
+    {
+        var result = await UserPlaySessions.AddAsync(value);
+        if (shouldSave) await SaveChangesAsync();
+        return result.Entity;
+    }
+     
+    public async Task UpdateUserPlaySessionAsync(UserPlaySession value, bool shouldSave = false)
+    {
+        UserPlaySessions.Update(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public async Task RemoveUserPlaySessionAsync(UserPlaySession value, bool shouldSave = false)
+    {
+        UserPlaySessions.Remove(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public List<UserPlaySession> GetUserPlaySessions(
+        Expression<Func<UserPlaySession, bool>>? predicate = null)
+    {
+        if (predicate != null)
+            return UserPlaySessions.Where(predicate).ToList();
+        return UserPlaySessions.ToList();
+    }
+    
+    public UserPlaySession? FindUserPlaySession(Expression<Func<UserPlaySession, bool>> predicate)
+    {
+        return UserPlaySessions.FirstOrDefault(predicate);
+    }
+
+    #endregion
+
+    #region User Capes
+
+     public async Task<UserCape> AddUserCapeAsync(UserCape value,
+        bool shouldSave = false)
+    {
+        var result = await UserCapes.AddAsync(value);
+        if (shouldSave) await SaveChangesAsync();
+        return result.Entity;
+    }
+     
+    public async Task UpdateUserCapeAsync(UserCape value, bool shouldSave = false)
+    {
+        UserCapes.Update(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public async Task RemoveUserCapeAsync(UserCape value, bool shouldSave = false)
+    {
+        UserCapes.Remove(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public List<UserCape> GetUserCapes(
+        Expression<Func<UserCape, bool>>? predicate = null)
+    {
+        if (predicate != null)
+            return UserCapes.Where(predicate).ToList();
+        return UserCapes.ToList();
+    }
+    
+    public UserCape? FindUserCape(Expression<Func<UserCape, bool>> predicate)
+    {
+        return UserCapes.FirstOrDefault(predicate);
+    }
+
+    #endregion
+    
     /// <summary>
     /// Clears all user logins and tokens associated with the specified user ID.
     /// </summary>
     /// <param name="userId">The ID of the user whose logins and tokens are to be cleared.</param>
     /// <param name="shouldSave">Indicates whether to save changes to the database after clearing the logins and tokens.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task ClearUserLoginsAsync(ulong userId, bool shouldSave = false)
+    public async Task ClearUserLoginsAsync(string userId, bool shouldSave = false)
     {
         var logins = await UserLogins.Where(x => x.UserId == userId).ToListAsync();
         var tokens = await UserTokens.Where(x => x.UserId == userId).ToListAsync();
@@ -752,6 +858,80 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     {
         return await Files.FirstOrDefaultAsync(predicate!);
     }
+    #endregion
+
+    #region Capes
+
+    public async Task<Cape> AddCapeAsync(Cape value,
+        bool shouldSave = false)
+    {
+        var result = await Capes.AddAsync(value);
+        if (shouldSave) await SaveChangesAsync();
+        return result.Entity;
+    }
+     
+    public async Task UpdateCapeAsync(Cape value, bool shouldSave = false)
+    {
+        Capes.Update(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public async Task RemoverCapeAsync(Cape value, bool shouldSave = false)
+    {
+        Capes.Remove(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public List<Cape> GetCapes(
+        Expression<Func<Cape, bool>>? predicate = null)
+    {
+        if (predicate != null)
+            return Capes.Where(predicate).ToList();
+        return Capes.ToList();
+    }
+    
+    public Cape? FindUserCape(Expression<Func<Cape, bool>> predicate)
+    {
+        return Capes.FirstOrDefault(predicate);
+    }
+
+    #endregion
+    
+    #region Server Joins
+
+    public async Task<ServerJoin> AddServerJoinAsync(ServerJoin value,
+        bool shouldSave = false)
+    {
+        var result = await ServerJoins.AddAsync(value);
+        if (shouldSave) await SaveChangesAsync();
+        return result.Entity;
+    }
+     
+    public async Task UpdateServerJoinAsync(ServerJoin value, bool shouldSave = false)
+    {
+        ServerJoins.Update(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public async Task RemoverServerJoinAsync(ServerJoin value, bool shouldSave = false)
+    {
+        ServerJoins.Remove(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public List<ServerJoin> GetServerJoins(
+        Expression<Func<ServerJoin, bool>>? predicate = null)
+    {
+        if (predicate != null)
+            return ServerJoins.Where(predicate).ToList();
+        return ServerJoins.ToList();
+    }
+    
+    public ServerJoin? FindServerJoin(Expression<Func<ServerJoin, bool>> predicate)
+    {
+        return ServerJoins.FirstOrDefault(predicate);
+    }
+
     #endregion
     
     #region News

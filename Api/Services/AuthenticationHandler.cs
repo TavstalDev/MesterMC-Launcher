@@ -45,7 +45,7 @@ public class AuthenticationHandler : AuthenticationHandler<AuthenticationSchemeO
 
         if (user.LockoutEnabled)
         {
-            if (user.LockoutEnd > DateTime.Now)
+            if (user.LockoutEnd > DateTimeOffset.UtcNow)
                 return AuthenticateResult.Fail(user.LockoutReason ?? "User is locked out");
             
             user.LockoutEnabled = false;

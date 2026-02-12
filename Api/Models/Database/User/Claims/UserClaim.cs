@@ -8,7 +8,7 @@ public class UserClaim
     
     public UserClaim(string key, string value) { Key = key; DefaultValue = value; }
     
-    public CustomUserClaim ToIdentityClaim(ulong userId)
+    public CustomUserClaim ToIdentityClaim(string userId)
     {
         return new CustomUserClaim
         {
@@ -23,7 +23,7 @@ public class UserClaim
         return ToIdentityClaim(user.Id);
     }
     
-    public static List<CustomUserClaim> ToList(List<UserClaim> claims, ulong userId)
+    public static List<CustomUserClaim> ToList(List<UserClaim> claims, string userId)
     {
         List<CustomUserClaim> local = new List<CustomUserClaim>();
         foreach (var claim in claims)

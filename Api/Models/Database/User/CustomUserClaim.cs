@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;
 
-public class CustomUserClaim : IdentityUserClaim<ulong>
+public class CustomUserClaim : IdentityUserClaim<string>
 {
     /* ######################################################################
      *                         NAVIGATION PROPERTIES

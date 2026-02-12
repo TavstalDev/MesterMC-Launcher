@@ -9,7 +9,8 @@ namespace Tavstal.MesterMC.Api.Models.Database.User;
 public class UserBillingInformation
 {
     [Key]
-    public ulong UserId { get; set; }
+    [StringLength(36)]
+    public string UserId { get; set; }
     
     [PersonalData]
     [StringLength(50)]

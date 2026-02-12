@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using OtpNet;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Models.Database.User.Claims;
@@ -19,12 +20,15 @@ public class CustomUserManager : UserManager<CustomUser>
     // ReSharper disable once NotAccessedField.Local
     private readonly ILogger _logger;
     private readonly IConfiguration _configuration;
+    private readonly Settings _settings;
     
-    public CustomUserManager(IUserStore<CustomUser> store, IOptions<IdentityOptions> optionsAccessor, IPasswordHasher<CustomUser> passwordHasher, IEnumerable<IUserValidator<CustomUser>> userValidators, IEnumerable<IPasswordValidator<CustomUser>> passwordValidators, ILookupNormalizer keyNormalizer, IdentityErrorDescriber errors, IServiceProvider services, ILogger<CustomUserManager> logger, CustomDbContext context, IConfiguration configuration) : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger)
+    public CustomUserManager(IUserStore<CustomUser> store, IOptions<IdentityOptions> optionsAccessor, IPasswordHasher<CustomUser> passwordHasher, IEnumerable<IUserValidator<CustomUser>> userValidators, IEnumerable<IPasswordValidator<CustomUser>> passwordValidators, ILookupNormalizer keyNormalizer, IdentityErrorDescriber errors, IServiceProvider services, ILogger<CustomUserManager> logger, CustomDbContext context, IConfiguration configuration, Settings settings) 
+        : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger)
     {
         _context = context;
         _configuration = configuration;
         _logger = logger;
+        _settings = settings;
     }
 
     #region Roles & Claims
@@ -38,7 +42,8 @@ public class CustomUserManager : UserManager<CustomUser>
         CustomClaimTypes.EmailConfirmationToken,
         CustomClaimTypes.EmailRecoveryToken,
         CustomClaimTypes.TwoFactorRecoveryCode,
-        CustomClaimTypes.TwoFactorSessionToken
+        CustomClaimTypes.TwoFactorSessionToken,
+        CustomClaimTypes.TwoFactorLauncherSessionToken
     ];
     
     #region Roles
@@ -80,8 +85,8 @@ public class CustomUserManager : UserManager<CustomUser>
         if (userClaim == null)
             return false;
             
-        ulong userId = Convert.ToUInt64(userClaim.Value);
-        CustomUser? user = _context.FindUser(x => x.Id == userId);
+        string userid = userClaim.Value;
+        CustomUser? user = _context.FindUser(x => x.Id == userid);
         if (user == null)
             return false;
 
@@ -125,8 +130,8 @@ public class CustomUserManager : UserManager<CustomUser>
         if (userClaim == null)
             return false;
 
-        ulong userId = Convert.ToUInt64(userClaim.Value);
-        CustomUser? user = _context.FindUser(x => x.Id == userId);
+        string userid = userClaim.Value;
+        CustomUser? user = _context.FindUser(x => x.Id == userid);
         if (user == null)
             return false;
 
@@ -229,7 +234,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// </summary>
     /// <param name="userid">The user ID to get the custom roles for.</param>
     /// <returns>A list of custom roles.</returns>
-    private List<CustomRole> GetUserCustomRoles(ulong userid)
+    private List<CustomRole> GetUserCustomRoles(string userid)
     {
         var userRoles = _context.GetUserRoles(x => x.UserId == userid);
         List<CustomRole> roles = new List<CustomRole>();
@@ -247,7 +252,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// </summary>
     /// <param name="userid">The ID of the user whose roles are to be retrieved.</param>
     /// <returns>A list of <see cref="CustomRole"/> objects representing the user's roles.</returns>
-    public List<CustomRole> GetUserRoles(ulong userid)
+    public List<CustomRole> GetUserRoles(string userid)
     {
         var userRoles =_context. GetUserRoles(x => x.UserId == userid);
         List<CustomRole> roles = new List<CustomRole>();
@@ -265,7 +270,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// </summary>
     /// <param name="userid">The user ID to get the highest role for.</param>
     /// <returns>The highest role.</returns>
-    public CustomRole GetUserHighestRole(ulong userid)
+    public CustomRole GetUserHighestRole(string userid)
     {
         var userRoles =_context. GetUserRoles(x => x.UserId == userid);
         List<CustomRole> roles = new List<CustomRole>();
@@ -286,7 +291,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <param name="userid">The user ID to check.</param>
     /// <param name="claim">The claim to check.</param>
     /// <returns>True if the user has the claim, otherwise false.</returns>
-    public bool UserHasClaim(ulong userid, string claim)
+    public bool UserHasClaim(string userid, string claim)
     {
         CustomUser? user = _context.FindUser(x => x.Id == userid);
         if (user == null)
@@ -314,7 +319,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <param name="claim">The claim to check.</param>
     /// <param name="value">The claim value to check.</param>
     /// <returns>True if the user has the claim with the value, otherwise false.</returns>
-    public bool UserHasClaim(ulong userid, string claim, string value)
+    public bool UserHasClaim(string userid, string claim, string value)
     {
         CustomUser? user = _context.FindUser(x => x.Id == userid);
         if (user == null)
@@ -358,9 +363,9 @@ public class CustomUserManager : UserManager<CustomUser>
     /// </summary>
     /// <param name="userid">The user ID to get the role claims for.</param>
     /// <returns>A list of role claims.</returns>
-    private List<IdentityRoleClaim<ulong>> GetUserRoleClaims(ulong userid)
+    private List<IdentityRoleClaim<string>> GetUserRoleClaims(string userid)
     {
-        List<IdentityRoleClaim<ulong>> claims = new List<IdentityRoleClaim<ulong>>();
+        List<IdentityRoleClaim<string>> claims = new List<IdentityRoleClaim<string>>();
         List<CustomRole> roles = GetUserCustomRoles(userid);
         foreach (var role in roles.OrderByDescending(x => x.Level))
         {
@@ -402,7 +407,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <param name="claim">The claim to check.</param>
     /// <param name="value">The claim value to check.</param>
     /// <returns>True if the user has the permission, otherwise false.</returns>
-    public bool HasPermission(ulong userid, string claim, string value = "true")
+    public bool HasPermission(string userid, string claim, string value = "true")
     {
         var roleClaim = _context.FindUserClaim(x => x.UserId == userid && x.ClaimType == claim && x.ClaimValue == value);
         if (roleClaim != null)
@@ -445,7 +450,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <param name="userId">The ID of the user whose claims are to be retrieved.</param>
     /// <param name="includeRoles">A boolean indicating whether to include role claims (default is true).</param>
     /// <returns>A list of <see cref="CustomClaim"/> objects representing the user's claims.</returns>
-    public List<CustomClaim> GetAllClaimsOfUser(ulong userId, bool includeRoles = true)
+    public List<CustomClaim> GetAllClaimsOfUser(string userId, bool includeRoles = true)
     {
         List<CustomClaim> claims = new List<CustomClaim>();
         List<string> addedKeys = new List<string>();
@@ -492,7 +497,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <param name="userId">The ID of the user whose claims are to be retrieved.</param>
     /// <param name="includeRoles">A boolean indicating whether to include role claims (default is true).</param>
     /// <returns>A list of <see cref="Claim"/> objects representing the user's claims.</returns>
-    public List<Claim> GetAllClaimsOfUserV2(ulong userId, bool includeRoles = true)
+    public List<Claim> GetAllClaimsOfUserV2(string userId, bool includeRoles = true)
     {
         List<Claim> claims = new List<Claim>();
         List<string> addedKeys = new List<string>();
@@ -534,7 +539,7 @@ public class CustomUserManager : UserManager<CustomUser>
         if (userToken == null)
             return null;
 
-        var userLogin = _context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTime.Now);
+        var userLogin = _context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
         if (userLogin == null)
             return null;
             
@@ -553,7 +558,7 @@ public class CustomUserManager : UserManager<CustomUser>
             if (raw.Length < 2)
                 return null;
                 
-            return await _context.FindUserAsync(x => x.NormalizedEmail == raw[0].Normalize() && x.PasswordHash == StringChiper.GetEncryptedSha256Hash(raw[1], _configuration.GetValue<string>("EncryptionKey")!));
+            return await _context.FindUserAsync(x => x.NormalizedEmail == raw[0].Normalize() && x.PasswordHash == StringChiper.GetEncryptedSha256Hash(raw[1], _settings.EncryptionKey));
         }
 
         if (authenticationString.ToLower().StartsWith("bearer"))
@@ -563,7 +568,7 @@ public class CustomUserManager : UserManager<CustomUser>
             if (userToken == null)
                 return null;
 
-            var userLogin = _context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTime.Now);
+            var userLogin = _context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
             if (userLogin == null)
                 return null;
 
@@ -583,6 +588,7 @@ public class CustomUserManager : UserManager<CustomUser>
         string suffix = hashString.Substring(5);
 
         using var client = new HttpClient();
+        // TODO: Cache the response for the prefix to avoid making too many requests to the API
         var response = await client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
 
         return response.Contains(suffix);

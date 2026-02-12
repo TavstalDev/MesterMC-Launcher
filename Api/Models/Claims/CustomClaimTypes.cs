@@ -81,5 +81,11 @@ public static class CustomClaimTypes
     /// Claim type for tracking the number of session attempts for two-factor authentication.
     /// </summary>
     public const string TwoFactorSessionAttempt = "mmc.TwoFactor.SessionAttempt";
+    
+    public const string TwoFactorLauncherSessionToken = "mmc.TwoFactor.Launcher.SessionToken";
+    
+    public const string TwoFactorLauncherSessionExpiration = "mmc.TwoFactor.Launcher.SessionExpiration";
+    
+    public const string TwoFactorLauncherSessionAttempt = "mmc.TwoFactor.Launcher.SessionAttempt";
     #endregion
 }

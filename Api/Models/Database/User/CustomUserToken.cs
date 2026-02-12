@@ -6,13 +6,14 @@ using Newtonsoft.Json;
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;
 
-public sealed class CustomUserToken : IdentityUserToken<ulong>
+public sealed class CustomUserToken : IdentityUserToken<string>
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public string Id { get; set; }
     
-    public override ulong UserId { get; set; }
+    [StringLength(36)]
+    public override string UserId { get; set; }
     
     [StringLength(32)]
     public override string Name { get; set; }
@@ -28,7 +29,7 @@ public sealed class CustomUserToken : IdentityUserToken<ulong>
     
     public CustomUserToken() { }
     
-    public CustomUserToken(ulong userId, string name, string value, string loginProvider, DateTimeOffset createDate)
+    public CustomUserToken(string userId, string name, string value, string loginProvider, DateTimeOffset createDate)
     {
         UserId = userId;
         Name = name;

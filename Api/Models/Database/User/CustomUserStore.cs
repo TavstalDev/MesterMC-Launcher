@@ -4,7 +4,7 @@ using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;
 
-public class CustomUserStore : UserStore<CustomUser, CustomRole, CustomDbContext, ulong, CustomUserClaim, CustomUserRole, IdentityUserLogin<ulong>, IdentityUserToken<ulong>, IdentityRoleClaim<ulong>>
+public class CustomUserStore : UserStore<CustomUser, CustomRole, CustomDbContext, string, CustomUserClaim, CustomUserRole, IdentityUserLogin<string>, IdentityUserToken<string>, IdentityRoleClaim<string>>
 {
     public CustomUserStore(CustomDbContext context, IdentityErrorDescriber? describer = null)
         : base(context, describer)

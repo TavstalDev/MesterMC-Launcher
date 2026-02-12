@@ -6,13 +6,14 @@ using Newtonsoft.Json;
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;
 
-public sealed class CustomUserLogin : IdentityUserLogin<ulong>
+public sealed class CustomUserLogin : IdentityUserLogin<string>
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public ulong Id { get; set; }
     
-    public override ulong UserId { get; set; }
+    [StringLength(36)]
+    public override string UserId { get; set; }
     
     [StringLength(255)]
     public override string? ProviderKey { get; set; }
@@ -52,7 +53,7 @@ public sealed class CustomUserLogin : IdentityUserLogin<ulong>
     
     public CustomUserLogin() {}
     
-    public CustomUserLogin(ulong userId, string? providerKey, string providerDisplayName, string loginProvider, string ipv4Address, string ipv6Address, string country, string city, string region, string operatingSystem, string browser, DateTimeOffset createDate, DateTimeOffset expireDate)
+    public CustomUserLogin(string userId, string? providerKey, string providerDisplayName, string loginProvider, string ipv4Address, string ipv6Address, string country, string city, string region, string operatingSystem, string browser, DateTimeOffset createDate, DateTimeOffset expireDate)
     {
         UserId = userId;
         ProviderKey = providerKey;
@@ -69,7 +70,7 @@ public sealed class CustomUserLogin : IdentityUserLogin<ulong>
         ExpireDate = expireDate;
     }
     
-    public CustomUserLogin(ulong userId, string? providerKey, string providerDisplayName, string loginProvider, string? ipv4Address, string? ipv6Address, IpInfo ipInfo, string operatingSystem, string browser, DateTimeOffset createDate, DateTimeOffset expireDate)
+    public CustomUserLogin(string userId, string? providerKey, string providerDisplayName, string loginProvider, string? ipv4Address, string? ipv6Address, IpInfo ipInfo, string operatingSystem, string browser, DateTimeOffset createDate, DateTimeOffset expireDate)
     {
         UserId = userId;
         ProviderKey = providerKey;

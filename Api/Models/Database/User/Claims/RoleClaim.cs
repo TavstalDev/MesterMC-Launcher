@@ -14,9 +14,9 @@ public class RoleClaim
         DefaultValue = value; 
     }
     
-    public IdentityRoleClaim<ulong> ToIdentityClaim(ulong roleId)
+    public IdentityRoleClaim<string> ToIdentityClaim(string roleId)
     {
-        return new IdentityRoleClaim<ulong>
+        return new IdentityRoleClaim<string>
         {
             ClaimType = Key,
             ClaimValue = DefaultValue,
@@ -24,20 +24,20 @@ public class RoleClaim
         };
     }
     
-    public IdentityRoleClaim<ulong> ToIdentityClaim(CustomRole role)
+    public IdentityRoleClaim<string> ToIdentityClaim(CustomRole role)
     {
         return ToIdentityClaim(role.Id);
     }
     
-    public static List<IdentityRoleClaim<ulong>> ToList(List<RoleClaim> claims, ulong roleId)
+    public static List<IdentityRoleClaim<string>> ToList(List<RoleClaim> claims, string roleId)
     {
-        List<IdentityRoleClaim<ulong>> local = new List<IdentityRoleClaim<ulong>>();
+        List<IdentityRoleClaim<string>> local = new List<IdentityRoleClaim<string>>();
         foreach (var claim in claims)
             local.Add(claim.ToIdentityClaim(roleId));
         return local;
     }
     
-    public static List<IdentityRoleClaim<ulong>> ToList(List<RoleClaim> claims, CustomRole role)
+    public static List<IdentityRoleClaim<string>> ToList(List<RoleClaim> claims, CustomRole role)
     {
         return ToList(claims, role.Id);
     }
