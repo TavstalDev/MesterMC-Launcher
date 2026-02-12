@@ -11,7 +11,6 @@ public static class Program
     
     public static void Main(string[] args)
     {
-        new EnvLoader().Load();
         CreateHostBuilder(args).Build().Run();
     }
     
@@ -25,6 +24,13 @@ public static class Program
             {
                 _isDevelopment = builderContext.HostingEnvironment.IsDevelopment();
                 _contentRoot = builderContext.HostingEnvironment.ContentRootPath;
+                
+                // Load .env file
+                new EnvLoader()
+                    .AddEnvFile(Path.Combine(_contentRoot, ".env"))
+                    .Load();
+
+                
                 config.AddJsonFile(_isDevelopment ? "appsettings.Development.json" : "appsettings.json", optional: false, reloadOnChange: true);
                 //config.AddJsonFile("secrets.json", optional: false, reloadOnChange: true);
                 config.AddEnvironmentVariables();

@@ -11,10 +11,9 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database.User;
-using Tavstal.MesterMC.Api.Models.Swagger;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -55,8 +54,8 @@ public class Startup
         }
 
         connectionString = connectionString
-            .Replace("$DB_USER", _configuration.GetValue<string>("Database:User"))
-            .Replace("$DB_PASSWORD", _configuration.GetValue<string>("Database:Password"));
+            .Replace("$DB_USER", _configuration.GetValue<string>("DB_USER"))
+            .Replace("$DB_PASSWORD", _configuration.GetValue<string>("DB_PASSWORD"));
 
         // Configure the database context
         services.AddDbContext<CustomDbContext>(options =>
@@ -85,7 +84,6 @@ public class Startup
         {
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
-            
         // Configure Swagger generation
         services.AddSwaggerGen(config =>
         {
@@ -106,8 +104,6 @@ public class Startup
                     Url = new Uri("https://www.gnu.org/licenses/gpl-3.0.html")
                 }
             });
-            // Add schema filter for enums
-            config.SchemaFilter<EnumSchemaFilter>();
             // Include XML comments for better documentation
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
@@ -135,11 +131,30 @@ public class Startup
                 Scheme = "basic",
             });
             // Add security requirements for Bearer and Basic authentication
-            config.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+            config.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
-                [new OpenApiSecuritySchemeReference("Bearer")] = [],
-                [new OpenApiSecuritySchemeReference("Basic")] = []
-
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type=ReferenceType.SecurityScheme,
+                            Id="Bearer"
+                        }
+                    },
+                    []
+                },
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type=ReferenceType.SecurityScheme,
+                            Id="Basic"
+                        }
+                    },
+                    []
+                }
             });
         });
         #endregion
@@ -181,7 +196,7 @@ public class Startup
                     // Set the valid audience for the token
                     ValidAudience = _configuration.GetValue<string>("Jwt:Audience"),
                     // Set the signing key for the token
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("EncryptionKey") ?? throw new Exception("Encryption key is not set"))),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("JWT_ENCRYPTION_KEY") ?? throw new Exception("Encryption key is not set"))),
                 };
             })
             // Add custom authentication scheme for Basic authentication
@@ -257,8 +272,25 @@ public class Startup
         #endregion
     }
     
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, ILogger<Startup> _logger)
     {
+        // TODO: Remove after debugging yggdrasil
+        app.Use(async (context, next) =>
+        {
+            // Log the details of the incoming call
+            _logger.LogCritical("DEBUG-LOG: Incoming {Method} {Path}{Query}", 
+                context.Request.Method, 
+                context.Request.Path, 
+                context.Request.QueryString);
+
+            await next();
+
+            // Log what the server actually returned
+            _logger.LogCritical("DEBUG-LOG: Response {StatusCode} for {Path}", 
+                context.Response.StatusCode, 
+                context.Request.Path);
+        });
+        
         // Use developer exception page
         if (Program.IsDevelopment)
             app.UseDeveloperExceptionPage();
