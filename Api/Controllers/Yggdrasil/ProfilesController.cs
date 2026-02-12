@@ -1,9 +1,12 @@
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
+using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
-[Route("/yggdrasil/api/profiles")]
+[Route("yggdrasil/api/profiles")]
 public class ProfilesController : Controller
 {
     private readonly IConfiguration _configuration;
@@ -22,22 +25,22 @@ public class ProfilesController : Controller
     [HttpPost("minecraft")]
     public IActionResult MinecraftProfile([FromBody] List<String> names)
     {
-        /*
-         * EXAMPLE RESPONSE
-         *
-         * [
-             {
-               "id": "5f8d0d55a3b24f2ab9c6e4fcd1234567",
-               "name": "PlayerOne"
-             },
-             {
-               "id": "8a7b6c5d4e3f2a1b0c9d8e7f12345678",
-               "name": "AnotherPlayer"
-             }
-           ]
-           
-         *
-         */
-        return Ok();
+        List<CustomUser> users = _dbContext.GetUsers(x => names.Contains(x.UserName));
+        if (users.Count == 0)
+            return this.ReturnResponseCode(HttpStatusCode.NotFound);
+
+        List<Dictionary<string, string>> response = new List<Dictionary<string, string>>();
+        foreach (CustomUser user in users)
+        {
+            Dictionary<string, string> userData = new Dictionary<string, string>
+            {
+                { "id", user.Id.ToString() },
+                { "name", user.UserName }
+            };
+            response.Add(userData);
+            
+        }
+        
+        return this.ReturnJson(response);
     }
 }
