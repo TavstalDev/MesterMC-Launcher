@@ -17,17 +17,26 @@ using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Models.Swagger;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace Tavstal.MesterMC.Api;
 
 public class Startup
 {
+    private static Startup _instance;
     private readonly IConfiguration _configuration;
+    private readonly string _uploadDirectory;
+    public static string UploadDirectory => _instance._uploadDirectory;
     
     public Startup(IConfiguration configuration)
     {
+        _instance = this;
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         _configuration = configuration;
+        string basePath = AppContext.BaseDirectory;
+        _uploadDirectory = Path.Combine(basePath, _configuration.GetValue<string>("UploadDirectory") ?? "uploads");
+        if (!Directory.Exists(_uploadDirectory))
+            Directory.CreateDirectory(_uploadDirectory);
     }
     
     public void ConfigureServices(IServiceCollection services)
@@ -242,7 +251,7 @@ public class Startup
         });
         #endregion
         // JwtSettings
-        services.AddSingleton<JwtSettings>();
+        services.AddSingleton<Settings>();
         // Email Service
         services.AddSingleton<EmailService>();
         #endregion
