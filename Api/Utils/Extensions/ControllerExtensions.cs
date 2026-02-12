@@ -41,19 +41,25 @@ public static class ControllerExtensions
         return controller.StatusCode((int)status, message);
     }
     
-    public static IActionResult ReturnJson(this ControllerBase controller, HttpStatusCode status, object json)
+    public static IActionResult ReturnJson(this ControllerBase controller, string json)
     {
-        return controller.StatusCode((int)status, JObject.FromObject(json).ToString(Formatting.None));
+        return controller.Content(json, "application/json");
     }
     
-    public static IActionResult ReturnJson(this ControllerBase controller, HttpStatusCode status, JObject json)
+    public static IActionResult ReturnJson(this ControllerBase controller, object json)
     {
-        return controller.StatusCode((int)status, JObject.FromObject(json).ToString(Formatting.None));
+        string jsonString = JsonConvert.SerializeObject(json, Formatting.None);
+        return controller.Content(jsonString, "application/json");
     }
     
-    public static IActionResult ReturnJson(this ControllerBase controller, HttpStatusCode status, JArray json)
+    public static IActionResult ReturnJson(this ControllerBase controller, JObject json)
     {
-        return controller.StatusCode((int)status, JObject.FromObject(json).ToString(Formatting.None));
+        return controller.Content(json.ToString(Formatting.None), "application/json");
+    }
+    
+    public static IActionResult ReturnJson(this ControllerBase controller, JArray json)
+    {
+        return controller.Content(json.ToString(Formatting.None), "application/json");
     }
     
     public static IActionResult RedirectError(this ControllerBase controller, HttpStatusCode status, string message)

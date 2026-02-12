@@ -36,13 +36,13 @@ public static class TokenHelper
     /// <param name="expireDate">The expiration date of the token.</param>
     /// <param name="claims">Optional claims to include in the token.</param>
     /// <returns>A string representation of the generated JWT.</returns>
-    public static string GenerateJwtToken(string encryptionKey, string issuer, string audience, DateTime expireDate, IEnumerable<Claim>? claims = null)
+    public static string GenerateJwtToken(string encryptionKey, string issuer, string audience, DateTimeOffset expireDate, IEnumerable<Claim>? claims = null)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(encryptionKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(
             new JwtHeader(credentials),
-            new JwtPayload(issuer, audience, claims, DateTime.Now, expireDate)
+            new JwtPayload(issuer, audience, claims, DateTime.UtcNow, expireDate.Date)
         );
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
