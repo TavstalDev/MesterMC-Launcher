@@ -12,6 +12,7 @@ using System.Diagnostics;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
+using Tavstal.KonkordLauncher.Core.Models.Endpoints;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
 using Tavstal.KonkordLauncher.Core.Models.MojangApi;
 using Tavstal.KonkordLauncher.Core.Models.MojangApi.Meta;
@@ -390,10 +391,11 @@ public class MinecraftInstance
 
         jvmArgs.Add("-DmmcToken=\"${auth_access_token}\"");
         // TODO: Change this to an actual domain
-        //jvmArgs.Add("-Dminecraft.api.auth.host=https://nope.invalid");
-        jvmArgs.Add("-Dminecraft.api.account.host=https://localhost:36767");
-        jvmArgs.Add("-Dminecraft.api.session.host=https://localhost:36767");
-        //jvmArgs.Add("-Dminecraft.api.services.host=https://localhost:36767");
+        jvmArgs.Add("-Dminecraft.api.env=custom");
+        jvmArgs.Add($"-Dminecraft.api.auth.host={MesterMcEndpoints.YggdrasilEndpoint}");
+        jvmArgs.Add($"-Dminecraft.api.account.host={MesterMcEndpoints.YggdrasilEndpoint}");
+        jvmArgs.Add($"-Dminecraft.api.session.host={MesterMcEndpoints.YggdrasilEndpoint}");
+        jvmArgs.Add($"-Dminecraft.api.services.host={MesterMcEndpoints.YggdrasilEndpoint}");
         
         var argsToAdd = _jvmArgumentsBeforeClassPath.OrderByDescending(x => x.Priority).Select(a => a.Arg);
         foreach (var arg in argsToAdd)
