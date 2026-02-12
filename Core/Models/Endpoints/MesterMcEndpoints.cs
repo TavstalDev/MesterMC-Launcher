@@ -16,15 +16,19 @@ public static class MesterMcEndpoints
     public const string AllReleases = "https://api.github.com/repos/TavstalDev/MMC-Launcher/releases";
 
 #if DEBUG
-    public const string AuthEndpoint = "http://localhost:36767/launcher/login";
+    public const string AuthEndpoint = "http://localhost:36767/login/launcher";
     
-    public const string TfaEndpoint = "http://localhost:36767/launcher/tfa";
+    public const string TfaEndpoint = "http://localhost:36767/login/launcher/2fa";
+    
+    public const string YggdrasilEndpoint = "http://localhost:36767/yggdrasil";
     
     public const string ApiBaseEndpoint = "http://localhost:36767/";
 #else
-    public const string AuthEndpoint = "https://api.mestermc.hu/launcher/login";
+    public const string AuthEndpoint = "https://api.mestermc.hu/login/launcher";
     
-    public const string TfaEndpoint = "https://api.mestermc.hu/launcher/tfa";
+    public const string TfaEndpoint = "https://api.mestermc.hu/login/launcher/2fa";
+
+public const string YggdrasilEndpoint = "https://api.mestermc.hu/yggdrasil";
     
     public const string ApiBaseEndpoint = "https://api.mestermc.hu/";
 #endif
