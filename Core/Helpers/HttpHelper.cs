@@ -47,9 +47,23 @@ public static class HttpHelper
             handler.EnableMultipleHttp2Connections = false;
             client = new HttpClient(handler);
         }
-        else 
-            client = new HttpClient();
-        
+        else
+        {
+            #if DEBUG
+            var handler = new HttpClientHandler
+            {
+                // This callback bypasses the SSL check
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => 
+                {
+                    return true; 
+                }
+            };
+            client = new HttpClient(handler);
+            #else
+            client = new HttpClient(handler);
+            #endif
+        }
+
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         client.DefaultRequestHeaders.UserAgent.ParseAdd("KonkordLauncher/2.0.0 (+https://tavstaldev.github.io)");
         client.Timeout = TimeSpan.FromSeconds(20);
