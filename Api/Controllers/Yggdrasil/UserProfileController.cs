@@ -5,7 +5,7 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
-[Route("/yggdrasil/api/user/profile")]
+[Route("yggdrasil/api/user/profile")]
 public class UserProfileController : Controller
 {
     private readonly IConfiguration _configuration;
@@ -24,12 +24,12 @@ public class UserProfileController : Controller
     [HttpDelete("{uuid}/{textureType}")]
     public IActionResult DeleteTexture(string uuid, string textureType)
     {
-        return this.ReturnResponseCode(HttpStatusCode.NoContent);
+        return this.ReturnResponseCode(HttpStatusCode.NotImplemented);
     }
     
     [HttpPut("{uuid}/{textureType}")]
     public IActionResult UpdateTexture(string uuid, string textureType)
     {
-        return this.ReturnResponseCode(HttpStatusCode.NoContent);
+        return this.ReturnResponseCode(HttpStatusCode.NotImplemented);
     }
 }

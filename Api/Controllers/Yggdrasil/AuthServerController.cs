@@ -6,7 +6,7 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
-[Route("/yggdrasil/authserver")]
+[Route("yggdrasil/authserver")]
 public class AuthServerController : Controller
 {
     private readonly IConfiguration _configuration;
@@ -48,7 +48,7 @@ public class AuthServerController : Controller
            }
          * 
          */
-        return Ok();
+        return this.ReturnResponseCode(HttpStatusCode.NotImplemented, "Authentication is not implemented yet.");
     }
 
     [HttpPost("refresh")]
@@ -72,24 +72,27 @@ public class AuthServerController : Controller
            
          * 
          */
-        return Ok();
+        return this.ReturnResponseCode(HttpStatusCode.NotImplemented, "Authentication is not implemented yet.");
     }
 
     [HttpPost("validate")]
     public IActionResult Validate([FromBody] YigValidateRequest request)
     {
-        return this.ReturnResponseCode(HttpStatusCode.NoContent);
+        return this.ReturnResponseCode(HttpStatusCode.NotImplemented, "Authentication is not implemented yet.");
+        //return this.ReturnResponseCode(HttpStatusCode.NoContent);
     }
 
     [HttpPost("invalidate")]
     public IActionResult Invalidate([FromBody] YigValidateRequest request)
     {
-        return this.ReturnResponseCode(HttpStatusCode.NoContent);
+        return this.ReturnResponseCode(HttpStatusCode.NotImplemented, "Authentication is not implemented yet.");
+        //return this.ReturnResponseCode(HttpStatusCode.NoContent);
     }
 
     [HttpPost("signout")]
     public IActionResult SignOut([FromBody] YigSignoutRequest request)
     {
-        return this.ReturnResponseCode(HttpStatusCode.NoContent);
+        return this.ReturnResponseCode(HttpStatusCode.NotImplemented, "Authentication is not implemented yet.");
+        //return this.ReturnResponseCode(HttpStatusCode.NoContent);
     }
 }
