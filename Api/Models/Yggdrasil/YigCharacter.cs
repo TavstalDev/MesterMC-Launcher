@@ -1,4 +1,4 @@
-namespace Tavstal.MesterMC.Api.Models.Yiggdrasil;
+namespace Tavstal.MesterMC.Api.Models.Yggdrasil;
 
 // TODO: Create an actual database model for this, because it is just an example
 public class YigCharacter

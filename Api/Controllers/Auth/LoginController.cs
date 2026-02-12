@@ -22,17 +22,17 @@ public class LoginController : Controller
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
-    private readonly JwtSettings _jwtSettings;
+    private readonly Settings _settings;
     
     public LoginController(IConfiguration configuration, ILogger<LoginController> logger, CustomDbContext dbContext,
-        CustomUserManager userManager, EmailService emailService, JwtSettings jwtSettings)
+        CustomUserManager userManager, EmailService emailService, Settings settings)
     {
         _configuration = configuration;
         _logger = logger;
         _dbContext = dbContext;
         _userManager = userManager;
         _emailService = emailService;
-        _jwtSettings = jwtSettings;
+        _settings = settings;
     }
     
     [HttpPost("/login")]
@@ -126,7 +126,7 @@ public class LoginController : Controller
                 new CustomUserToken(
                     user.Id, 
                     "AccessToken", 
-                    TokenHelper.GenerateJwtToken(_jwtSettings.EncryptionKey, _jwtSettings.Issuer, _jwtSettings.Audience, expireDate), 
+                    TokenHelper.GenerateJwtToken(_settings.EncryptionKey, _settings.Issuer, _settings.Audience, expireDate), 
                     "MesterMC", 
                     DateTime.Now), 
                 true);
@@ -231,7 +231,7 @@ public class LoginController : Controller
             var userToken = await _dbContext.AddUserTokenAsync(new CustomUserToken(
                 user.Id, 
                 "AccessToken", 
-                TokenHelper.GenerateJwtToken(_jwtSettings.EncryptionKey, _jwtSettings.Issuer, _jwtSettings.Audience, expireDate), 
+                TokenHelper.GenerateJwtToken(_settings.EncryptionKey, _settings.Issuer, _settings.Audience, expireDate), 
                 "MesterMC", 
                 DateTime.Now), 
                 true);

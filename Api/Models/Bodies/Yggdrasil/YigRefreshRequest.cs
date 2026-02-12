@@ -1,4 +1,4 @@
-namespace Tavstal.MesterMC.Api.Models.Bodies.Yiggdrasil;
+namespace Tavstal.MesterMC.Api.Models.Bodies.Yggdrasil;
 
 public class YigRefreshRequest
 {

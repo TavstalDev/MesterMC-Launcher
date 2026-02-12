@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Tavstal.MesterMC.Api.Services.Database;
 
-namespace Tavstal.MesterMC.Api.Controllers.Yiggdrasil;
+namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
-[Route("/yiggdrasil/api/profiles")]
+[Route("/yggdrasil/api/profiles")]
 public class ProfilesController : Controller
 {
     private readonly IConfiguration _configuration;

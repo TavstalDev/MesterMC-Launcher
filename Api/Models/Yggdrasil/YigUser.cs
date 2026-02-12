@@ -1,6 +1,6 @@
 using Tavstal.MesterMC.Api.Utils;
 
-namespace Tavstal.MesterMC.Api.Models.Yiggdrasil;
+namespace Tavstal.MesterMC.Api.Models.Yggdrasil;
 
 // TODO: Merge with the actual user model
 public class YigUser
@@ -51,7 +51,7 @@ public class YigUser
         return new Dictionary<string, object>
         {
             {"id", _uuid},
-            {"properties", YiggdrasilHelper.Properties()}
+            {"properties", YggdrasilHelper.Properties()}
         };
     }
 }

@@ -1,12 +1,12 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using Tavstal.MesterMC.Api.Models.Bodies.Yiggdrasil;
+using Tavstal.MesterMC.Api.Models.Bodies.Yggdrasil;
 using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Utils.Extensions;
 
-namespace Tavstal.MesterMC.Api.Controllers.Yiggdrasil;
+namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
-[Route("/yiggdrasil/authserver")]
+[Route("/yggdrasil/authserver")]
 public class AuthServerController : Controller
 {
     private readonly IConfiguration _configuration;

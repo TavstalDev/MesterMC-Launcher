@@ -55,10 +55,8 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
     public new DbSet<IdentityRoleClaim<ulong>> RoleClaims { get; private set; }
 
     private DbSet<UserBillingInformation> UserBillingInformations { get; set; }
-
-    private DbSet<UserSession> UserSessions { get; set; }
     
-    private DbSet<UserSkin> UserSkins { get; set; }
+    private DbSet<FileData> Files { get; set; }
     
     private DbSet<News> News { get; set; }
 
@@ -121,18 +119,6 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
             .HasOne(b => b.User)
             .WithOne(u => u.BillingInformation)
             .HasForeignKey<UserBillingInformation>(b => b.UserId)
-            .IsRequired();
-
-        builder.Entity<UserSession>()
-            .HasOne(x => x.User)
-            .WithMany(y => y.UserSessions)
-            .HasForeignKey(z => z.UserId)
-            .IsRequired();
-
-        builder.Entity<UserSkin>()
-            .HasOne(x => x.User)
-            .WithOne(y => y.Skin)
-            .HasForeignKey<UserSkin>(z => z.UserId)
             .IsRequired();
     }
 
@@ -711,127 +697,6 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
 
     #endregion
 
-    #region User Sessions
-    /// <summary>
-    /// Adds a new user session to the database asynchronously.
-    /// </summary>
-    /// <param name="value">The user session to add.</param>
-    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the user session.</param>
-    /// <returns>The added user session.</returns>
-    public async Task<UserSession> AddUserSessionAsync(UserSession value, bool shouldSave = false)
-    {
-        var result = await UserSessions.AddAsync(value);
-        if (shouldSave) await SaveChangesAsync();
-        return result.Entity;
-    }
-
-    /// <summary>
-    /// Updates an existing user session in the database asynchronously.
-    /// </summary>
-    /// <param name="value">The user session to update.</param>
-    /// <param name="shouldSave">Indicates whether to save changes to the database after updating the user session.</param>
-    public async Task UpdateUserSessionAsync(UserSession value, bool shouldSave = false)
-    {
-        UserSessions.Update(value);
-        if (shouldSave) await SaveChangesAsync();
-    }
-
-    
-    /// <summary>
-    /// Removes an existing user session from the database asynchronously.
-    /// </summary>
-    /// <param name="value">The user session to remove.</param>
-    /// <param name="shouldSave">Indicates whether to save changes to the database after removing the user session.</param>
-    public async Task RemoveUserSessionAsync(UserSession value, bool shouldSave = false)
-    {
-        UserSessions.Remove(value);
-        if (shouldSave) await SaveChangesAsync();
-    }
-
-    /// <summary>
-    /// Retrieves a list of user sessions from the database asynchronously.
-    /// </summary>
-    /// <param name="predicate">An optional predicate to filter the user sessions.</param>
-    /// <returns>A list of user sessions.</returns>
-    public async Task<List<UserSession>> GetUserSessionAsync(
-        Expression<Func<UserSession, bool>>? predicate = null)
-    {
-        if (predicate == null)
-            return await UserSessions.ToListAsync();
-        return await UserSessions.Where(predicate).ToListAsync();
-    }
-
-    /// <summary>
-    /// Finds a specific user session in the database asynchronously based on a predicate.
-    /// </summary>
-    /// <param name="predicate">The predicate to filter the user session.</param>
-    /// <returns>The found user session, or null if no user session is found.</returns>
-    public async Task<UserSession?> FindUserSessionAsync(Expression<Func<UserSession, bool>>? predicate = null)
-    {
-        return await UserSessions.FirstOrDefaultAsync(predicate!);
-    }
-    #endregion
-    
-    #region User Skins
-    /// <summary>
-    /// Adds a new user skin to the database asynchronously.
-    /// </summary>
-    /// <param name="value">The user skin to add.</param>
-    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the user skin.</param>
-    /// <returns>The added user skin.</returns>
-    public async Task<UserSkin> AddUserSkinAsync(UserSkin value, bool shouldSave = false)
-    {
-        var result = await UserSkins.AddAsync(value);
-        if (shouldSave) await SaveChangesAsync();
-        return result.Entity;
-    }
-
-    /// <summary>
-    /// Updates an existing user skin in the database asynchronously.
-    /// </summary>
-    /// <param name="value">The user skin to update.</param>
-    /// <param name="shouldSave">Indicates whether to save changes to the database after updating the user skin.</param>
-    public async Task UpdateUserSkinAsync(UserSkin value, bool shouldSave = false)
-    {
-        UserSkins.Update(value);
-        if (shouldSave) await SaveChangesAsync();
-    }
-
-    /// <summary>
-    /// Removes an existing user skin from the database asynchronously.
-    /// </summary>
-    /// <param name="value">The user skin to remove.</param>
-    /// <param name="shouldSave">Indicates whether to save changes to the database after removing the user skin.</param>
-    public async Task RemoveUserSkinAsync(UserSkin value, bool shouldSave = false)
-    {
-        UserSkins.Remove(value);
-        if (shouldSave) await SaveChangesAsync();
-    }
-    
-    /// <summary>
-    /// Retrieves a list of user skins from the database asynchronously.
-    /// </summary>
-    /// <param name="predicate">An optional predicate to filter the user skins.</param>
-    /// <returns>A list of user skins.</returns>
-    public async Task<List<UserSkin>> GetUserSkinAsync(
-        Expression<Func<UserSkin, bool>>? predicate = null)
-    {
-        if (predicate == null)
-            return await UserSkins.ToListAsync();
-        return await UserSkins.Where(predicate).ToListAsync();
-    }
-
-    /// <summary>
-    /// Finds a specific user skin in the database asynchronously based on a predicate.
-    /// </summary>
-    /// <param name="predicate">The predicate to filter the user skin.</param>
-    /// <returns>The found user skin, or null if no user skin is found.</returns>
-    public async Task<UserSkin?> FindUserSkinAsync(Expression<Func<UserSkin, bool>>? predicate = null)
-    {
-        return await UserSkins.FirstOrDefaultAsync(predicate!);
-    }
-    #endregion
-
     /// <summary>
     /// Clears all user logins and tokens associated with the specified user ID.
     /// </summary>
@@ -853,6 +718,40 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, ulong, 
             await SaveChangesAsync();
     }
 
+    #endregion
+
+    #region FileData
+    public async Task<FileData> AddFileDataAsync(FileData value, bool shouldSave = false)
+    {
+        var result = await Files.AddAsync(value);
+        if (shouldSave) await SaveChangesAsync();
+        return result.Entity;
+    }
+    
+    public async Task UpdateFileDataAsync(FileData value, bool shouldSave = false)
+    {
+        Files.Update(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public async Task RemoveFileDataAsync(FileData value, bool shouldSave = false)
+    {
+        Files.Remove(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    public async Task<List<FileData>> GetFileDatasAsync(
+        Expression<Func<FileData, bool>>? predicate = null)
+    {
+        if (predicate == null)
+            return await Files.ToListAsync();
+        return await Files.Where(predicate).ToListAsync();
+    }
+    
+    public async Task<FileData?> FindFileDataAsync(Expression<Func<FileData, bool>>? predicate = null)
+    {
+        return await Files.FirstOrDefaultAsync(predicate!);
+    }
     #endregion
     
     #region News

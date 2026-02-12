@@ -1,4 +1,4 @@
-namespace Tavstal.MesterMC.Api.Models.Yiggdrasil;
+namespace Tavstal.MesterMC.Api.Models.Yggdrasil;
 
 public enum EModelType
 {

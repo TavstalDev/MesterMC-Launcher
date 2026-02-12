@@ -1,11 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Newtonsoft.Json;
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+using System.Text.Json.Serialization;
+using Tavstal.MesterMC.Api.Models.Database.User;
 
-namespace Tavstal.MesterMC.Api.Models.Database.User;
+namespace Tavstal.MesterMC.Api.Models.Database.Server;
 
-public class UserSession
+public class ServerJoin
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -13,15 +13,11 @@ public class UserSession
     
     public ulong UserId { get; set; }
     
-    public string SessionToken { get; set; }
+    public required string ServerInstanceId { get; set; }
     
-    public bool Allow { get; set; }
+    public required DateTimeOffset CreatedAt { get; set; }
     
-    public string IpAddress { get; set; }
-    
-    public DateTimeOffset ExpiresAt { get; set; }      
-    
-    public DateTimeOffset CreatedAt { get; set; }
+    public required DateTimeOffset ExpiredAt { get; set; }
     
     /* ######################################################################
      *                         NAVIGATION PROPERTIES

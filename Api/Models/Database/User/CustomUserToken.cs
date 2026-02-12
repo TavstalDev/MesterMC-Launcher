@@ -40,10 +40,7 @@ public sealed class CustomUserToken : IdentityUserToken<ulong>
     /* ######################################################################
      *                         NAVIGATION PROPERTIES
      * ###################################################################### */
-
-    /// <summary>
-    /// Gets or sets the user associated with the notification.
-    /// </summary>
+    
     [ForeignKey("UserId")]
     [JsonIgnore]
     public CustomUser? User { get; set; }

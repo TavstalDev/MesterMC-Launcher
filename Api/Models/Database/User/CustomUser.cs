@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -24,8 +25,11 @@ public sealed class CustomUser : IdentityUser<ulong>
     [JsonIgnore]
     public override string PasswordHash { get; set; }
     
+    [StringLength(36)]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public string Uuid { get; set; }
+    
     [StringLength(16)]
-    [ProtectedPersonalData]
     public override string UserName { get; set; }
     
     [StringLength(16)]
@@ -90,9 +94,10 @@ public sealed class CustomUser : IdentityUser<ulong>
     
     public CustomUser() { }
     
-    public CustomUser(ulong id, string userName, string normalizedUserName, string email, string normalizedEmail, string password, string? avatarPath, ulong? discordId, string? lockoutReason, DateTimeOffset createDate, DateTimeOffset lastUpdate, DateTimeOffset lastLogin)
+    public CustomUser(ulong id, string uuid, string userName, string normalizedUserName, string email, string normalizedEmail, string password, string? avatarPath, ulong? discordId, string? lockoutReason, DateTimeOffset createDate, DateTimeOffset lastUpdate, DateTimeOffset lastLogin)
     {
         Id = id;
+        Uuid = uuid;
         UserName = userName;
         NormalizedUserName = normalizedUserName;
         DisplayName = userName; // Default display name is the username
@@ -137,11 +142,6 @@ public sealed class CustomUser : IdentityUser<ulong>
     public ICollection<CustomUserLogin> UserLogins { get; set; }
     
     public ICollection<CustomUserRole> UserRoles { get; set; }
-    
-    [JsonIgnore]
-    public ICollection<UserSession> UserSessions { get; set; }
-    
-    public UserSkin Skin { get; set; }
     
     [JsonIgnore]
     public UserBillingInformation? BillingInformation { get; set; }

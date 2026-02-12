@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Utils.Extensions;
 
-namespace Tavstal.MesterMC.Api.Controllers.Yiggdrasil;
+namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
-[Route("/yiggdrasil/api/user/profile")]
+[Route("/yggdrasil/api/user/profile")]
 public class UserProfileController : Controller
 {
     private readonly IConfiguration _configuration;
