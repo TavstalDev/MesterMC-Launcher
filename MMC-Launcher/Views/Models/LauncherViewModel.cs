@@ -31,7 +31,7 @@ public partial class LauncherViewModel : ObservableObject
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(LauncherViewModel));
     private readonly bool _isInitialized;
     private Process? gameProcess;
-    private DateTime startTime = DateTime.Now;
+    private DateTime startTime = DateTime.UtcNow;
     public bool IsLinux => OSHelper.GetOperatingSystem() == EOperatingSystem.Linux;
     
     #region Observable Properties
@@ -146,7 +146,7 @@ public partial class LauncherViewModel : ObservableObject
         }
         
         // Successful login
-        await PlayAsync(result.Value.Item1, playerName);
+        await PlayAsync(result.Value.Item1, playerName, result.Value.Item3);
     }
     
     [RelayCommand]
@@ -157,15 +157,17 @@ public partial class LauncherViewModel : ObservableObject
 
         LoginStatus = ELoginStatus.LOGGING_IN;
         var result = await AuthHelper.SubmitTFA(TfaToken!, TfaCode); // TfaToken is guaranteed to be non-null here
-        if (string.IsNullOrEmpty(result))
+        if (result == null)
         {
             LoginStatus = ELoginStatus.ERROR;
             ErrorMessage = "Hiba történt a kétlépcsős azonosítás során. Kérlek, ellenőrizd a kódot, majd próbáld újra.";
             return;
         }
+        string accessToken = result.Value.Item1;
+        string uuid = result.Value.Item2;
 
         // Successful TFA
-        await PlayAsync(result, Username!); // Username is guaranteed to be non-null here
+        await PlayAsync(accessToken, Username!, uuid); // Username is guaranteed to be non-null here
     }
 
     [RelayCommand]
@@ -256,7 +258,7 @@ public partial class LauncherViewModel : ObservableObject
     }
     #endregion
     
-    private async Task PlayAsync(string accessToken, string playerName)
+    private async Task PlayAsync(string accessToken, string playerName, string? uuid = null)
     {
         MinecraftInstance? instance = App.createMinecraftInstance(null);
         if (instance == null) 
@@ -264,15 +266,16 @@ public partial class LauncherViewModel : ObservableObject
         
         LoginStatus = ELoginStatus.SUCCESS;
         var config = await LauncherHelper.GetLauncherSettingsAsync();
-        config.Users.TryAdd(playerName, accessToken);
+        config.Users.TryAdd(playerName, accessToken); // TODO
         config.LastUser = config.Users.Keys.ToList().IndexOf(playerName);
         await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CommonJsonContext.Default.CoreConfig);
         
-        instance.UpdateUserDetails(new ClientDetails(accessToken, playerName, GameHelper.GetOfflinePlayerUUID(playerName), true));
+        uuid ??= GameHelper.GetOfflinePlayerUUID(playerName);
+        instance.UpdateUserDetails(new ClientDetails(accessToken, playerName, uuid, true));
         await Task.Delay(250); // Small delay to ensure status update is visible
         LoginStatus = ELoginStatus.LAUNCHING;
         //await Task.Run(async () => await MetricsHelper.SendMetricAsync()); // Send metrics in the background, tracks basic hardware info (cpu, ram, gpu, sum of disk space), so we can track what to optimize for and how our userbase looks like
-        startTime = DateTime.Now;
+        startTime = DateTime.UtcNow;
         gameProcess = await instance.Start();
         if (gameProcess != null)
         {
@@ -299,7 +302,7 @@ public partial class LauncherViewModel : ObservableObject
         {
             Dispatcher.UIThread.Invoke(async () =>
             {
-                DateTime endTime = DateTime.Now;
+                DateTime endTime = DateTime.UtcNow;
                 _logger.Info("Minecraft launched in " + (endTime - startTime).TotalMilliseconds + "ms.");
                 await HideWindowInteraction.Handle(Unit.Default);
                 gameProcess.OutputDataReceived -= HandleGameOutput;

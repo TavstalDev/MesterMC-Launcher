@@ -63,7 +63,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         
         FitToDisplay();
         
-        DateTime now = DateTime.Now;
+        DateTime now = DateTime.UtcNow;
         switch (now.Month)
         {
             case 1:
@@ -173,13 +173,13 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
 
             // 4. Check for Updates
             App.IsUpToDate = true;
-            if (settings.Launcher.EnableAutomaticUpdates && DateTime.Now > settings.Launcher.NextUpdateCheck)
+            if (settings.Launcher.EnableAutomaticUpdates && DateTime.UtcNow > settings.Launcher.NextUpdateCheck)
             {
                 SetStatus("Frissítések keresése...");
                 await Task.Delay(_stepDelay);
 
                 settings.Launcher.NextUpdateCheck =
-                    DateTime.Now.AddHours(settings.Launcher.UpdateInterval == 0 ? 1 : settings.Launcher.UpdateInterval);
+                    DateTime.UtcNow.AddHours(settings.Launcher.UpdateInterval == 0 ? 1 : settings.Launcher.UpdateInterval);
                 await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
 
                 if (await CheckUpdateAsync())
@@ -220,7 +220,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             }
             
             // 8. Update cache refresh date & fetch news
-            if (DateTime.Now > settings.CacheRefreshDate)
+            if (DateTime.UtcNow > settings.CacheRefreshDate)
             {
                 /*SetStatus("Hírek lekérése...");
                 await Task.Delay(_stepDelay);
@@ -231,7 +231,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                     await JsonHelper.WriteJsonFileAsync(newsPath, newsItems, CommonJsonContext.Default.ListNewsData);
                 }*/
                 
-                settings.CacheRefreshDate = DateTime.Now.AddDays(1);
+                settings.CacheRefreshDate = DateTime.UtcNow.AddDays(1);
                 await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
             }
             
