@@ -94,7 +94,7 @@ public static class ValidationHelper
         {
             using var httpClient = new HttpClient();
             var settings = await LauncherHelper.GetLauncherSettingsAsync();
-            bool refreshManifests = DateTime.Now > settings.CacheRefreshDate;
+            bool refreshManifests = DateTimeOffset.UtcNow > settings.CacheRefreshDate;
             
             // Vanilla
             if (!File.Exists(settings.Launcher.GetVanillaManifestPath()) || refreshManifests)

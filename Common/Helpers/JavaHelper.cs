@@ -282,7 +282,7 @@ public static class JavaHelper
             _cacheExpiration = DateTime.MinValue;
         }
 
-        if (_cachedJavaVersions.Count > 0 && _cacheExpiration > DateTime.Now)
+        if (_cachedJavaVersions.Count > 0 && _cacheExpiration > DateTimeOffset.UtcNow)
             return _cachedJavaVersions;
         
         List<JavaVersion> javaVersions = [];
@@ -318,7 +318,7 @@ public static class JavaHelper
         }
 
         _cachedJavaVersions = javaVersions;
-        _cacheExpiration = DateTime.Now.AddMinutes(10); // Cache for 10 minutes
+        _cacheExpiration = DateTime.UtcNow.AddMinutes(10); // Cache for 10 minutes
 
         return javaVersions;
     }

@@ -82,7 +82,7 @@ public class CoreConfig
         Java = new JavaConfig();
         Minecraft = new MinecraftConfig();
         Misc = new MiscConfig();
-        CacheRefreshDate = DateTime.Now;
+        CacheRefreshDate = DateTime.UtcNow;
         EnableEnvironmentVariables = false;
         EnvironmentVariables = new Dictionary<string, string>();
         LastUser = -1;
