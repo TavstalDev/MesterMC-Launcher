@@ -5,7 +5,7 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
-[Route("/yggdrasil/textures")]
+[Route("yggdrasil/textures")]
 public class TexturesController : Controller
 {
     private readonly IConfiguration _configuration;
