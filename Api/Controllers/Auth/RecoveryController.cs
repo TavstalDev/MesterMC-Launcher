@@ -19,7 +19,6 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 [Tags("Authentication: Recovery")]
 public class RecoveryController : Controller
 {
-    private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
@@ -27,9 +26,8 @@ public class RecoveryController : Controller
     private readonly Settings _settings;
     // TODO: Test Recovery System
     
-    public RecoveryController(IConfiguration configuration, ILogger logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings)
+    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings)
     {
-        _configuration = configuration;
         _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;

@@ -17,19 +17,17 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
 [ApiController]
 [Tags("Authentication: Login")]
-public class LoginController : Controller
+public class LoginController : CustomControllerBase
 {
-    private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
     private readonly Settings _settings;
     
-    public LoginController(IConfiguration configuration, ILogger<LoginController> logger, CustomDbContext dbContext,
+    public LoginController(ILogger<LoginController> logger, CustomDbContext dbContext,
         CustomUserManager userManager, EmailService emailService, Settings settings)
     {
-        _configuration = configuration;
         _logger = logger;
         _dbContext = dbContext;
         _userManager = userManager;
@@ -150,7 +148,7 @@ public class LoginController : Controller
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
-                UserId = userToken.UserId,
+                userToken.UserId,
                 Expires = userLogin.ExpireDate.ToString(CultureInfo.InvariantCulture)
             });
         }
@@ -258,7 +256,7 @@ public class LoginController : Controller
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
-                UserId = userToken.UserId,
+                userToken.UserId,
                 Token = userToken.Value,
                 Expires = userLogin.ExpireDate.ToString(CultureInfo.InvariantCulture)
             });
@@ -334,7 +332,7 @@ public class LoginController : Controller
                         message = "Redirect to 2FA",
                         userId = user.Id,
                         token = sessionSecret,
-                        url = $"{_settings.ApiUrl}/2fa/launcher"
+                        url = $"{_settings.ApiUrl}/login/launcher/2fa"
                     });
                 }
 
@@ -358,8 +356,8 @@ public class LoginController : Controller
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
-                UserId = userPlaySession.UserId,
-                Token = userPlaySession.Token,
+                userPlaySession.UserId,
+                userPlaySession.Token,
                 Expires = userPlaySession.ExpiresAt.ToString(CultureInfo.InvariantCulture)
             });
         }
@@ -454,8 +452,8 @@ public class LoginController : Controller
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
-                UserId = userPlaySession.UserId,
-                Token = userPlaySession.Token,
+                userPlaySession.UserId,
+                userPlaySession.Token,
                 Expires = userPlaySession.ExpiresAt.ToString(CultureInfo.InvariantCulture)
             });
         }
@@ -473,9 +471,9 @@ public class LoginController : Controller
     {
         try
         {
-            var user = await _userManager.GetUserByAuthenticationStringAsync(this.GetAuthenticationToken());
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "The user is not authenticated.");
+                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
             
             List<CustomRole> roles = _userManager.GetUserRoles(user.Id);
             var claims = _userManager.GetAllClaimsOfUser(user.Id);
@@ -488,7 +486,7 @@ public class LoginController : Controller
                 UserId = user.Id,
                 Username = user.UserName,
                 DisplayName = user.DisplayName ?? user.UserName,
-                Email = user.Email,
+                user.Email,
                 //HasAvatar = hasAvatar,
                 //Avatar = hasAvatar ? $"{_settings.ApiUrl}/users/{user.Id}/avatar" : "",
                 Roles = roles,
@@ -511,7 +509,12 @@ public class LoginController : Controller
         try
         {
             if (string.IsNullOrEmpty(token))
-                token = this.GetAuthenticationToken();
+            {
+                if (Request.Headers.TryGetValue("Authorization", out var authHeader))
+                    token = authHeader.ToString();
+                else if (Request.Cookies.TryGetValue("mmc-token", out var authCookie))
+                    token = authCookie;
+            }
             
             if (string.IsNullOrEmpty(token))
                 return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid token.");

@@ -11,16 +11,12 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [Tags("Yggdrasil")]
 public class ProfilesController : Controller
 {
-    private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
-    private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     
-    public ProfilesController(IConfiguration configuration, ILogger<ProfilesController> logger, CustomUserManager userManager, CustomDbContext dbContext)
+    public ProfilesController(ILogger<ProfilesController> logger, CustomDbContext dbContext)
     {
-        _configuration = configuration;
         _logger = logger;
-        _userManager = userManager;
         _dbContext = dbContext;
     }
 
@@ -36,7 +32,7 @@ public class ProfilesController : Controller
         {
             Dictionary<string, string> userData = new Dictionary<string, string>
             {
-                { "id", user.Id.ToString() },
+                { "id", user.Id },
                 { "name", user.UserName }
             };
             response.Add(userData);

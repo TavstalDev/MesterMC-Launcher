@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
@@ -18,26 +19,29 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [Tags("Yggdrasil")]
 public class SessionServerController : Controller
 {
-    private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly Settings _settings;
     private readonly ExpiringCache<string, string> _profileCache = new(TimeSpan.FromMinutes(5));
     
-    public SessionServerController(IConfiguration configuration, ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings)
+    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings)
     {
-        _configuration = configuration;
         _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;
         _settings = settings;
     }
-    
+
+    [HttpGet("/yggdrasil/sessionserver/blockedservers")]
+    public Task<IActionResult> GetBlockedServers()
+    {
+        return Task.FromResult(this.ReturnJson(new { blockedServers = new string[] { } }));
+    }
+
     [HttpPost("join")]
     public async Task<IActionResult> Join([FromBody] YigJoinServerRequest request)
     {
-        _logger.LogWarning("Join request for serverId: {ServerId}, selectedProfile: {SelectedProfile}, accessToken: {AccessToken}", request.serverId, request.selectedProfile, request.accessToken);
         string dashedUuid = Guid.Parse(request.selectedProfile).ToString("D");
         CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
         if (user == null)
@@ -69,7 +73,6 @@ public class SessionServerController : Controller
     [HttpGet("hasJoined")]
     public async Task<IActionResult> HasJoined([FromQuery] string serverId, [FromQuery] string username, [FromQuery] string? ip)
     {
-        _logger.LogWarning("HasJoined request for serverId: {ServerId}, username: {Username}, ip: {Ip}", serverId, username, ip);
         CustomUser? user = await _userManager.FindByNameAsync(username);
         if (user == null)
             return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
@@ -121,7 +124,7 @@ public class SessionServerController : Controller
         var skin = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
         if (skin != null)
         {
-            textures.Add("skin", new Dictionary<string, object>
+            textures.Add("SKIN", new Dictionary<string, object>
             {
                 { "url", skin.GetUrl(_settings.ApiUrl) },
                 { "metadata", new Dictionary<string, object> 
@@ -134,13 +137,21 @@ public class SessionServerController : Controller
             });
         }
 
-        var cape = _dbContext.FindUserCape(x => x.UserId == user.Id && x.IsSelected)?.Cape.FileData;
-        if (cape != null)
+        var userCape = _dbContext.FindUserCape(x => x.UserId == user.Id && x.IsSelected);
+        if (userCape != null)
         {
-            textures.Add("cape", new Dictionary<string, object>
+            var cape = _dbContext.FindCape(x => x.Id == userCape.CapeId);
+            if (cape != null)
             {
-                { "url", cape.GetUrl(_settings.ApiUrl) },
-            });
+                var capeData = await _dbContext.FindFileDataAsync(x => x.Id == cape.FileId);
+                if (capeData != null)
+                {
+                    textures.Add("CAPE", new Dictionary<string, object>
+                    {
+                        { "url", capeData.GetUrl(_settings.ApiUrl) },
+                    });
+                }
+            }
         }
         
         Dictionary<string, object> textureValues = new Dictionary<string, object>
@@ -153,18 +164,27 @@ public class SessionServerController : Controller
         if (!unsigned)
             textureValues.Add("signatureRequired", true);
 
+        string jsonString = JsonConvert.SerializeObject(textureValues, Formatting.None);
+        string base64Value = Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonString));
+        
         List<Dictionary<string, object>> properties = [];
         Dictionary<string, object> texturesProperty = new Dictionary<string, object>
         {
             { "name", "textures" },
-            { "value", Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(textureValues, Formatting.None))) },
+            { "value", base64Value },
         };
         if (!unsigned)
         {
-            var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, "");
-            var rsa = cert.GetRSAPrivateKey();
+            using var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, _settings.CertPassword);
+            using var rsa = cert.GetRSAPrivateKey();
+        
             if (rsa != null)
-                texturesProperty.Add("signature", rsa.ExportSubjectPublicKeyInfoPem());
+            {
+                byte[] dataToSign = Encoding.UTF8.GetBytes(base64Value);
+                byte[] signatureBytes = rsa.SignData(dataToSign, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
+            
+                texturesProperty.Add("signature", Convert.ToBase64String(signatureBytes));
+            }
         }
 
         properties.Add(texturesProperty);

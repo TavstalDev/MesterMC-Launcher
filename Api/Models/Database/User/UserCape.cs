@@ -11,17 +11,17 @@ public class UserCape
     public ulong Id { get; set; }
     
     [StringLength(36)]
-    public string UserId { get; set; }
+    public required string UserId { get; set; }
     
-    public ulong CapeId { get; set; }
+    public required ulong CapeId { get; set; }
     
     public bool IsSelected { get; set; }    
     
     public string? Reason { get; set; }
     
-    public DateTimeOffset CreatedAt { get; set; }
+    public required DateTimeOffset CreatedAt { get; set; }
     
-    public DateTimeOffset UpdatedAt { get; set; }
+    public required DateTimeOffset UpdatedAt { get; set; }
     
     /* ######################################################################
      *                         NAVIGATION PROPERTIES
@@ -29,9 +29,9 @@ public class UserCape
     
     [ForeignKey("UserId")] 
     [JsonIgnore]
-    public CustomUser User { get; set; } 
+    public CustomUser? User { get; set; } 
     
     [ForeignKey("CapeId")] 
     [JsonIgnore]
-    public Cape Cape { get; set; }
+    public Cape? Cape { get; set; }
 }

@@ -16,8 +16,8 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 [ApiController]
 [Route("/2fa")]
 [Tags("Authentication: 2FA")]
-public class TwoFactorController : Controller {
-    private readonly IConfiguration _configuration;
+public class TwoFactorController : CustomControllerBase {
+
     private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
@@ -25,9 +25,8 @@ public class TwoFactorController : Controller {
     private readonly Settings _settings;
     // TODO: Test TwoFactor Auth System
     
-    public TwoFactorController(IConfiguration configuration, ILogger logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings)
+    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings)
     {
-        _configuration = configuration;
         _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;
@@ -42,9 +41,9 @@ public class TwoFactorController : Controller {
     {
         try
         {
-            var user = await _userManager.GetUserByAuthenticationStringAsync(this.GetAuthenticationToken());
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "The user is not authenticated.");
+                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (user.TwoFactorEnabled)
                 return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
@@ -73,9 +72,9 @@ public class TwoFactorController : Controller {
     {
         try
         {
-            var user = await _userManager.GetUserByAuthenticationStringAsync(this.GetAuthenticationToken());
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "The user is not authenticated.");
+                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!user.TwoFactorEnabled)
                 return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
@@ -104,9 +103,9 @@ public class TwoFactorController : Controller {
     {
         try
         {
-            var user = await _userManager.GetUserByAuthenticationStringAsync(this.GetAuthenticationToken());
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "The user is not authenticated.");
+                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (user.TwoFactorEnabled)
                 return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
@@ -137,9 +136,9 @@ public class TwoFactorController : Controller {
     {
         try
         {
-            var user = await _userManager.GetUserByAuthenticationStringAsync(this.GetAuthenticationToken());
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "The user is not authenticated.");
+                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             var recoveryCodeClaims = _dbContext.GetUserClaims(x => x.UserId == user.Id && x.ClaimType == CustomClaimTypes.TwoFactorRecoveryCode);
             foreach (var claim in recoveryCodeClaims) 

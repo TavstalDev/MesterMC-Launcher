@@ -19,16 +19,14 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 [Tags("Authentication: Registration")]
 public class RegisterController : Controller
 {
-    private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
     private readonly Settings _settings;
     
-    public RegisterController(IConfiguration configuration, ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, EmailService emailService, Settings settings)
+    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, EmailService emailService, Settings settings)
     {
-        _configuration = configuration;
         _logger = logger;
         _dbContext = dbContext;
         _userManager = userManager;

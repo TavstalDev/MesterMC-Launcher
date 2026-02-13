@@ -9,8 +9,10 @@ public class Cape
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public ulong Id { get; set; }
     
-    public ulong FileId { get; set; }
+    public required string Name { get; set; }
     
+    public required ulong FileId { get; set; }
+
     public bool IsPublic { get; set; }
     
     /* ######################################################################

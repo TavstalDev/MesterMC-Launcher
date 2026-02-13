@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.ConstrainedExecution;
 
 namespace Tavstal.MesterMC.Api.Models;
 
@@ -20,6 +21,7 @@ public class Settings
     public string EmailPassword { get; set; }
  
     public string[] SkinDomains { get; set; }
+    public string CertPassword { get; set; }
     public byte[] Cert { get; set; }
     public string ServerName { get; set; }
     public string ImplementationName { get; set; }
@@ -44,6 +46,9 @@ public class Settings
         
         SkinDomains = configuration.GetSection("Yggdrasil:SkinDomains").Get<string[]>() ?? throw new ArgumentNullException("SkinDomains");
         
+        CertPassword = configuration["YGGDRASIL_CERT_PASSWORD"] ?? string.Empty;
+        if (CertPassword == " ")
+            CertPassword = string.Empty; // Treat a password of " " as an empty password
         Cert = File.ReadAllBytes(Path.Combine(Program.ContentRoot, "Certs/yggdrasil.pfx"));
         ServerName = configuration["Yggdrasil:ServerName"] ?? throw new ArgumentNullException("ServerName");
         ImplementationName = configuration["Yggdrasil:ImplementationName"] ?? throw new ArgumentNullException("ImplementationName");

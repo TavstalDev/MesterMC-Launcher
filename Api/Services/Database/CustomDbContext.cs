@@ -145,7 +145,7 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
             .HasOne(f => f.User)
             .WithMany(u => u.Files)
             .HasForeignKey(f => f.UserId)
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Entity<UserCape>()
             .HasOne(c => c.User)
@@ -876,7 +876,7 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         if (shouldSave) await SaveChangesAsync();
     }
     
-    public async Task RemoverCapeAsync(Cape value, bool shouldSave = false)
+    public async Task RemoveCapeAsync(Cape value, bool shouldSave = false)
     {
         Capes.Remove(value);
         if (shouldSave) await SaveChangesAsync();

@@ -14,22 +14,25 @@ using KeyGeneration = OtpSharp.KeyGeneration;
 
 namespace Tavstal.MesterMC.Api.Services.Database;
 
-public class CustomUserManager : UserManager<CustomUser>
+public class CustomUserManager(
+    IUserStore<CustomUser> store,
+    IOptions<IdentityOptions> optionsAccessor,
+    IPasswordHasher<CustomUser> passwordHasher,
+    IEnumerable<IUserValidator<CustomUser>> userValidators,
+    IEnumerable<IPasswordValidator<CustomUser>> passwordValidators,
+    ILookupNormalizer keyNormalizer,
+    IdentityErrorDescriber errors,
+    IServiceProvider services,
+    ILogger<CustomUserManager> logger,
+    CustomDbContext context,
+    IConfiguration configuration,
+    Settings settings)
+    : UserManager<CustomUser>(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer,
+        errors, services, logger)
 {
-    private readonly CustomDbContext _context;
     // ReSharper disable once NotAccessedField.Local
-    private readonly ILogger _logger;
-    private readonly IConfiguration _configuration;
-    private readonly Settings _settings;
-    
-    public CustomUserManager(IUserStore<CustomUser> store, IOptions<IdentityOptions> optionsAccessor, IPasswordHasher<CustomUser> passwordHasher, IEnumerable<IUserValidator<CustomUser>> userValidators, IEnumerable<IPasswordValidator<CustomUser>> passwordValidators, ILookupNormalizer keyNormalizer, IdentityErrorDescriber errors, IServiceProvider services, ILogger<CustomUserManager> logger, CustomDbContext context, IConfiguration configuration, Settings settings) 
-        : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger)
-    {
-        _context = context;
-        _configuration = configuration;
-        _logger = logger;
-        _settings = settings;
-    }
+    private readonly ILogger _logger = logger;
+    private readonly IConfiguration _configuration = configuration;
 
     #region Roles & Claims
 
@@ -59,11 +62,11 @@ public class CustomUserManager : UserManager<CustomUser>
         if (user == null)
             return false;
 
-        var role = _context.FindRole(x => x.NormalizedName == roleName.Normalize());
+        var role = context.FindRole(x => x.NormalizedName == roleName.Normalize());
         if (role == null)
             return false;
 
-        return _context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
+        return context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
     }
 
     /// <summary>
@@ -86,14 +89,14 @@ public class CustomUserManager : UserManager<CustomUser>
             return false;
             
         string userid = userClaim.Value;
-        CustomUser? user = _context.FindUser(x => x.Id == userid);
+        CustomUser? user = context.FindUser(x => x.Id == userid);
         if (user == null)
             return false;
 
-        var role = _context.FindRole(x => x.NormalizedName == roleName.Normalize());
+        var role = context.FindRole(x => x.NormalizedName == roleName.Normalize());
         if (role == null)
             return false;
-        return _context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
+        return context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
     }
         
     /// <summary>
@@ -104,7 +107,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <returns>True if the user has the role, otherwise false.</returns>
     public bool HasRole(CustomUser user, CustomRole role)
     {
-        return _context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
+        return context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
     }
 
     /// <summary>
@@ -131,11 +134,11 @@ public class CustomUserManager : UserManager<CustomUser>
             return false;
 
         string userid = userClaim.Value;
-        CustomUser? user = _context.FindUser(x => x.Id == userid);
+        CustomUser? user = context.FindUser(x => x.Id == userid);
         if (user == null)
             return false;
 
-        return _context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
+        return context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
     }
 
     /// <summary>
@@ -152,10 +155,10 @@ public class CustomUserManager : UserManager<CustomUser>
             
         foreach (var role in rolenames)
         {
-            var r = _context.FindRole(x => x.Name.ToLower() == role.ToLower());
+            var r = context.FindRole(x => x.Name.ToLower() == role.ToLower());
             if (r == null)
                 return false;
-            if (_context.FindUserRole(x => x.UserId == user.Id && x.RoleId == r.Id) == null)
+            if (context.FindUserRole(x => x.UserId == user.Id && x.RoleId == r.Id) == null)
                 return false;
         }
 
@@ -176,10 +179,10 @@ public class CustomUserManager : UserManager<CustomUser>
             
         foreach (var role in rolenames)
         {
-            var r = _context.FindRole(x => x.Name.ToLower() == role.ToLower());
+            var r = context.FindRole(x => x.Name.ToLower() == role.ToLower());
             if (r != null)
             {
-                if (_context.FindUserRole(x => x.UserId == user.Id && x.RoleId == r.Id) != null)
+                if (context.FindUserRole(x => x.UserId == user.Id && x.RoleId == r.Id) != null)
                     return true;
             }
         }
@@ -199,9 +202,9 @@ public class CustomUserManager : UserManager<CustomUser>
         if (role == null)
             return users;
 
-        foreach (var userRole in _context.GetUserRoles(x => x.RoleId == role.Id))
+        foreach (var userRole in context.GetUserRoles(x => x.RoleId == role.Id))
         {
-            CustomUser? user = _context.FindUser(x => x.Id == userRole.UserId);
+            CustomUser? user = context.FindUser(x => x.Id == userRole.UserId);
             if (user == null)
                 continue;
                 
@@ -236,11 +239,11 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <returns>A list of custom roles.</returns>
     private List<CustomRole> GetUserCustomRoles(string userid)
     {
-        var userRoles = _context.GetUserRoles(x => x.UserId == userid);
+        var userRoles = context.GetUserRoles(x => x.UserId == userid);
         List<CustomRole> roles = new List<CustomRole>();
         foreach (var role in userRoles)
         {
-            var r = _context.FindRole(x => x.Id == role.RoleId);
+            var r = context.FindRole(x => x.Id == role.RoleId);
             if (r != null)
                 roles.Add(r);
         }
@@ -254,11 +257,11 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <returns>A list of <see cref="CustomRole"/> objects representing the user's roles.</returns>
     public List<CustomRole> GetUserRoles(string userid)
     {
-        var userRoles =_context. GetUserRoles(x => x.UserId == userid);
+        var userRoles =context. GetUserRoles(x => x.UserId == userid);
         List<CustomRole> roles = new List<CustomRole>();
         foreach (var role in userRoles)
         {
-            var r = _context.FindRole(x => x.Id == role.RoleId);
+            var r = context.FindRole(x => x.Id == role.RoleId);
             if (r != null)
                 roles.Add(r);
         }
@@ -272,11 +275,11 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <returns>The highest role.</returns>
     public CustomRole GetUserHighestRole(string userid)
     {
-        var userRoles =_context. GetUserRoles(x => x.UserId == userid);
+        var userRoles =context. GetUserRoles(x => x.UserId == userid);
         List<CustomRole> roles = new List<CustomRole>();
         foreach (var role in userRoles)
         {
-            var r = _context.FindRole(x => x.Id == role.RoleId);
+            var r = context.FindRole(x => x.Id == role.RoleId);
             if (r != null)
                 roles.Add(r);
         }
@@ -293,11 +296,11 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <returns>True if the user has the claim, otherwise false.</returns>
     public bool UserHasClaim(string userid, string claim)
     {
-        CustomUser? user = _context.FindUser(x => x.Id == userid);
+        CustomUser? user = context.FindUser(x => x.Id == userid);
         if (user == null)
             return false;
 
-        return _context.FindUserClaim(x => x.UserId == userid && x.ClaimType == claim) != null;
+        return context.FindUserClaim(x => x.UserId == userid && x.ClaimType == claim) != null;
     }
 
         
@@ -309,7 +312,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <returns>True if the user has the claim, otherwise false.</returns>
     public bool UserHasClaim(CustomUser user, string claim)
     {
-        return _context.FindUserClaim(x =>  user.Id == x.UserId && x.ClaimType == claim) != null;
+        return context.FindUserClaim(x =>  user.Id == x.UserId && x.ClaimType == claim) != null;
     }
 
     /// <summary>
@@ -321,11 +324,11 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <returns>True if the user has the claim with the value, otherwise false.</returns>
     public bool UserHasClaim(string userid, string claim, string value)
     {
-        CustomUser? user = _context.FindUser(x => x.Id == userid);
+        CustomUser? user = context.FindUser(x => x.Id == userid);
         if (user == null)
             return false;
 
-        var localClaim = _context.FindUserClaim(x => x.UserId == user.Id && x.ClaimType ==claim);
+        var localClaim = context.FindUserClaim(x => x.UserId == user.Id && x.ClaimType ==claim);
         if (localClaim == null)
             return false;
 
@@ -347,7 +350,7 @@ public class CustomUserManager : UserManager<CustomUser>
         if (user == null)
             return false;
 
-        var localClaim = _context.FindUserClaim(x => x.UserId == user.Id && x.ClaimType == claim);
+        var localClaim = context.FindUserClaim(x => x.UserId == user.Id && x.ClaimType == claim);
         if (localClaim == null)
             return false;
 
@@ -369,7 +372,7 @@ public class CustomUserManager : UserManager<CustomUser>
         List<CustomRole> roles = GetUserCustomRoles(userid);
         foreach (var role in roles.OrderByDescending(x => x.Level))
         {
-            claims.AddRange(_context.GetRoleClaims(x => x.RoleId == role.Id));
+            claims.AddRange(context.GetRoleClaims(x => x.RoleId == role.Id));
         }
         return claims;
     }
@@ -383,10 +386,10 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SetUserClaim(CustomUser user, string claim, string value)
     {
-        var localClaim = _context.FindUserClaim(x => x.UserId == user.Id && x.ClaimType == claim);
+        var localClaim = context.FindUserClaim(x => x.UserId == user.Id && x.ClaimType == claim);
         if (localClaim == null)
         {
-            await _context.AddUserClaimAsync(new CustomUserClaim
+            await context.AddUserClaimAsync(new CustomUserClaim
             {
                 UserId = user.Id,
                 ClaimType = claim,
@@ -396,7 +399,7 @@ public class CustomUserManager : UserManager<CustomUser>
         }
 
         localClaim.ClaimValue = value;
-        await _context.UpdateUserClaimAsync(localClaim, true);
+        await context.UpdateUserClaimAsync(localClaim, true);
     }
     #endregion
         
@@ -409,7 +412,7 @@ public class CustomUserManager : UserManager<CustomUser>
     /// <returns>True if the user has the permission, otherwise false.</returns>
     public bool HasPermission(string userid, string claim, string value = "true")
     {
-        var roleClaim = _context.FindUserClaim(x => x.UserId == userid && x.ClaimType == claim && x.ClaimValue == value);
+        var roleClaim = context.FindUserClaim(x => x.UserId == userid && x.ClaimType == claim && x.ClaimValue == value);
         if (roleClaim != null)
             return true;
 
@@ -437,7 +440,7 @@ public class CustomUserManager : UserManager<CustomUser>
     public List<CustomUser> GetUsersByPermission(string claim, string value = "true")
     {
         List<CustomUser> users = new List<CustomUser>();
-        foreach (var user in _context.GetUsers())
+        foreach (var user in context.GetUsers())
             if (HasPermission(user, claim, value))
                 users.Add(user);
 
@@ -454,7 +457,7 @@ public class CustomUserManager : UserManager<CustomUser>
     {
         List<CustomClaim> claims = new List<CustomClaim>();
         List<string> addedKeys = new List<string>();
-        List<CustomUserClaim> userClaims = _context.GetUserClaims(x => x.UserId == userId);
+        List<CustomUserClaim> userClaims = context.GetUserClaims(x => x.UserId == userId);
         foreach (var userClaim in userClaims)
         {
             if (string.IsNullOrEmpty(userClaim.ClaimType))
@@ -501,7 +504,7 @@ public class CustomUserManager : UserManager<CustomUser>
     {
         List<Claim> claims = new List<Claim>();
         List<string> addedKeys = new List<string>();
-        List<CustomUserClaim> userClaims = _context.GetUserClaims(x => x.UserId == userId);
+        List<CustomUserClaim> userClaims = context.GetUserClaims(x => x.UserId == userId);
         foreach (var userClaim in userClaims)
         {
             if (string.IsNullOrEmpty(userClaim.ClaimType))
@@ -535,15 +538,15 @@ public class CustomUserManager : UserManager<CustomUser>
     
     public CustomUser? GetUserByCredentials(string token)
     {
-        var userToken = _context.FindUserToken(x => x.Value == token);
+        var userToken = context.FindUserToken(x => x.Value == token);
         if (userToken == null)
             return null;
 
-        var userLogin = _context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
+        var userLogin = context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
         if (userLogin == null)
             return null;
             
-        return _context.FindUser(x => x.Id == userToken.UserId);
+        return context.FindUser(x => x.Id == userToken.UserId);
     }
     
     public async Task<CustomUser?> GetUserByAuthenticationStringAsync(string? authenticationString)
@@ -554,26 +557,29 @@ public class CustomUserManager : UserManager<CustomUser>
         if (authenticationString.ToLower().StartsWith("basic"))
         {
             string value = authenticationString.Remove(0, 6);
+            if (value.EndsWith("=="))
+                value = Encoding.UTF8.GetString(Convert.FromBase64String(value));
+            
             var raw = value.Split(value.Contains(':') ? ":" : ".");
             if (raw.Length < 2)
                 return null;
 
             string normalizedValue = raw[0].Normalize().ToUpper();
-            return await _context.FindUserAsync(x => (x.NormalizedEmail == normalizedValue || x.NormalizedUserName == normalizedValue) && x.PasswordHash == StringChiper.GetEncryptedSha256Hash(raw[1], _settings.EncryptionKey));
+            return await context.FindUserAsync(x => (x.NormalizedEmail == normalizedValue || x.NormalizedUserName == normalizedValue) && x.PasswordHash == StringChiper.GetEncryptedSha256Hash(raw[1], settings.EncryptionKey));
         }
 
         if (authenticationString.ToLower().StartsWith("bearer"))
         {
             string token = authenticationString.Remove(0, 7);
-            var userToken = _context.FindUserToken(x => x.Value == token);
+            var userToken = context.FindUserToken(x => x.Value == token);
             if (userToken == null)
                 return null;
 
-            var userLogin = _context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
+            var userLogin = context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
             if (userLogin == null)
                 return null;
 
-            return await _context.FindUserAsync(x => x.Id == userToken.UserId);
+            return await context.FindUserAsync(x => x.Id == userToken.UserId);
         }
 
         return null;

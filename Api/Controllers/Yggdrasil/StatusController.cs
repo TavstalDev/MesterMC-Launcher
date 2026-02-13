@@ -11,13 +11,11 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [Tags("Yggdrasil")]
 public class StatusController : Controller
 {
-    private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
     private readonly Settings _settings;
     
-    public StatusController(IConfiguration configuration, ILogger<StatusController> logger, Settings settings)
+    public StatusController(ILogger<StatusController> logger, Settings settings)
     {
-        _configuration = configuration;
         _logger = logger;
         _settings = settings;
     }
@@ -25,7 +23,7 @@ public class StatusController : Controller
     [HttpGet] 
     public IActionResult Root()
     {
-        var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, "");
+        var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, _settings.CertPassword);
         var rsa = cert.GetRSAPrivateKey();
         if (rsa == null)
             return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to load RSA private key from certificate");
@@ -55,5 +53,12 @@ public class StatusController : Controller
             { "token.count", 0 },
             { "pendingAuthentication.count", 0 }
         });
+    }
+    
+    [HttpGet("publickeys")]
+    [HttpGet("minecraftservices/publickeys")]
+    public IActionResult GetPublicKeys()
+    {
+        return this.ReturnJson(new { profileKeys = new object[] { } });
     }
 }
