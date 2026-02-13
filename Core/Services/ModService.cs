@@ -26,7 +26,6 @@ public static class ModService
         new("continuity-3.0.1-beta.1+1.21.6.jar", "80b03195bbfdc805a3280d6b6354e3ecdeb6a3c936fd2928a71fac8bee619708", "https://cdn.modrinth.com/data/1IjD5062/versions/m0cvWhzT/continuity-3.0.1-beta.1%2B1.21.6.jar"),
         new("CraftPresence-2.7.0+1.21.8-fabric.jar", "a08c55ac8cec21cee3bbfc1f939b374b31eaa084aa3ff2308be8f8fdc43a1738", "https://cdn.modrinth.com/data/DFqQfIBR/versions/4vj0xtr0/CraftPresence-2.7.0%2B1.21.8-fabric.jar"),
         new("cwb-fabric-3.0.0+mc1.21.5.jar", "0ffe5494c49758a5c3ba407aa25cb33962f7d1b00d1068cfbadf5104a219766a", "https://cdn.modrinth.com/data/ETlrkaYF/versions/wXhtL4fb/cwb-fabric-3.0.0%2Bmc1.21.5.jar"),
-        new("hdskins-6.14.6+1.21.7.jar", "897a31de63dfca41381112ce1834ada513b612fd659e5939dba12ade0ff5487a", "https://cdn.modrinth.com/data/FzE9gshV/versions/43qGf0x0/hdskins-6.14.6%2B1.21.7.jar"),
         new("debugify-1.21.8+1.0.jar", "5277a32bb4c21fbe0752bea28e90e6c365da82c6d6a0a7b26732f2a0ebd3a775", "https://cdn.modrinth.com/data/QwxR6Gcd/versions/WLSwJeXa/debugify-1.21.8%2B1.0.jar"),
         new("dynamic-fps-3.9.6+minecraft-1.21.6-fabric.jar", "bc1173b967b23368138ee8539ab12c7865339a7696486bfad61dd7062d33c4a2", "https://cdn.modrinth.com/data/LQ3K71Q1/versions/PqIDU2GY/dynamic-fps-3.9.6%2Bminecraft-1.21.6-fabric.jar"),
         new("e4mc_minecraft-fabric-5.4.1.jar", "42d722bceb020190509d1c228d3bd9714cf9090903ba80ad2fd525fe830e70bf", "https://cdn.modrinth.com/data/qANg5Jrr/versions/baNcxaPZ/e4mc_minecraft-fabric-5.4.1.jar"),
@@ -63,11 +62,10 @@ public static class ModService
         new("yet_another_config_lib_v3-3.7.1+1.21.6-fabric.jar", "7d71fbee0e2ca0f38a475309d23c9d084cd68edd4be6544eecdb5aec1f36d1ed", "https://cdn.modrinth.com/data/1eAoo2KR/versions/WxYlHLu6/yet_another_config_lib_v3-3.7.1%2B1.21.6-fabric.jar"),
         new("yosbr-0.1.2.jar", "db4c744fd71f5617639cb0fdff72378b08d2852004f4045c62090de1bf53afcb", "https://cdn.modrinth.com/data/WwbubTsV/versions/KMOzdYko/yosbr-0.1.2.jar"),
         new("Zoomify-2.14.6+1.21.6.jar", "f730fc2f5e2b0a5f285f9ed01a307f2c5cecb13e5527fcb6971b4b398c85549a", "https://cdn.modrinth.com/data/w7ThoJFB/versions/qMqviL3t/Zoomify-2.14.6%2B1.21.6.jar"),
-    
+        new("CustomSkinLoader_Fabric-14.27.jar", "393dc6b04042b7ff56a163bac319ceb573edcf77f74272f1c93799da03368f1d", "https://cdn.modrinth.com/data/idMHQ4n2/versions/Fsrt5ueW/CustomSkinLoader_Fabric-14.27.jar"),
         new("splashscreen-1.1.1.jar", "4db8d45dfd719bc2ac8f9d997b6f5245fa7fbdec744491ffa8218b5e16a3e06f", "https://cdn.modrinth.com/data/cxe0fRnA/versions/gWPlubql/splashscreen-1.1.1.jar"),
         
-        // Custom
-        new("MMCAuth-1.0-SNAPSHOT.jar", "da110b033d96e75049f5df7252f2bde3d14ccf3cb34f576b056f467a08657b00", ""),
+
         
         // Disabled mods
         new("litematica-fabric-1.21.8-0.23.5.jar", "1f04fa397b9d544286d95c5582e96a7dd9ae5a5ea3755d8e69fa34a748c406e0", "https://cdn.modrinth.com/data/bEpr0Arc/versions/XWl870Bx/litematica-fabric-1.21.8-0.23.5.jar", true),
