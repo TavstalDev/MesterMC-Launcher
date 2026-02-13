@@ -14,7 +14,9 @@ using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
+[ApiController]
 [Route("/register")]
+[Tags("Authentication: Registration")]
 public class RegisterController : Controller
 {
     private readonly IConfiguration _configuration;

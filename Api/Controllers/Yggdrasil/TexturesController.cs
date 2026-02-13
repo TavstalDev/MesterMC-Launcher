@@ -5,7 +5,9 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
+[ApiController]
 [Route("yggdrasil/textures")]
+[Tags("Yggdrasil")]
 public class TexturesController : Controller
 {
     private readonly IConfiguration _configuration;
@@ -20,7 +22,7 @@ public class TexturesController : Controller
         _userManager = userManager;
         _dbContext = dbContext;
     }
-
+    
     [HttpGet("{hash}")]
     public async Task<IActionResult> GetTexture(string hash)
     {

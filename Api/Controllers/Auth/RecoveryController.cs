@@ -14,7 +14,9 @@ using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
+[ApiController]
 [Route("/recovery")]
+[Tags("Authentication: Recovery")]
 public class RecoveryController : Controller
 {
     private readonly IConfiguration _configuration;

@@ -5,7 +5,9 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
+[ApiController]
 [Route("yggdrasil/api/user/profile")]
+[Tags("Yggdrasil")]
 public class UserProfileController : Controller
 {
     private readonly IConfiguration _configuration;

@@ -15,6 +15,8 @@ using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
+[ApiController]
+[Tags("Authentication: Login")]
 public class LoginController : Controller
 {
     private readonly IConfiguration _configuration;

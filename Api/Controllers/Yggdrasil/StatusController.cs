@@ -6,7 +6,9 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
+[ApiController]
 [Route("yggdrasil")]
+[Tags("Yggdrasil")]
 public class StatusController : Controller
 {
     private readonly IConfiguration _configuration;

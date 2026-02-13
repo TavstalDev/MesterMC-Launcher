@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
+[ApiController]
+[Tags("Yggdrasil")]
 public class MinecraftServicesController : Controller
 {
     [HttpGet("yggdrasil/minecraftservices/publickeys")]

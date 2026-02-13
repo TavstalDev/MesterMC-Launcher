@@ -12,8 +12,10 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
+[ApiController]
 [Route("yggdrasil/session/minecraft")] // Client
 [Route("yggdrasil/sessionserver/session/minecraft")] // Server
+[Tags("Yggdrasil")]
 public class SessionServerController : Controller
 {
     private readonly IConfiguration _configuration;
@@ -91,14 +93,23 @@ public class SessionServerController : Controller
     [HttpGet("profile/{uuid}")]
     public async Task<IActionResult> GetProfile(string uuid, [FromQuery] bool unsigned = true)
     {
-        string dashedUuid = Guid.Parse(uuid).ToString("D");
-        CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
-        if (user == null)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
-        
-        string json = await GetProfileResponseJsonAsync(user, unsigned);
-        _profileCache.Set(user.Id, json); // TODO: Uncomment it for testing, probably caching will not work if timestamp is a dependency in mojang's authlib
-        return this.ReturnJson(json);
+        try
+        {
+            string dashedUuid = Guid.Parse(uuid).ToString("D");
+            CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
+            if (user == null)
+                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
+
+            string json = await GetProfileResponseJsonAsync(user, unsigned);
+            _profileCache.Set(user.Id,
+                json); // TODO: Uncomment it for testing, probably caching will not work if timestamp is a dependency in mojang's authlib
+            return this.ReturnJson(json);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical("Unknown error while processing profile request for uuid: {Uuid}, unsigned: {Unsigned}. Error: {ErrorMessage}", uuid, unsigned, ex);
+            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "An error occurred while processing the request: " + ex.Message);
+        }
     }
 
     private async Task<string> GetProfileResponseJsonAsync(CustomUser user, bool unsigned = true)
@@ -150,8 +161,10 @@ public class SessionServerController : Controller
         };
         if (!unsigned)
         {
-            var signature =  X509CertificateLoader.LoadCertificate(_settings.Cert).GetRSAPrivateKey()!.ExportSubjectPublicKeyInfoPem();
-            texturesProperty.Add("signature", signature);
+            var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, "");
+            var rsa = cert.GetRSAPrivateKey();
+            if (rsa != null)
+                texturesProperty.Add("signature", rsa.ExportSubjectPublicKeyInfoPem());
         }
 
         properties.Add(texturesProperty);

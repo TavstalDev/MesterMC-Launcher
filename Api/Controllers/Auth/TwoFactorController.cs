@@ -13,7 +13,9 @@ using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
+[ApiController]
 [Route("/2fa")]
+[Tags("Authentication: 2FA")]
 public class TwoFactorController : Controller {
     private readonly IConfiguration _configuration;
     private readonly ILogger _logger;

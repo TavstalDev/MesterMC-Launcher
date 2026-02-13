@@ -6,7 +6,9 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
+[ApiController]
 [Route("yggdrasil/authserver")]
+[Tags("Yggdrasil")]
 public class AuthServerController : Controller
 {
     private readonly IConfiguration _configuration;
