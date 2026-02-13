@@ -6,8 +6,8 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn> <!-- TODO: Remove this when I start adding XML comments to the public API -->
     </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="DotEnv.Core" Version="3.1.0" />
         <PackageReference Include="MailKit" Version="4.14.1" />
