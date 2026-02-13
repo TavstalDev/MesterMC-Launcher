@@ -12,8 +12,8 @@ using Tavstal.MesterMC.Api.Services.Database;
 namespace Tavstal.MesterMC.Api.Migrations
 {
     [DbContext(typeof(CustomDbContext))]
-    [Migration("20260212211814_mmcdb1")]
-    partial class mmcdb1
+    [Migration("20260213155435_mmcdb")]
+    partial class mmcdb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -64,6 +64,10 @@ namespace Tavstal.MesterMC.Api.Migrations
                     b.Property<bool>("IsPublic")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FileId");
@@ -98,7 +102,6 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
 
@@ -405,9 +408,11 @@ namespace Tavstal.MesterMC.Api.Migrations
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.CustomUserRole", b =>
                 {
                     b.Property<string>("UserId")
+                        .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
 
                     b.Property<string>("RoleId")
+                        .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
 
                     b.Property<string>("RoleId1")
@@ -599,9 +604,7 @@ namespace Tavstal.MesterMC.Api.Migrations
                 {
                     b.HasOne("Tavstal.MesterMC.Api.Models.Database.User.CustomUser", "User")
                         .WithMany("Files")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
