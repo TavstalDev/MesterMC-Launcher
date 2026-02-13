@@ -329,6 +329,9 @@ public class MinecraftInstance
         string? result = await MinecraftFileService.DownloadLaunchWrapperAsync(PathDetails.LibrariesDir, _progressReporter);
         if (!string.IsNullOrEmpty(result))
             _classPath.Add(result);
+        result = await MinecraftFileService.DownloadAuthlibInjectorAsync(PathDetails.LibrariesDir, _progressReporter);
+        if (!string.IsNullOrEmpty(result))
+            _classPath.Add(result);
     }
 
     /// <summary>
@@ -356,7 +359,8 @@ public class MinecraftInstance
         _classPathFilePath = Path.Combine(gameDir, "classpath.txt");
         File.WriteAllText(_classPathFilePath, classpath);
 
-        string? jvmArgumentString = ReplacePlaceholders(string.Join(' ',BuildJvmArguments(gameDir)), gameDir, nativesDir, modVersion);
+        string authlibPath = Path.Combine(this.PathDetails!.LibrariesDir, "com", "mojang", "authlib", "authlib.jar");
+        string? jvmArgumentString = $"-javaagent:{authlibPath}={MesterMcEndpoints.YggdrasilEndpoint} -Dauthlibinjector.disableHttpd " + ReplacePlaceholders(string.Join(' ',BuildJvmArguments(gameDir)), gameDir, nativesDir, modVersion);
         // TODO: Better way to add launchWrapper
         jvmArgumentString += " net.minecraft.client.main.Launch";
         
@@ -388,9 +392,7 @@ public class MinecraftInstance
 
         if (!string.IsNullOrEmpty(GameDetails.JvmArgs))
             jvmArgs.Add(GameDetails.JvmArgs);
-
-        jvmArgs.Add("-DmmcToken=\"${auth_access_token}\"");
-        // TODO: Change this to an actual domain
+        
         jvmArgs.Add("-Dminecraft.api.env=custom");
         jvmArgs.Add($"-Dminecraft.api.auth.host={MesterMcEndpoints.YggdrasilEndpoint}");
         jvmArgs.Add($"-Dminecraft.api.account.host={MesterMcEndpoints.YggdrasilEndpoint}");

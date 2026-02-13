@@ -524,7 +524,7 @@ public static class MinecraftFileService
         
         string targetAssetName = "launchWrapper-1.0.jar";
         string targetFile = Path.Combine(targetDir, targetAssetName);
-        bool shouldDownload = !File.Exists(targetFile) || !FileSystemHelper.CheckSHA256(targetFile, "1e6b53fb2b2244f768f4c4095fef5758190b2c8c60fb68d7c5080ac80d236d0f");
+        bool shouldDownload = !File.Exists(targetFile) || !FileSystemHelper.CheckSHA256(targetFile, "876eb0142f2b1637b8a2513ab6d4e5d3ddb2a7bf11bfe0223a31d34c0b970ec3");
         if (!shouldDownload)
             return targetFile;
         
@@ -563,6 +563,30 @@ public static class MinecraftFileService
             return null;
         
         await HttpHelper.DownloadFileAsync(downloadUrl, targetFile, progress);
+        return targetFile;
+    }
+    
+    public static async Task<string?> DownloadAuthlibInjectorAsync(string libsDir,
+        IProgressReporter? progressReporter = null)
+    {
+        string targetDir = Path.Combine(libsDir, "com", "mojang", "authlib");
+        if (!Directory.Exists(targetDir))
+            Directory.CreateDirectory(targetDir);
+        
+        string targetAssetName = "authlib.jar";
+        string targetFile = Path.Combine(targetDir, targetAssetName);
+        bool shouldDownload = !File.Exists(targetFile) || !FileSystemHelper.CheckSHA256(targetFile, "eaf14bc5acffc7d885bd5bd5942b99f36d6299302beae356b2fc5807fe42652b");
+        if (!shouldDownload)
+            return targetFile;
+        
+        Progress<double> progress = new Progress<double>();
+        progress.ProgressChanged += (_, e) =>
+        {
+            progressReporter?.SetProgress(e);
+            progressReporter?.SetStatus("A {0} fájl letöltése... {1}%", targetAssetName, e.ToString("0.00"));
+        };
+        
+        await HttpHelper.DownloadFileAsync("https://github.com/yushijinhun/authlib-injector/releases/download/v1.2.7/authlib-injector-1.2.7.jar", targetFile, progress);
         return targetFile;
     }
 
