@@ -557,8 +557,9 @@ public class CustomUserManager : UserManager<CustomUser>
             var raw = value.Split(value.Contains(':') ? ":" : ".");
             if (raw.Length < 2)
                 return null;
-                
-            return await _context.FindUserAsync(x => x.NormalizedEmail == raw[0].Normalize() && x.PasswordHash == StringChiper.GetEncryptedSha256Hash(raw[1], _settings.EncryptionKey));
+
+            string normalizedValue = raw[0].Normalize().ToUpper();
+            return await _context.FindUserAsync(x => (x.NormalizedEmail == normalizedValue || x.NormalizedUserName == normalizedValue) && x.PasswordHash == StringChiper.GetEncryptedSha256Hash(raw[1], _settings.EncryptionKey));
         }
 
         if (authenticationString.ToLower().StartsWith("bearer"))

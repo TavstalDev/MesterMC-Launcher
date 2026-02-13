@@ -890,7 +890,7 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         return Capes.ToList();
     }
     
-    public Cape? FindUserCape(Expression<Func<Cape, bool>> predicate)
+    public Cape? FindCape(Expression<Func<Cape, bool>> predicate)
     {
         return Capes.FirstOrDefault(predicate);
     }
