@@ -61,6 +61,32 @@ public class FileData
         return File.ReadAllBytes(filePath);
     }
 
+    public void SaveFile(Stream stream)
+    {
+        string dirPath = Startup.UploadDirectory;
+        if (!Directory.Exists(dirPath))
+            Directory.CreateDirectory(dirPath);
+        
+        string containingDir = GetContainingDirectoryName();
+        string containingDirPath = Path.Combine(dirPath, containingDir);
+        if (!Directory.Exists(containingDirPath))
+            Directory.CreateDirectory(containingDirPath);
+        
+        string filePath = Path.Combine(containingDirPath, FileName);
+        using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+        stream.CopyTo(fileStream);
+    }
+    
+    public void DeleteFile()
+    {
+        if (!Exists())
+            return;
+        
+        string dirPath = Startup.UploadDirectory;
+        string filePath = Path.Combine(dirPath, GetContainingDirectoryName(), FileName);
+        File.Delete(filePath);
+    }
+
     public string GetUrl(string baseUrl)
     {
         return $"{baseUrl}/yggdrasil/textures/{Hash}";
