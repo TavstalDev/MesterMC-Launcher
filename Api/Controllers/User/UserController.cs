@@ -26,7 +26,8 @@ public class UserController : CustomControllerBase
         _dbContext = dbContext;
     }
 
-    [HttpPost("skin/upload")]
+    #region Skin
+    [HttpPut("skin")]
     public async Task<IActionResult> UploadSkin(IFormFile file)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -56,7 +57,7 @@ public class UserController : CustomControllerBase
         
         try 
         {
-            // 4. Check Format and Dimensions using ImageSharp
+            // Check Format and Dimensions using ImageSharp
             using var image = await Image.LoadAsync(stream);
             var info = image.Metadata.DecodedImageFormat;
 
@@ -106,8 +107,10 @@ public class UserController : CustomControllerBase
         await _dbContext.RemoveFileDataAsync(existingSkin, true);
         return this.ReturnResponseCode(HttpStatusCode.OK, "Skin deleted successfully");
     }
+    #endregion
 
-    [HttpPatch("cape/{id}")]
+    #region Cape
+    [HttpPatch("cape-selection/{id}")]
     public async Task<IActionResult> SelectCape(ulong id)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -134,7 +137,7 @@ public class UserController : CustomControllerBase
         return this.ReturnResponseCode(HttpStatusCode.OK, "Cape selected successfully");
     }
 
-    [HttpDelete("cape")]
+    [HttpDelete("cape-selection")]
     public async Task<IActionResult> ClearSelectedCape()
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -152,9 +155,8 @@ public class UserController : CustomControllerBase
         return this.ReturnResponseCode(HttpStatusCode.OK, "Selected cape cleared successfully");
     }
 
-    #region Elevated Permissions
-
-    [HttpPost("cape/upload")]
+    #region Elevated Endpoints
+    [HttpPost("capes")]
     public async Task<IActionResult> UploadCape(IFormFile file)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -229,7 +231,7 @@ public class UserController : CustomControllerBase
     }
 
     
-    [HttpDelete("cape/{capeId}")]
+    [HttpDelete("capes/{capeId}")]
     public async Task<IActionResult> DeleteCape(ulong capeId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -253,5 +255,6 @@ public class UserController : CustomControllerBase
         await _dbContext.SaveChangesAsync();
         return this.ReturnResponseCode(HttpStatusCode.OK, "Cape deleted successfully");
     }
+    #endregion
     #endregion
 }
