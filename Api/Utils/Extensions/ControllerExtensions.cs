@@ -2,30 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Tavstal.MesterMC.Api.Models.Database.User;
+using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Utils.Extensions;
 
 public static class ControllerExtensions
 {
-    public static string GetAuthenticationToken(this ControllerBase controller)
-    {
-        // Check if the request has an Authorization header
-        if (controller.Request.Headers.TryGetValue("Authorization", out var authHeader))
-        {
-            // Return the token part of the Authorization header
-            return authHeader.ToString();
-        }
-
-        if (controller.Request.Cookies.TryGetValue("mmc-token", out var authCookie))
-        {
-            // If the Authorization header is not present, check for an Authorization cookie
-            return authCookie;
-        }
-
-        // If no Authorization header is present, return empty
-        return string.Empty;
-    }
-    
     public static IActionResult ReturnResponseCode(this ControllerBase controller, HttpStatusCode status)
     {
         return controller.StatusCode((int)status);
