@@ -8,7 +8,6 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
-using System.Globalization;
 using System.IO.Compression;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -27,19 +26,22 @@ public static class MinecraftFileService
     private static readonly int MaxParallelDownloads = 24;
     
     /// <summary>
-    /// Downloads a file from a URL, deserializes its content, and saves it locally if it doesn't already exist.
+    /// Downloads a file from a specified URL, verifies its integrity using a SHA-1 hash (if provided),
+    /// and saves it locally. If the file already exists and matches the hash, it is deserialized and returned.
     /// </summary>
     /// <typeparam name="T">The type to which the file content will be deserialized.</typeparam>
     /// <param name="filePath">The local file path where the file will be saved.</param>
     /// <param name="url">The URL from which the file will be downloaded.</param>
-    /// <param name="statusKey">A key used for progress reporting and status messages.</param>
+    /// <param name="sha1Hash">The SHA-1 hash to verify the file's integrity. If null, no verification is performed.</param>
     /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
     /// <param name="deserialize">A function to deserialize the file content into the specified type.</param>
-    /// <returns>The deserialized object of type <typeparamref name="T"/> or null if the operation fails.</returns>
-    private static async Task<T?> DownloadAndSaveFileAsync<T>(string filePath, string url, string statusKey,
+    /// <returns>
+    /// The deserialized object of type <typeparamref name="T"/> if the operation succeeds; otherwise, null.
+    /// </returns>
+    private static async Task<T?> DownloadAndSaveFileAsync<T>(string filePath, string url, string? sha1Hash,
         IProgressReporter? progressReporter, Func<string, T?> deserialize)
     {
-        if (File.Exists(filePath))
+        if (File.Exists(filePath) && (sha1Hash == null || FileSystemHelper.CheckSHA1(filePath, sha1Hash)))
         {
             progressReporter?.SetStatus("A {0} fájl beolvasása...", Path.GetFileName(filePath));
             string jsonResult = await File.ReadAllTextAsync(filePath);
@@ -71,13 +73,14 @@ public static class MinecraftFileService
     /// </summary>
     /// <param name="filePath">The local file path where the file will be saved.</param>
     /// <param name="url">The URL from which the file will be downloaded.</param>
+    /// <param name="sha1Hash">The SHA-1 hash to verify the file's integrity. If null, no verification is performed.</param>
     /// <param name="statusKey">A key used for progress reporting and status messages.</param>
     /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
     /// <returns>A byte array containing the file content or null if the operation fails.</returns>
-    private static async Task DownloadAndSaveBinaryFileAsync(string filePath, string url, string statusKey,
+    private static async Task DownloadAndSaveBinaryFileAsync(string filePath, string url, string? sha1Hash, string statusKey,
         IProgressReporter? progressReporter)
     {
-        if (File.Exists(filePath))
+        if (File.Exists(filePath) && (sha1Hash == null || FileSystemHelper.CheckSHA1(filePath, sha1Hash)))
         {
             progressReporter?.SetStatus($"instance.reading.{statusKey}", Path.GetFileName(filePath));
             return;
@@ -109,7 +112,7 @@ public static class MinecraftFileService
         var versionResult = await DownloadAndSaveFileAsync(
             versionData.VersionJsonPath,
             minecraftVersion.Url,
-            "version_json",
+            minecraftVersion.Sha1,
             progressReporter,
             JsonConvert.DeserializeObject<VersionMeta>);
 
@@ -119,6 +122,7 @@ public static class MinecraftFileService
         await DownloadAndSaveBinaryFileAsync(
             versionData.VersionJarPath,
             versionResult.Downloads.Client.Url,
+            versionResult.Downloads.Client.Sha1,
             "version_jar",
             progressReporter);
 
@@ -150,7 +154,7 @@ public static class MinecraftFileService
         string? resultJson = await DownloadAndSaveFileAsync(
             assetPath,
             versionMeta.Index.Url,
-            "asset_index_json",
+            versionMeta.Index.Sha1,
             progressReporter,
             json => json); // Deserialize to string, then parse JObject
 
@@ -369,7 +373,7 @@ public static class MinecraftFileService
         string? logContent = await DownloadAndSaveFileAsync(
             logFilePath,
             versionMeta.LoggingMeta.Client.File.Url,
-            "logging",
+            null, // Do not check hash for logging file, because it can be modified by the user and it does not affect the game integrity
             progressReporter,
             json => json); // Deserialize to string
 
@@ -403,7 +407,7 @@ public static class MinecraftFileService
         await DownloadAndSaveFileAsync(
             clientMappinsPath,
             versionMeta.Downloads.ClientMappings.Url,
-            "client_mappings",
+            versionMeta.Downloads.ClientMappings.Sha1,
             progressReporter,
             json => json); // Deserialize to string
     }
@@ -425,27 +429,35 @@ public static class MinecraftFileService
     {
         progressReporter?.SetProgress(0);
         progressReporter?.SetStatus("Könyvtár fájlok ellenőrzése...");
+
+        string jsonKey = $"{versionData.MinecraftVersion}-{kind}-{versionData.CustomVersion}";
+        string librarySizeCacheFilePath = Path.Combine(cacheDir, "libsizes.json");
+        JObject cacheObject;
+        if (!File.Exists(librarySizeCacheFilePath)) // Create empty cache file if it does not exist
+        {
+            cacheObject = new  JObject();
+            await File.WriteAllTextAsync(librarySizeCacheFilePath, "{}");
+        }
+        else
+        {
+            string json = await File.ReadAllTextAsync(librarySizeCacheFilePath);
+            cacheObject = JObject.Parse(json);
+        }
         
-        string libraryCacheDir = Path.Combine(cacheDir, "libsizes");
-        Directory.CreateDirectory(libraryCacheDir);
-
-        string librarySizeCacheFilePath = Path.Combine(libraryCacheDir,
-            $"{versionData.MinecraftVersion}-{kind}-{versionData.CustomVersion}.json");
-
         // Calculate or read library size
         long overallLibrarySize;
-        if (!File.Exists(librarySizeCacheFilePath))
+        if (cacheObject.TryGetValue(jsonKey, out var cacheValue))
+        {
+            overallLibrarySize = cacheValue.Value<long>();
+        }
+        else
         {
             overallLibrarySize = mcLibs
                 .Where(lib => lib.GetRulesResult() && lib.Downloads.Artifact != null)
                 .Sum(lib => lib.Downloads.Artifact?.Size ?? 0);
 
-            await File.WriteAllTextAsync(librarySizeCacheFilePath,
-                overallLibrarySize.ToString(CultureInfo.InvariantCulture));
-        }
-        else
-        {
-            overallLibrarySize = long.Parse(await File.ReadAllTextAsync(librarySizeCacheFilePath), CultureInfo.InvariantCulture);
+            cacheObject[jsonKey] = overallLibrarySize;
+            await File.WriteAllTextAsync(librarySizeCacheFilePath, cacheObject.ToString());
         }
         
         var semaphore = new SemaphoreSlim(MaxParallelDownloads);
@@ -493,7 +505,7 @@ public static class MinecraftFileService
                     {
                         var classifier = lib.Downloads.Classifiers.GetOsNative();
                         var libJarFilePath = Path.Combine(libsDir, classifier.Path);
-                        await DownloadNativeFileAsync(classifier.Url, libJarFilePath, lib.Name, versionData.NativesDir, progressReporter);
+                        await DownloadNativeFileAsync(classifier.Url, classifier.Sha1, libJarFilePath, lib.Name, versionData.NativesDir, progressReporter);
                         Interlocked.Add(ref downloadedBytes, classifier.Size);
                         
                         if (!string.IsNullOrEmpty(libJarFilePath) && !classPath.Contains(libJarFilePath))
@@ -515,6 +527,14 @@ public static class MinecraftFileService
         return classPath;
     }
 
+    /// <summary>
+    /// Downloads the LaunchWrapper JAR file and saves it locally if it doesn't already exist.
+    /// </summary>
+    /// <param name="libsDir">The directory where the library files are stored.</param>
+    /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
+    /// <returns>
+    /// The file path of the downloaded LaunchWrapper JAR file, or null if the operation fails.
+    /// </returns>
     public static async Task<string?> DownloadLaunchWrapperAsync(string libsDir,
         IProgressReporter? progressReporter = null)
     {
@@ -524,7 +544,7 @@ public static class MinecraftFileService
         
         string targetAssetName = "launchWrapper-1.0.jar";
         string targetFile = Path.Combine(targetDir, targetAssetName);
-        bool shouldDownload = !File.Exists(targetFile) || !FileSystemHelper.CheckSHA256(targetFile, "876eb0142f2b1637b8a2513ab6d4e5d3ddb2a7bf11bfe0223a31d34c0b970ec3");
+        bool shouldDownload = !File.Exists(targetFile) || !FileSystemHelper.CheckSHA256(targetFile, "1e6b53fb2b2244f768f4c4095fef5758190b2c8c60fb68d7c5080ac80d236d0f");
         if (!shouldDownload)
             return targetFile;
         
@@ -565,30 +585,6 @@ public static class MinecraftFileService
         await HttpHelper.DownloadFileAsync(downloadUrl, targetFile, progress);
         return targetFile;
     }
-    
-    public static async Task<string?> DownloadAuthlibInjectorAsync(string libsDir,
-        IProgressReporter? progressReporter = null)
-    {
-        string targetDir = Path.Combine(libsDir, "com", "mojang", "authlib");
-        if (!Directory.Exists(targetDir))
-            Directory.CreateDirectory(targetDir);
-        
-        string targetAssetName = "authlib.jar";
-        string targetFile = Path.Combine(targetDir, targetAssetName);
-        bool shouldDownload = !File.Exists(targetFile) || !FileSystemHelper.CheckSHA256(targetFile, "eaf14bc5acffc7d885bd5bd5942b99f36d6299302beae356b2fc5807fe42652b");
-        if (!shouldDownload)
-            return targetFile;
-        
-        Progress<double> progress = new Progress<double>();
-        progress.ProgressChanged += (_, e) =>
-        {
-            progressReporter?.SetProgress(e);
-            progressReporter?.SetStatus("A {0} fájl letöltése... {1}%", targetAssetName, e.ToString("0.00"));
-        };
-        
-        await HttpHelper.DownloadFileAsync("https://github.com/yushijinhun/authlib-injector/releases/download/v1.2.7/authlib-injector-1.2.7.jar", targetFile, progress);
-        return targetFile;
-    }
 
     /// <summary>
     /// Downloads a library artifact and saves it locally.
@@ -608,7 +604,7 @@ public static class MinecraftFileService
         Directory.CreateDirectory(libDirPath);
 
         string libFilePath = Path.Combine(libsDir, localPath);
-        if (!File.Exists(libFilePath) && !string.IsNullOrEmpty(lib.Downloads.Artifact.Url))
+        if (!(File.Exists(libFilePath) && FileSystemHelper.CheckSHA1(libFilePath, lib.Downloads.Artifact?.Sha1)) && !string.IsNullOrEmpty(lib.Downloads.Artifact?.Url))
         {
             Progress<double> progress = new Progress<double>();
             progress.ProgressChanged += (_, e) =>
@@ -628,17 +624,18 @@ public static class MinecraftFileService
     /// and extracts its contents to the specified native directory.
     /// </summary>
     /// <param name="url">The URL of the native library file to download.</param>
+    /// <param name="sha1">The SHA-1 hash of the file to verify its integrity after download.</param>
     /// <param name="filePath">The local file path where the downloaded file will be saved.</param>
     /// <param name="libName">The name of the library being downloaded, used for progress reporting.</param>
     /// <param name="nativeDir">The directory where the extracted native files will be stored.</param>
     /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
     private static async Task DownloadNativeFileAsync(
-        string url, string filePath, string libName, string nativeDir, IProgressReporter? progressReporter)
+        string url, string sha1, string filePath, string libName, string nativeDir, IProgressReporter? progressReporter)
     {
         string libDir = Path.GetDirectoryName(filePath)!;
         Directory.CreateDirectory(libDir);
 
-        if (File.Exists(filePath))
+        if (File.Exists(filePath) && FileSystemHelper.CheckSHA1(filePath, sha1))
         {
             ExtractNativeFiles(filePath,nativeDir);
             return;

@@ -45,12 +45,7 @@ public class FabricInstance(
         // Create versionDir in the versions folder
         if (!Directory.Exists(fabricVersion.VersionDirectory))
             Directory.CreateDirectory(fabricVersion.VersionDirectory);
-
-        // Check libsizes dir
-        string librarySizeCacheDir = Path.Combine(PathDetails.CacheDir, "libsizes");
-        if (!Directory.Exists(librarySizeCacheDir))
-            Directory.CreateDirectory(librarySizeCacheDir);
-
+        
         // Download version json
         FabricVersionMeta? fabricVersionMeta;
         List<LibraryMeta> localLibraries = new List<LibraryMeta>();

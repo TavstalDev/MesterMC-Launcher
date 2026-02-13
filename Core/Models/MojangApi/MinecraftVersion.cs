@@ -35,7 +35,10 @@ public class MinecraftVersion
     /// </summary>
     [JsonPropertyName("url"), JsonProperty("url")]
     public string Url { get; set; }
-
+    
+    [JsonPropertyName("sha1"), JsonProperty("sha1")]
+    public string Sha1 { get; set; }
+    
     /// <summary>
     /// Gets or sets the time the version was created or last updated.
     /// </summary>
@@ -68,27 +71,15 @@ public class MinecraftVersion
     /// <param name="url">The URL for the version's metadata or resources.</param>
     /// <param name="time">The time the version was created or last updated.</param>
     /// <param name="releaseTime">The release time of the Minecraft version.</param>
-    public MinecraftVersion(string id, string type, string url, DateTime time, DateTime releaseTime)
+    public MinecraftVersion(string id, string type, string url, string sha1, DateTime time, DateTime releaseTime)
     {
         Id = id;
         _version = new Version(id);
         Type = type;
         Url = url;
+        Sha1 = sha1;
         Time = time;
         ReleaseTime = releaseTime;
-    }
-    
-    /// <summary>
-    /// Retrieves the .NET version associated with the Minecraft version.
-    /// If the version is not already initialized, it creates a new instance
-    /// of the <see cref="Version"/> class using the <see cref="Id"/> property.
-    /// </summary>
-    /// <returns>The .NET version associated with the Minecraft version.</returns>
-    public Version GetVersion()
-    {
-        if (_version == null)
-            _version = new Version(Id);
-        return _version;
     }
 
     /// <summary>

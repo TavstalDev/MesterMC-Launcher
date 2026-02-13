@@ -329,9 +329,6 @@ public class MinecraftInstance
         string? result = await MinecraftFileService.DownloadLaunchWrapperAsync(PathDetails.LibrariesDir, _progressReporter);
         if (!string.IsNullOrEmpty(result))
             _classPath.Add(result);
-        result = await MinecraftFileService.DownloadAuthlibInjectorAsync(PathDetails.LibrariesDir, _progressReporter);
-        if (!string.IsNullOrEmpty(result))
-            _classPath.Add(result);
     }
 
     /// <summary>
@@ -359,8 +356,7 @@ public class MinecraftInstance
         _classPathFilePath = Path.Combine(gameDir, "classpath.txt");
         File.WriteAllText(_classPathFilePath, classpath);
 
-        string authlibPath = Path.Combine(this.PathDetails!.LibrariesDir, "com", "mojang", "authlib", "authlib.jar");
-        string? jvmArgumentString = $"-javaagent:{authlibPath}={MesterMcEndpoints.YggdrasilEndpoint} -Dauthlibinjector.disableHttpd " + ReplacePlaceholders(string.Join(' ',BuildJvmArguments(gameDir)), gameDir, nativesDir, modVersion);
+        string? jvmArgumentString = ReplacePlaceholders(string.Join(' ',BuildJvmArguments(gameDir)), gameDir, nativesDir, modVersion);
         // TODO: Better way to add launchWrapper
         jvmArgumentString += " net.minecraft.client.main.Launch";
         
