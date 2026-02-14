@@ -664,6 +664,20 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         return UserLogins.FirstOrDefault(predicate);
     }
 
+    
+    public async Task ClearExpiredUserLoginsAsync(bool shouldSave = false)
+    {
+        var expiredLogins = await UserLogins.Where(l => l.ExpireDate <= DateTimeOffset.UtcNow).ToListAsync();
+        foreach (var login in expiredLogins)
+        {
+            var token = UserTokens.FirstOrDefault(x => x.Id == login.ProviderKey);
+            if (token != null)
+                UserTokens.Remove(token);
+        }
+        
+        UserLogins.RemoveRange(expiredLogins);
+        if (shouldSave) await SaveChangesAsync();
+    }
     #endregion
 
     #region User Billing Information
@@ -764,6 +778,13 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         return UserPlaySessions.FirstOrDefault(predicate);
     }
 
+    
+    public async Task ClearExpiredUserPlaySessionsAsync(bool shouldSave = false)
+    {
+        var expiredSessions = await UserPlaySessions.Where(s => s.ExpiresAt <= DateTimeOffset.UtcNow).ToListAsync();
+        UserPlaySessions.RemoveRange(expiredSessions);
+        if (shouldSave) await SaveChangesAsync();
+    }
     #endregion
 
     #region User Capes
@@ -932,6 +953,12 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         return ServerJoins.FirstOrDefault(predicate);
     }
 
+    public async Task ClearExpiredServerJoinsAsync(bool shouldSave = false)
+    {
+        var expiredJoins = await ServerJoins.Where(sj => sj.ExpiresAt <= DateTimeOffset.UtcNow).ToListAsync();
+        ServerJoins.RemoveRange(expiredJoins);
+        if (shouldSave) await SaveChangesAsync();
+    }
     #endregion
     
     #region News
