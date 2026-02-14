@@ -265,6 +265,8 @@ public class Startup
             });
         });
         #endregion
+        // Database cleaner service
+        services.AddHostedService<DatabaseCleanerService>();
         // JwtSettings
         services.AddSingleton<Settings>();
         // Email Service
