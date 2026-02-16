@@ -1,10 +1,18 @@
 namespace Tavstal.MesterMC.Api.Services.Database;
 
+/// <summary>
+/// A background service that periodically cleans up expired content from the database.
+/// </summary>
 public class DatabaseCleanerService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DatabaseCleanerService"/> class.
+    /// </summary>
+    /// <param name="scopeFactory">The factory to create service scopes.</param>
+    /// <param name="logger">The logger instance for logging messages.</param>
     public DatabaseCleanerService(
         IServiceScopeFactory scopeFactory,
         ILogger<DatabaseCleanerService> logger)
@@ -13,6 +21,11 @@ public class DatabaseCleanerService : BackgroundService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Executes the background service, periodically invoking the cleanup process.
+    /// </summary>
+    /// <param name="stoppingToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the background execution.</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -24,6 +37,10 @@ public class DatabaseCleanerService : BackgroundService
         }
     }
 
+    /// <summary>
+    /// Cleans up expired content from the database, including user logins, play sessions, and server joins.
+    /// </summary>
+    /// <returns>A task that represents the cleanup operation.</returns>
     private async Task CleanupExpiredContent()
     {
         try

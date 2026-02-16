@@ -9,11 +9,21 @@ using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Services;
 
+/// <summary>
+/// Custom authentication handler for processing authentication requests.
+/// </summary>
 public class AuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthenticationHandler"/> class.
+    /// </summary>
+    /// <param name="options">The options monitor for authentication scheme options.</param>
+    /// <param name="logger">The logger factory for creating loggers.</param>
+    /// <param name="encoder">The URL encoder for encoding values.</param>
+    /// <param name="userManager">The custom user manager for handling user-related operations.</param>
     public AuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
@@ -25,6 +35,10 @@ public class AuthenticationHandler : AuthenticationHandler<AuthenticationSchemeO
         _userManager = userManager;
     }
     
+    /// <summary>
+    /// Handles the authentication process for incoming requests.
+    /// </summary>
+    /// <returns>An <see cref="AuthenticateResult"/> indicating the result of the authentication process.</returns>
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         try
