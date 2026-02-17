@@ -1,11 +1,15 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
+using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
+/// <summary>
+/// Controller for handling Yggdrasil profile-related API requests.
+/// </summary>
 [ApiController]
 [Route("yggdrasil/api/profiles")]
 [Tags("Yggdrasil")]
@@ -13,20 +17,38 @@ public class ProfilesController : Controller
 {
     private readonly ILogger _logger;
     private readonly CustomDbContext _dbContext;
-    
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProfilesController"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance for logging information.</param>
+    /// <param name="dbContext">The database context for accessing user data.</param>
     public ProfilesController(ILogger<ProfilesController> logger, CustomDbContext dbContext)
     {
         _logger = logger;
         _dbContext = dbContext;
     }
 
+    /// <summary>
+    /// Retrieves Minecraft profiles for the specified list of usernames.
+    /// </summary>
+    /// <param name="names">A list of usernames to retrieve profiles for.</param>
+    /// <returns>
+    /// A JSON response containing the profiles of the specified users, or a 404 status code
+    /// if no users are found.
+    /// </returns>
+    /// <response code="200">Returns the profiles of the specified users.</response>
+    /// <response code="404">No users found with the provided usernames.</response>
     [HttpPost("minecraft")]
+    [JsonResponse(typeof(List<Dictionary<string, string>>)), TextResponse(StatusCodes.Status404NotFound)]
     public IActionResult MinecraftProfile([FromBody] List<String> names)
     {
+        // Retrieve users from the database whose usernames match the provided list.
         List<CustomUser> users = _dbContext.GetUsers(x => names.Contains(x.UserName));
         if (users.Count == 0)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound);
+            return this.ReturnResponseCode(HttpStatusCode.NotFound, "No users found with the provided usernames.");
 
+        // Prepare the response containing user IDs and usernames.
         List<Dictionary<string, string>> response = new List<Dictionary<string, string>>();
         foreach (CustomUser user in users)
         {
@@ -36,9 +58,9 @@ public class ProfilesController : Controller
                 { "name", user.UserName }
             };
             response.Add(userData);
-            
         }
-        
+
+        // Return the response as JSON.
         return this.ReturnJson(response);
     }
 }

@@ -13,6 +13,9 @@ using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
+/// <summary>
+/// Controller for handling Yggdrasil session server-related API requests.
+/// </summary>
 [ApiController]
 [Route("yggdrasil/session/minecraft")] // Client
 [Route("yggdrasil/sessionserver/session/minecraft")] // Server
@@ -25,6 +28,13 @@ public class SessionServerController : Controller
     private readonly Settings _settings;
     private readonly ExpiringCache<string, string> _profileCache = new(TimeSpan.FromMinutes(5));
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SessionServerController"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance for logging information.</param>
+    /// <param name="userManager">The user manager for handling user-related operations.</param>
+    /// <param name="dbContext">The database context for accessing data.</param>
+    /// <param name="settings">The application settings.</param>
     public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings)
     {
         _logger = logger;
@@ -32,13 +42,27 @@ public class SessionServerController : Controller
         _dbContext = dbContext;
         _settings = settings;
     }
-
+    /// <summary>
+    /// Retrieves the list of blocked servers.
+    /// </summary>
+    /// <returns>A JSON response containing an empty list of blocked servers.</returns>
     [HttpGet("/yggdrasil/sessionserver/blockedservers")]
     public Task<IActionResult> GetBlockedServers()
     {
-        return Task.FromResult(this.ReturnJson(new { blockedServers = new string[] { } }));
+        return Task.FromResult(this.ReturnJson(new { blockedServers = Array.Empty<string>() }));
     }
 
+    /// <summary>
+    /// Handles the join request for a server.
+    /// </summary>
+    /// <param name="request">The join server request containing the selected profile and access token.</param>
+    /// <returns>
+    /// A response indicating the result of the join operation.
+    /// </returns>
+    /// <response code="204">The join operation was successful.</response>
+    /// <response code="404">User or session not found.</response>
+    /// <response code="401">The access token has expired.</response>
+    /// <response code="403">The IP address does not match the request.</response>
     [HttpPost("join")]
     public async Task<IActionResult> Join([FromBody] YigJoinServerRequest request)
     {
@@ -70,6 +94,19 @@ public class SessionServerController : Controller
         return this.ReturnResponseCode(HttpStatusCode.NoContent);
     }
 
+    /// <summary>
+    /// Checks if a user has joined a server.
+    /// </summary>
+    /// <param name="serverId">The ID of the server.</param>
+    /// <param name="username">The username of the user.</param>
+    /// <param name="ip">The optional IP address of the user.</param>
+    /// <returns>
+    /// A JSON response containing the user's profile if the join is valid.
+    /// </returns>
+    /// <response code="200">The user has joined the server.</response>
+    /// <response code="404">User or server join not found.</response>
+    /// <response code="401">The server join has expired.</response>
+    /// <response code="403">The username does not match the server join.</response>
     [HttpGet("hasJoined")]
     public async Task<IActionResult> HasJoined([FromQuery] string serverId, [FromQuery] string username, [FromQuery] string? ip)
     {
@@ -93,6 +130,17 @@ public class SessionServerController : Controller
         return this.ReturnJson(json);
     }
 
+    /// <summary>
+    /// Retrieves the profile of a user by UUID.
+    /// </summary>
+    /// <param name="uuid">The UUID of the user.</param>
+    /// <param name="unsigned">Indicates whether the profile should be unsigned.</param>
+    /// <returns>
+    /// A JSON response containing the user's profile.
+    /// </returns>
+    /// <response code="200">The profile was retrieved successfully.</response>
+    /// <response code="404">User not found.</response>
+    /// <response code="500">An error occurred while processing the request.</response>
     [HttpGet("profile/{uuid}")]
     public async Task<IActionResult> GetProfile(string uuid, [FromQuery] bool unsigned = true)
     {
@@ -115,6 +163,14 @@ public class SessionServerController : Controller
         }
     }
 
+    /// <summary>
+    /// Generates a JSON response containing the profile information of a user, including textures for skin and cape.
+    /// </summary>
+    /// <param name="user">The user whose profile information is being retrieved.</param>
+    /// <param name="unsigned">Indicates whether the profile should be unsigned. Defaults to true.</param>
+    /// <returns>
+    /// A JSON string representing the user's profile, including textures and other metadata.
+    /// </returns>
     private async Task<string> GetProfileResponseJsonAsync(CustomUser user, bool unsigned = true)
     {
         if (_profileCache.TryGet(user.Id, out var profile))
