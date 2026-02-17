@@ -26,6 +26,19 @@ public class JsonResponseAttribute : Attribute, IApiResponseMetadataProvider
             "application/json"
         };
     }
+    
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JsonResponseAttribute"/> class with the specified type.
+    /// </summary>
+    /// <param name="type">The type of the value returned by an action.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
+    public JsonResponseAttribute(Type type)
+    {
+        _contentTypes = ["application/json"];
+        Type = type ?? throw new ArgumentNullException(nameof(type));
+        StatusCode = 200;
+        IsResponseTypeSetByDefault = false;
+    }
         
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonResponseAttribute"/> class with the specified status code and type.
@@ -34,10 +47,7 @@ public class JsonResponseAttribute : Attribute, IApiResponseMetadataProvider
     /// <param name="type">The type of the value returned by an action.</param>
     public JsonResponseAttribute(int statusCode, Type type)
     {
-        _contentTypes = new MediaTypeCollection
-        {
-            "application/json"
-        };
+        _contentTypes = ["application/json"];
         Type = type ?? throw new ArgumentNullException(nameof(type));
         StatusCode = statusCode;
         IsResponseTypeSetByDefault = false;
@@ -54,20 +64,15 @@ public class JsonResponseAttribute : Attribute, IApiResponseMetadataProvider
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="contentType"/> is null.</exception>
     public JsonResponseAttribute(Type type, int statusCode, string contentType, params string[] additionalContentTypes)
     {
-        if (contentType == null)
-        {
-            throw new ArgumentNullException(nameof(contentType));
-        }
+        ArgumentNullException.ThrowIfNull(contentType);
 
         Type = type ?? throw new ArgumentNullException(nameof(type));
         StatusCode = statusCode;
         IsResponseTypeSetByDefault = false;
 
         MediaTypeHeaderValue.Parse(contentType);
-        for (var i = 0; i < additionalContentTypes.Length; i++)
-        {
-            MediaTypeHeaderValue.Parse(additionalContentTypes[i]);
-        }
+        foreach (var t in additionalContentTypes)
+            MediaTypeHeaderValue.Parse(t);
 
         _contentTypes = GetContentTypes(contentType, additionalContentTypes);
     }
@@ -116,8 +121,7 @@ public class JsonResponseAttribute : Attribute, IApiResponseMetadataProvider
     /// <exception cref="InvalidOperationException">Thrown when a wildcard content type is specified.</exception>
     private static MediaTypeCollection GetContentTypes(string contentType, string[] additionalContentTypes)
     {
-        var completeContentTypes = new List<string>(additionalContentTypes.Length + 1);
-        completeContentTypes.Add(contentType);
+        var completeContentTypes = new List<string>(additionalContentTypes.Length + 1) { contentType };
         completeContentTypes.AddRange(additionalContentTypes);
         MediaTypeCollection contentTypes = new();
         foreach (var type in completeContentTypes)
