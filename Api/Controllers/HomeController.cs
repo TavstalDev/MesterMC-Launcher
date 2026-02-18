@@ -1,14 +1,15 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers;
 
 /// <summary>
 /// Controller responsible for handling requests to the home endpoint.
 /// </summary>
-public class HomeController : Controller
+public class HomeController : CustomControllerBase
 {
+    protected HomeController(ILogger<HomeController> logger) : base(logger) { }
+    
     /// <summary>
     /// Handles the root endpoint ("/") and returns an HTTP 200 OK response.
     /// This endpoint is ignored in the API documentation.
@@ -17,6 +18,6 @@ public class HomeController : Controller
     [Route("/"), ApiExplorerSettings(IgnoreApi = true)]
     public IActionResult Index()
     {
-        return this.ReturnResponseCode(HttpStatusCode.OK);
+        return ReturnResponseCode(HttpStatusCode.OK);
     }
 }

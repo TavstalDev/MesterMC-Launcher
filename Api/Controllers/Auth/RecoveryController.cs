@@ -9,7 +9,6 @@ using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
@@ -17,18 +16,16 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 [ApiController]
 [Route("/recovery")]
 [Tags("Authentication: Recovery")]
-public class RecoveryController : Controller
+public class RecoveryController : CustomControllerBase
 {
-    private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
     private readonly Settings _settings;
     // TODO: Test Recovery System
     
-    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings)
+    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings) : base(logger)
     {
-        _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;
         _emailService = emailService;
@@ -45,10 +42,10 @@ public class RecoveryController : Controller
         {
             CustomUser? user = await _userManager.FindByEmailAsync(email);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
             
             if (!user.EmailConfirmed)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Email is not confirmed.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Email is not confirmed.");
 
             var userClaim = _dbContext.FindUserClaim(x =>
                 x.UserId == user.Id && x.ClaimType == CustomClaimTypes.EmailRecoveryExpiration);
@@ -56,7 +53,7 @@ public class RecoveryController : Controller
             {
                 DateTime delayDate = DateTime.Parse(userClaim.ClaimValue!);
                 if (delayDate > DateTimeOffset.UtcNow)
-                    return this.ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
+                    return ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
             }
 
             await _dbContext.SetUserClaimAsync(new CustomUserClaim
@@ -80,12 +77,12 @@ public class RecoveryController : Controller
                 $"<h1>Account Recovery</h1><p>To recover your account, please use the following link: " +
                 $"<strong>{_settings.WebsiteUrl}/reset-password?recoveryToken={recoveryToken}</strong></p><p>The link is valid for 15 minutes.</p>");
             
-            return this.ReturnResponseCode(HttpStatusCode.Created, "Recovery email sent successfully.");
+            return ReturnResponseCode(HttpStatusCode.Created, "Recovery email sent successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
     
@@ -98,7 +95,7 @@ public class RecoveryController : Controller
         {
             CustomUser? user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
             
             #region Bruteforce protection
             var recoveryAttemptExpirationClaim = _dbContext.FindUserClaim(x =>
@@ -146,7 +143,7 @@ public class RecoveryController : Controller
 
            
             if (attempts > 3) 
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later."); 
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later."); 
                 
             await _dbContext.SetUserClaimAsync(new CustomUserClaim
             {
@@ -159,15 +156,15 @@ public class RecoveryController : Controller
             
             var recoveryTokenClaim = _dbContext.FindUserClaim(x => x.UserId == user.Id && x.ClaimType == CustomClaimTypes.EmailRecoveryToken && x.ClaimValue == request.RecoveryToken);
             if ( recoveryTokenClaim == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid recovery token.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid recovery token.");
             
             var expirationClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.EmailRecoveryExpiration && x.UserId == user.Id);
             if (expirationClaim == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "Failed to find expiration claim.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Failed to find expiration claim.");
             
             DateTime expirationDate = DateTime.Parse(expirationClaim.ClaimValue!);
             if (expirationDate < DateTimeOffset.UtcNow)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Recovery token has expired.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Recovery token has expired.");
             
             user.PasswordHash = StringChiper.GetEncryptedSha256Hash(request.NewPassword, _settings.EncryptionKey);
             await _dbContext.UpdateUserAsync(user);
@@ -179,12 +176,12 @@ public class RecoveryController : Controller
                 await _dbContext.ClearUserLoginsAsync(user.Id);
             
             await _dbContext.SaveChangesAsync();
-            return this.ReturnResponseCode(HttpStatusCode.OK, "Password reset successful.");
+            return ReturnResponseCode(HttpStatusCode.OK, "Password reset successful.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
     
@@ -197,10 +194,10 @@ public class RecoveryController : Controller
         {
             CustomUser? user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
             
             if (!user.EmailConfirmed)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Email is not confirmed.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Email is not confirmed.");
             
             #region Bruteforce protection
             var recoveryAttemptExpirationClaim = _dbContext.FindUserClaim(x =>
@@ -244,7 +241,7 @@ public class RecoveryController : Controller
 
            
             if (attempts > 3) 
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later."); 
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later."); 
                 
             await _dbContext.SetUserClaimAsync(new CustomUserClaim
             {
@@ -257,7 +254,7 @@ public class RecoveryController : Controller
             
             var backupCodeClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorRecoveryCode && x.ClaimValue == request.BackupCode && x.UserId == user.Id);
             if (backupCodeClaim == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid backup code.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid backup code.");
 
             user.TwoFactorEnabled = false;
             user.TwoFactorSecret = null;
@@ -269,12 +266,12 @@ public class RecoveryController : Controller
                 await _dbContext.ClearUserLoginsAsync(user.Id);
             
             await _dbContext.SaveChangesAsync();
-            return this.ReturnResponseCode(HttpStatusCode.OK, "2FA reset successful.");
+            return ReturnResponseCode(HttpStatusCode.OK, "2FA reset successful.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
 }

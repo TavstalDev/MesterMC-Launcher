@@ -8,7 +8,6 @@ using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
@@ -17,17 +16,15 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 [Route("/2fa")]
 [Tags("Authentication: 2FA")]
 public class TwoFactorController : CustomControllerBase {
-
-    private readonly ILogger _logger;
+    
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
     private readonly Settings _settings;
     // TODO: Test TwoFactor Auth System
     
-    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings)
+    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings) : base(logger)
     {
-        _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;
         _emailService = emailService;
@@ -43,25 +40,25 @@ public class TwoFactorController : CustomControllerBase {
         {
             CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (user.TwoFactorEnabled)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
             
             var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
             if (!totp.VerifyTotp(twoFactorCode, out _, new VerificationWindow(2, 2)))
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
             user.TwoFactorEnabled = true;
             await _dbContext.UpdateUserAsync(user);
             await _dbContext.SaveChangesAsync();
             
-            return this.ReturnResponseCode(HttpStatusCode.OK, "Two-factor authentication enabled.");
+            return ReturnResponseCode(HttpStatusCode.OK, "Two-factor authentication enabled.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
     
@@ -74,25 +71,25 @@ public class TwoFactorController : CustomControllerBase {
         {
             CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!user.TwoFactorEnabled)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
             
             var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
             if (!totp.VerifyTotp(twoFactorCode, out _, new VerificationWindow(2, 2)))
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
             user.TwoFactorEnabled = false;
             await _dbContext.UpdateUserAsync(user);
             await _dbContext.SaveChangesAsync();
             
-            return this.ReturnResponseCode(HttpStatusCode.OK, "Two-factor authentication disabled.");
+            return ReturnResponseCode(HttpStatusCode.OK, "Two-factor authentication disabled.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
     
@@ -105,16 +102,16 @@ public class TwoFactorController : CustomControllerBase {
         {
             CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (user.TwoFactorEnabled)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
 
             user.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
             await _dbContext.UpdateUserAsync(user);
             await _dbContext.SaveChangesAsync();
             
-            return this.ReturnJson(new
+            return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
                 userId = user.Id,
@@ -124,8 +121,8 @@ public class TwoFactorController : CustomControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
     
@@ -138,7 +135,7 @@ public class TwoFactorController : CustomControllerBase {
         {
             CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             var recoveryCodeClaims = _dbContext.GetUserClaims(x => x.UserId == user.Id && x.ClaimType == CustomClaimTypes.TwoFactorRecoveryCode);
             foreach (var claim in recoveryCodeClaims) 
@@ -159,7 +156,7 @@ public class TwoFactorController : CustomControllerBase {
             
             await _dbContext.SaveChangesAsync();
             
-            return this.ReturnJson(new
+            return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
                 userId = user.Id,
@@ -169,8 +166,8 @@ public class TwoFactorController : CustomControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
 }

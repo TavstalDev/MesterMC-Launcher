@@ -10,7 +10,6 @@ using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
@@ -19,16 +18,14 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 [Tags("Authentication: Login")]
 public class LoginController : CustomControllerBase
 {
-    private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
     private readonly Settings _settings;
     
     public LoginController(ILogger<LoginController> logger, CustomDbContext dbContext,
-        CustomUserManager userManager, EmailService emailService, Settings settings)
+        CustomUserManager userManager, EmailService emailService, Settings settings) : base(logger)
     {
-        _logger = logger;
         _dbContext = dbContext;
         _userManager = userManager;
         _emailService = emailService;
@@ -46,13 +43,13 @@ public class LoginController : CustomControllerBase
             var normalizedEmail = request.Email.Normalize();
             CustomUser? user = await _dbContext.FindUserAsync(x => (x.NormalizedEmail.Equals(normalizedEmail) || x.NormalizedUserName.Equals(normalizedEmail)));
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
             // Check if the user is locked out
             if (user.LockoutEnabled)
             {
                 if (user.LockoutEnd > DateTimeOffset.UtcNow)
-                    return this.ReturnJson(new
+                    return ReturnJson(new
                     {
                         statusCode = HttpStatusCode.Locked,
                         message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
@@ -67,7 +64,7 @@ public class LoginController : CustomControllerBase
             
             // Check password
             if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, _settings.EncryptionKey))
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
 
             // Check two-factor authentication
             if (user.TwoFactorEnabled)
@@ -101,7 +98,7 @@ public class LoginController : CustomControllerBase
                         Expires = expiry
                     });
                     
-                    return this.ReturnJson(new
+                    return ReturnJson(new
                     {
                         statusCode = HttpStatusCode.Redirect,
                         message = "Redirect to 2FA page",
@@ -113,7 +110,7 @@ public class LoginController : CustomControllerBase
 
                 var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
                 if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
-                    return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                    return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             }
 
             string ipv4 = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
@@ -144,7 +141,7 @@ public class LoginController : CustomControllerBase
                 Expires = userLogin.ExpireDate
             });
             
-            return this.ReturnJson(new
+            return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
@@ -154,8 +151,8 @@ public class LoginController : CustomControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Error during login: {Message}", ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogCritical("Error during login: {Message}", ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
 
@@ -169,27 +166,27 @@ public class LoginController : CustomControllerBase
         try
         {
             if (!Request.Cookies.TryGetValue("mmc-twofactor-session", out var cookieValue) || string.IsNullOrEmpty(cookieValue))
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
             
             var sessionClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorSessionToken && x.ClaimValue == cookieValue);
             if (sessionClaim == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret.");
             
             var expiryClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorSessionExpiration && x.UserId == sessionClaim.UserId);
             if (expiryClaim == null || !DateTimeOffset.TryParse(expiryClaim.ClaimValue, out DateTimeOffset expiry))
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret expiry.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret expiry.");
             
             if (DateTimeOffset.UtcNow > expiry)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Session token expired.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Session token expired.");
             
             CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == sessionClaim.UserId);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
             if (user.LockoutEnabled)
             {
                 if (user.LockoutEnd > DateTimeOffset.UtcNow)
-                    return this.ReturnJson(new
+                    return ReturnJson(new
                     {
                         statusCode = HttpStatusCode.Locked,
                         message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
@@ -208,7 +205,7 @@ public class LoginController : CustomControllerBase
             {
                 sessionAttempt = int.Parse(sessionAttemptClaim.ClaimValue!);
                 if (sessionAttempt >= 3)
-                    return this.ReturnResponseCode(HttpStatusCode.Forbidden,
+                    return ReturnResponseCode(HttpStatusCode.Forbidden,
                         "To many failed attempts. Please try reauthorizing again.");
             }
 
@@ -223,7 +220,7 @@ public class LoginController : CustomControllerBase
                     UserId = user.Id
                 });
                 await _dbContext.SaveChangesAsync();
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             }
 
             string ipv4 = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
@@ -252,7 +249,7 @@ public class LoginController : CustomControllerBase
             
             await _dbContext.SaveChangesAsync();
             
-            return this.ReturnJson(new
+            return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
@@ -263,8 +260,8 @@ public class LoginController : CustomControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Error during login: {Message}", ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogCritical("Error during login: {Message}", ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
     
@@ -279,13 +276,13 @@ public class LoginController : CustomControllerBase
             var normalizedUsername = request.Username.Normalize();
             CustomUser? user = await _dbContext.FindUserAsync(x => x.NormalizedUserName.Equals(normalizedUsername));
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
             // Check if the user is locked out
             if (user.LockoutEnabled)
             {
                 if (user.LockoutEnd > DateTimeOffset.UtcNow)
-                    return this.ReturnJson(new
+                    return ReturnJson(new
                     {
                         statusCode = HttpStatusCode.Locked,
                         message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
@@ -300,7 +297,7 @@ public class LoginController : CustomControllerBase
             
             // Check password
             if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, _settings.EncryptionKey))
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
 
             // Check two-factor authentication
             if (user.TwoFactorEnabled)
@@ -326,7 +323,7 @@ public class LoginController : CustomControllerBase
 
                     await _dbContext.SaveChangesAsync();
                     
-                    return this.ReturnJson(new
+                    return ReturnJson(new
                     {
                         statusCode = HttpStatusCode.Redirect,
                         message = "Redirect to 2FA",
@@ -339,7 +336,7 @@ public class LoginController : CustomControllerBase
 
                 var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
                 if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
-                    return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                    return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             }
 
             string host = HttpContext.Request.Host.Host;
@@ -352,7 +349,7 @@ public class LoginController : CustomControllerBase
                 ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
             }, true);
             
-            return this.ReturnJson(new
+            return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
@@ -363,8 +360,8 @@ public class LoginController : CustomControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Error during login: {Message}", ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogCritical("Error during login: {Message}", ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
 
@@ -378,23 +375,23 @@ public class LoginController : CustomControllerBase
         {
             var sessionClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionToken && x.ClaimValue == request.SessionToken);
             if (sessionClaim == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret.");
             
             var expiryClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionExpiration && x.UserId == sessionClaim.UserId);
             if (expiryClaim == null || !DateTimeOffset.TryParse(expiryClaim.ClaimValue, out DateTimeOffset expiry))
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret expiry.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret expiry.");
             
             if (DateTimeOffset.UtcNow > expiry)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Session token expired.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Session token expired.");
             
             CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == sessionClaim.UserId);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
             if (user.LockoutEnabled)
             {
                 if (user.LockoutEnd > DateTimeOffset.UtcNow)
-                    return this.ReturnJson(new
+                    return ReturnJson(new
                     {
                         statusCode = HttpStatusCode.Locked,
                         message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
@@ -413,7 +410,7 @@ public class LoginController : CustomControllerBase
             {
                 sessionAttempt = int.Parse(sessionAttemptClaim.ClaimValue!);
                 if (sessionAttempt >= 3)
-                    return this.ReturnResponseCode(HttpStatusCode.Forbidden,
+                    return ReturnResponseCode(HttpStatusCode.Forbidden,
                         "To many failed attempts. Please try reauthorizing again.");
             }
 
@@ -428,7 +425,7 @@ public class LoginController : CustomControllerBase
                     UserId = user.Id
                 });
                 await _dbContext.SaveChangesAsync();
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             }
             
             await _dbContext.RemoveUserClaimAsync(sessionClaim);
@@ -448,7 +445,7 @@ public class LoginController : CustomControllerBase
                 ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
             }, true);
             
-            return this.ReturnJson(new
+            return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
@@ -459,8 +456,8 @@ public class LoginController : CustomControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Error during login: {Message}", ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogCritical("Error during login: {Message}", ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
     
@@ -473,14 +470,14 @@ public class LoginController : CustomControllerBase
         {
             CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
             
             List<CustomRole> roles = _userManager.GetUserRoles(user.Id);
             var claims = _userManager.GetAllClaimsOfUser(user.Id);
 
             //bool hasAvatar = !string.IsNullOrEmpty(user.AvatarPath);
             // TODO: Change how avatar works
-            return this.ReturnJson(new
+            return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
                 UserId = user.Id,
@@ -495,8 +492,8 @@ public class LoginController : CustomControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
 
@@ -517,11 +514,11 @@ public class LoginController : CustomControllerBase
             }
             
             if (string.IsNullOrEmpty(token))
-                return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid token.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid token.");
             
             CustomUserToken? userToken = _dbContext.FindUserToken(x => x.Value == token);
             if (userToken == null)
-                return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid token.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid token.");
             
             CustomUserLogin? userLogin = _dbContext.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id);
             if (userLogin != null)
@@ -533,8 +530,8 @@ public class LoginController : CustomControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Error during logout: {Message}", ex.Message);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogCritical("Error during logout: {Message}", ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
         }
     }
 }

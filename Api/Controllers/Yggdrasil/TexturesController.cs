@@ -2,7 +2,6 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
@@ -12,9 +11,8 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [ApiController]
 [Route("yggdrasil/textures")]
 [Tags("Yggdrasil")]
-public class TexturesController : Controller
+public class TexturesController : CustomControllerBase
 {
-    private readonly ILogger _logger;
     private readonly CustomDbContext _dbContext;
 
     /// <summary>
@@ -22,9 +20,8 @@ public class TexturesController : Controller
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="dbContext">The database context for accessing texture data.</param>
-    public TexturesController(ILogger<TexturesController> logger, CustomDbContext dbContext)
+    public TexturesController(ILogger<TexturesController> logger, CustomDbContext dbContext) : base(logger)
     {
-        _logger = logger;
         _dbContext = dbContext;
     }
     /// <summary>
@@ -42,10 +39,10 @@ public class TexturesController : Controller
     {
         var fileData = await _dbContext.FindFileDataAsync(x => x.Hash == hash && (x.Type == EFileDataType.SKIN || x.Type == EFileDataType.CAPE));
         if (fileData == null)
-          return this.ReturnResponseCode(HttpStatusCode.NotFound, "Texture not found.");
+          return ReturnResponseCode(HttpStatusCode.NotFound, "Texture not found.");
         byte[]? bytes = fileData.GetFileData();
         if (bytes == null)
-          return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to retrieve texture data.");
+          return ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to retrieve texture data.");
         return File(bytes, fileData.ContentType);
     }
 }

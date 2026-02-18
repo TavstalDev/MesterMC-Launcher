@@ -7,7 +7,6 @@ using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
@@ -15,13 +14,11 @@ namespace Tavstal.MesterMC.Api.Controllers.User;
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class UserController : CustomControllerBase
 {
-    private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     
-    public UserController(ILogger<UserController> logger, CustomUserManager userManager, CustomDbContext dbContext)
+    public UserController(ILogger<UserController> logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
     {
-        _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;
     }
@@ -32,15 +29,15 @@ public class UserController : CustomControllerBase
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
-            return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
         // TODO: Add claim check
         
         if (file.Length > 1024 * 512) // 500 KB limit
-            return this.ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
         
         if (!file.FileName.EndsWith(".png"))
-            return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
         FileData? existingSkin = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
         if (existingSkin != null)
@@ -68,14 +65,14 @@ public class UserController : CustomControllerBase
             int height = image.Height;
 
             if (!((width == 64 && (height == 32 || height == 64)) || (width == 512 && (height == 256 || height == 512)))) 
-                return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
                 
             stream.Position = 0;
         }
         catch (Exception)
         {
-            _logger.LogError($"Failed to upload skin file: {fileHash}");
-            return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
+            Logger.LogError($"Failed to upload skin file: {fileHash}");
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
         }
 
         FileData fd = await _dbContext.AddFileDataAsync(new FileData
@@ -87,7 +84,7 @@ public class UserController : CustomControllerBase
             Type = EFileDataType.SKIN,
         }, true);
         fd.SaveFile(stream);
-        return this.ReturnResponseCode(HttpStatusCode.OK, "Skin uploaded successfully");
+        return ReturnResponseCode(HttpStatusCode.OK, "Skin uploaded successfully");
     }
     
     [HttpDelete("skin")]
@@ -95,17 +92,17 @@ public class UserController : CustomControllerBase
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
-            return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
         // TODO: Add claim check
         
         FileData? existingSkin = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
         if (existingSkin == null)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "No skin found for the user");
+            return ReturnResponseCode(HttpStatusCode.NotFound, "No skin found for the user");
         
         existingSkin.DeleteFile();
         await _dbContext.RemoveFileDataAsync(existingSkin, true);
-        return this.ReturnResponseCode(HttpStatusCode.OK, "Skin deleted successfully");
+        return ReturnResponseCode(HttpStatusCode.OK, "Skin deleted successfully");
     }
     #endregion
 
@@ -115,16 +112,16 @@ public class UserController : CustomControllerBase
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
-            return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
         // TODO: Add claim check
         
         UserCape? cape = _dbContext.FindUserCape(x => x.UserId == user.Id && x.CapeId == id);
         if (cape == null)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found for the user");
+            return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found for the user");
         
         if (cape.IsSelected)
-            return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Cape is already selected");
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape is already selected");
         
         UserCape? currentlySelectedCape = _dbContext.FindUserCape(x => x.UserId == user.Id && x.IsSelected);
         if (currentlySelectedCape != null)
@@ -134,7 +131,7 @@ public class UserController : CustomControllerBase
         }
         cape.IsSelected = true;
         await  _dbContext.UpdateUserCapeAsync(cape, true);
-        return this.ReturnResponseCode(HttpStatusCode.OK, "Cape selected successfully");
+        return ReturnResponseCode(HttpStatusCode.OK, "Cape selected successfully");
     }
 
     [HttpDelete("cape-selection")]
@@ -142,17 +139,17 @@ public class UserController : CustomControllerBase
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
-            return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
         // TODO: Add claim check
 
         UserCape? currentlySelectedCape = _dbContext.FindUserCape(x => x.UserId == user.Id && x.IsSelected);
         if (currentlySelectedCape == null)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "No cape is currently selected for the user");
+            return ReturnResponseCode(HttpStatusCode.NotFound, "No cape is currently selected for the user");
 
         currentlySelectedCape.IsSelected = false;
         await _dbContext.UpdateUserCapeAsync(currentlySelectedCape);
-        return this.ReturnResponseCode(HttpStatusCode.OK, "Selected cape cleared successfully");
+        return ReturnResponseCode(HttpStatusCode.OK, "Selected cape cleared successfully");
     }
 
     #region Elevated Endpoints
@@ -161,15 +158,15 @@ public class UserController : CustomControllerBase
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
-            return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
         // TODO: Add claim check
         
         if (file.Length > 1024 * 512) // 500 KB limit
-            return this.ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
         
         if (!file.FileName.EndsWith(".png"))
-            return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
         await using var stream = file.OpenReadStream();
         using var sha256 = SHA256.Create();
@@ -179,7 +176,7 @@ public class UserController : CustomControllerBase
         
         FileData? existingCape = await _dbContext.FindFileDataAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE);
         if (existingCape != null)
-            return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Cape with the same content already exists.");
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape with the same content already exists.");
         
         try 
         {
@@ -194,14 +191,14 @@ public class UserController : CustomControllerBase
             int height = image.Height;
 
             if (!((width == 64 && (height == 32 || height == 64)) || (width == 512 && (height == 256 || height == 512)))) 
-                return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
                 
             stream.Position = 0;
         }
         catch (Exception)
         {
-            _logger.LogError($"Failed to upload cape file: {fileHash}");
-            return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
+            Logger.LogError($"Failed to upload cape file: {fileHash}");
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
         }
 
         FileData fd = await _dbContext.AddFileDataAsync(new FileData
@@ -227,7 +224,7 @@ public class UserController : CustomControllerBase
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow
         }, true);
-        return this.ReturnResponseCode(HttpStatusCode.OK, "Cape uploaded successfully");
+        return ReturnResponseCode(HttpStatusCode.OK, "Cape uploaded successfully");
     }
 
     
@@ -236,13 +233,13 @@ public class UserController : CustomControllerBase
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
-            return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
         // TODO: Add claim check
 
         Cape? cape = _dbContext.FindCape(x => x.Id == capeId);
         if (cape == null)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found");
+            return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found");
         
         cape.FileData.DeleteFile();
         await _dbContext.RemoveFileDataAsync(cape.FileData);
@@ -253,7 +250,7 @@ public class UserController : CustomControllerBase
           await _dbContext.RemoveUserCapeAsync(userCape);
 
         await _dbContext.SaveChangesAsync();
-        return this.ReturnResponseCode(HttpStatusCode.OK, "Cape deleted successfully");
+        return ReturnResponseCode(HttpStatusCode.OK, "Cape deleted successfully");
     }
     #endregion
     #endregion

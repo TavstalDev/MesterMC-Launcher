@@ -6,13 +6,11 @@ namespace Tavstal.MesterMC.Api.Controllers.User;
 [Route("/profile")]
 public class ProfileController : CustomControllerBase
 {
-    private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     
-    public ProfileController(ILogger<ProfileController> logger, CustomUserManager userManager, CustomDbContext dbContext)
+    public ProfileController(ILogger<ProfileController> logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
     {
-        _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;
     }

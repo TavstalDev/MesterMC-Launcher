@@ -17,17 +17,15 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 [ApiController]
 [Route("/register")]
 [Tags("Authentication: Registration")]
-public class RegisterController : Controller
+public class RegisterController : CustomControllerBase
 {
-    private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
     private readonly Settings _settings;
     
-    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, EmailService emailService, Settings settings)
+    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, EmailService emailService, Settings settings) : base(logger)
     {
-        _logger = logger;
         _dbContext = dbContext;
         _userManager = userManager;
         _emailService = emailService;
@@ -46,16 +44,16 @@ public class RegisterController : Controller
                 return BadRequest(ModelState);
             
             if (await _userManager.IsCompromisedPassword(request.Password)) 
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "Password is compromised.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Password is compromised.");
             
             if (!request.EmailAddress.IsValidEmail())
-                return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid email address.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid email address.");
                 
             var normalizedEmail = request.EmailAddress.Normalize();
             var normalizedUsername = request.Username.Normalize();
             CustomUser? user = await _dbContext.FindUserAsync(x => x.NormalizedEmail == normalizedEmail || x.NormalizedUserName == normalizedUsername);
             if (user != null)
-                return this.ReturnResponseCode(HttpStatusCode.Conflict, "User already exists.");
+                return ReturnResponseCode(HttpStatusCode.Conflict, "User already exists.");
 
             // TODO: Handle avatar upload and saving
             /*string? avatarPath = null;
@@ -93,15 +91,15 @@ public class RegisterController : Controller
             }
             catch (Exception eex)
             {
-                _logger.LogCritical("Failed to send confirmation email: {Message}", eex);
+                Logger.LogCritical("Failed to send confirmation email: {Message}", eex);
             }
 
-            return this.ReturnResponseCode(HttpStatusCode.Created, "User registered successfully");
+            return ReturnResponseCode(HttpStatusCode.Created, "User registered successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Error during registration: {Message}", ex);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred");
+            Logger.LogCritical("Error during registration: {Message}", ex);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
 
@@ -117,18 +115,18 @@ public class RegisterController : Controller
             // Find the user by ID
             CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == request.UserId);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User does not exist.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User does not exist.");
 
             // Check if the user's email is already confirmed
             if (user.EmailConfirmed)
-                return this.ReturnResponseCode(HttpStatusCode.Forbidden, "The user is already confirmed.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "The user is already confirmed.");
 
             // Validate the confirmation token
             var claim = _dbContext.FindUserClaim(x =>
                 x.UserId == request.UserId && x.ClaimType == CustomClaimTypes.EmailConfirmationToken &&
                 x.ClaimValue == request.ConfirmationToken);
             if (claim == null)
-                return this.ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid confirmation token");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid confirmation token");
 
             // Remove the confirmation token claim and update the user's email confirmation status
             await _dbContext.RemoveUserClaimAsync(claim);
@@ -140,13 +138,13 @@ public class RegisterController : Controller
             await _emailService.SendEmailAsync(user.Email, "Account Confirmation",
                 "<h1>Your account has been confirmed</h1><p>Thank you for confirming your account. You can now log in.</p>");
 
-            return this.ReturnResponseCode(HttpStatusCode.OK, "User confirmed successfully");
+            return ReturnResponseCode(HttpStatusCode.OK, "User confirmed successfully");
         }
         catch (Exception ex)
         {
             // Log critical errors and return an internal server error response
-            _logger.LogCritical("Error during email confirmation: {Message}", ex);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred");
+            Logger.LogCritical("Error during email confirmation: {Message}", ex);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
 

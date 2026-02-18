@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
@@ -13,9 +12,8 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [ApiController]
 [Route("yggdrasil/api/profiles")]
 [Tags("Yggdrasil")]
-public class ProfilesController : Controller
+public class ProfilesController : CustomControllerBase
 {
-    private readonly ILogger _logger;
     private readonly CustomDbContext _dbContext;
 
     /// <summary>
@@ -23,9 +21,8 @@ public class ProfilesController : Controller
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="dbContext">The database context for accessing user data.</param>
-    public ProfilesController(ILogger<ProfilesController> logger, CustomDbContext dbContext)
+    public ProfilesController(ILogger<ProfilesController> logger, CustomDbContext dbContext) : base(logger)
     {
-        _logger = logger;
         _dbContext = dbContext;
     }
 
@@ -46,7 +43,7 @@ public class ProfilesController : Controller
         // Retrieve users from the database whose usernames match the provided list.
         List<CustomUser> users = _dbContext.GetUsers(x => names.Contains(x.UserName));
         if (users.Count == 0)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "No users found with the provided usernames.");
+            return ReturnResponseCode(HttpStatusCode.NotFound, "No users found with the provided usernames.");
 
         // Prepare the response containing user IDs and usernames.
         List<Dictionary<string, string>> response = new List<Dictionary<string, string>>();
@@ -61,6 +58,6 @@ public class ProfilesController : Controller
         }
 
         // Return the response as JSON.
-        return this.ReturnJson(response);
+        return ReturnJson(response);
     }
 }

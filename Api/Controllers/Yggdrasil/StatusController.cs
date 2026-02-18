@@ -2,7 +2,6 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Mvc;
 using Tavstal.MesterMC.Api.Models;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
@@ -12,9 +11,8 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [ApiController]
 [Route("yggdrasil")]
 [Tags("Yggdrasil")]
-public class StatusController : Controller
+public class StatusController : CustomControllerBase
 {
-    private readonly ILogger _logger;
     private readonly Settings _settings;
     
     /// <summary>
@@ -22,9 +20,8 @@ public class StatusController : Controller
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="settings">The application settings.</param>
-    public StatusController(ILogger<StatusController> logger, Settings settings)
+    public StatusController(ILogger<StatusController> logger, Settings settings) : base(logger)
     {
-        _logger = logger;
         _settings = settings;
     }
     
@@ -42,10 +39,10 @@ public class StatusController : Controller
         var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, _settings.CertPassword);
         var rsa = cert.GetRSAPrivateKey();
         if (rsa == null)
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to load RSA private key from certificate");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to load RSA private key from certificate");
 
         string signature = rsa.ExportSubjectPublicKeyInfoPem();
-        return this.ReturnJson(new
+        return ReturnJson(new
         {
             skinDomains = _settings.SkinDomains,
             signaturePublickey = signature,
@@ -70,7 +67,7 @@ public class StatusController : Controller
     public IActionResult Status()
     {
         // TODO: Implement actual status checks for users, tokens, and pending authentications
-        return this.ReturnJson(new Dictionary<string, object>
+        return ReturnJson(new Dictionary<string, object>
         {
             { "user.count", 0 },
             { "token.count", 0 },
@@ -89,6 +86,6 @@ public class StatusController : Controller
     [HttpGet("minecraftservices/publickeys")]
     public IActionResult GetPublicKeys()
     {
-        return this.ReturnJson(new { profileKeys = new object[] { } });
+        return ReturnJson(new { profileKeys = new object[] { } });
     }
 }

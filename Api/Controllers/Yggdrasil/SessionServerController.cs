@@ -9,7 +9,6 @@ using Tavstal.MesterMC.Api.Models.Bodies.Yggdrasil;
 using Tavstal.MesterMC.Api.Models.Database.Server;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
@@ -20,9 +19,8 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [Route("yggdrasil/session/minecraft")] // Client
 [Route("yggdrasil/sessionserver/session/minecraft")] // Server
 [Tags("Yggdrasil")]
-public class SessionServerController : Controller
+public class SessionServerController : CustomControllerBase
 {
-    private readonly ILogger _logger;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly Settings _settings;
@@ -35,9 +33,8 @@ public class SessionServerController : Controller
     /// <param name="userManager">The user manager for handling user-related operations.</param>
     /// <param name="dbContext">The database context for accessing data.</param>
     /// <param name="settings">The application settings.</param>
-    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings)
+    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger)
     {
-        _logger = logger;
         _userManager = userManager;
         _dbContext = dbContext;
         _settings = settings;
@@ -49,7 +46,7 @@ public class SessionServerController : Controller
     [HttpGet("/yggdrasil/sessionserver/blockedservers")]
     public Task<IActionResult> GetBlockedServers()
     {
-        return Task.FromResult(this.ReturnJson(new { blockedServers = Array.Empty<string>() }));
+        return Task.FromResult(ReturnJson(new { blockedServers = Array.Empty<string>() }));
     }
 
     /// <summary>
@@ -69,19 +66,19 @@ public class SessionServerController : Controller
         string dashedUuid = Guid.Parse(request.selectedProfile).ToString("D");
         CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
         if (user == null)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found for the provided selectedProfile UUID");
+            return ReturnResponseCode(HttpStatusCode.NotFound, "User not found for the provided selectedProfile UUID");
         
         UserPlaySession? session = _dbContext.FindUserPlaySession(x => x.Token == request.accessToken);
         if (session == null)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "No active session found for the provided access token");
+            return ReturnResponseCode(HttpStatusCode.NotFound, "No active session found for the provided access token");
         
         DateTimeOffset now = DateTimeOffset.UtcNow;
         if (now > session.ExpiresAt) 
-            return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "The access token has expired");
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "The access token has expired");
         
         string host = HttpContext.Request.Host.Host;
         if (session.UserIp != host)
-            return this.ReturnResponseCode(HttpStatusCode.Forbidden, "The IP address associated with the access token does not match the IP address of the request");
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "The IP address associated with the access token does not match the IP address of the request");
         
         await _dbContext.AddServerJoinAsync(new ServerJoin
         {
@@ -91,7 +88,7 @@ public class SessionServerController : Controller
             CreatedAt = now, 
             ExpiresAt = now.AddDays(1) 
         }, true);
-        return this.ReturnResponseCode(HttpStatusCode.NoContent);
+        return ReturnResponseCode(HttpStatusCode.NoContent);
     }
 
     /// <summary>
@@ -112,22 +109,22 @@ public class SessionServerController : Controller
     {
         CustomUser? user = await _userManager.FindByNameAsync(username);
         if (user == null)
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
+            return ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
         
         ServerJoin? join = _dbContext.FindServerJoin(x => x.ServerId == serverId && (x.UserIp == ip || ip == null));
         if (join == null) 
-            return this.ReturnResponseCode(HttpStatusCode.NotFound, "No matching server join found for the provided serverId and IP address");
+            return ReturnResponseCode(HttpStatusCode.NotFound, "No matching server join found for the provided serverId and IP address");
         
         DateTimeOffset now = DateTimeOffset.UtcNow;
         if (now > join.ExpiresAt) 
-            return this.ReturnResponseCode(HttpStatusCode.Unauthorized, "The server join has expired");
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "The server join has expired");
         
         if (user.Id != join.UserId)
-            return this.ReturnResponseCode(HttpStatusCode.Forbidden, "The provided username does not match the user associated with the server join");
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "The provided username does not match the user associated with the server join");
         
         string json = await GetProfileResponseJsonAsync(user);
         _profileCache.Set(user.Id, json); // TODO: Uncomment it for testing, probably caching will not work if timestamp is a dependency in mojang's authlib
-        return this.ReturnJson(json);
+        return ReturnJson(json);
     }
 
     /// <summary>
@@ -149,17 +146,17 @@ public class SessionServerController : Controller
             string dashedUuid = Guid.Parse(uuid).ToString("D");
             CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
             if (user == null)
-                return this.ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
 
             string json = await GetProfileResponseJsonAsync(user, unsigned);
             _profileCache.Set(user.Id,
                 json); // TODO: Uncomment it for testing, probably caching will not work if timestamp is a dependency in mojang's authlib
-            return this.ReturnJson(json);
+            return ReturnJson(json);
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Unknown error while processing profile request for uuid: {Uuid}, unsigned: {Unsigned}. Error: {ErrorMessage}", uuid, unsigned, ex);
-            return this.ReturnResponseCode(HttpStatusCode.InternalServerError, "An error occurred while processing the request: " + ex.Message);
+            Logger.LogCritical("Unknown error while processing profile request for uuid: {Uuid}, unsigned: {Unsigned}. Error: {ErrorMessage}", uuid, unsigned, ex);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An error occurred while processing the request: " + ex.Message);
         }
     }
 
