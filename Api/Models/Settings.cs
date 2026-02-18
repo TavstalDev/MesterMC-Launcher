@@ -1,6 +1,3 @@
-using System.Diagnostics;
-using System.Runtime.ConstrainedExecution;
-
 namespace Tavstal.MesterMC.Api.Models;
 
 public class Settings

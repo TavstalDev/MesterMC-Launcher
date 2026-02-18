@@ -9,7 +9,7 @@ public class ExpiringCache<TKey, TValue>
 
     public ExpiringCache(TimeSpan expiration)
     {
-        this.cache = new MemoryCache(new MemoryCacheOptions());
+        cache = new MemoryCache(new MemoryCacheOptions());
         this.expiration = expiration;
     }
 
