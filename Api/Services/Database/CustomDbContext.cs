@@ -723,12 +723,12 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
     /// </summary>
     /// <param name="predicate">An optional predicate to filter the records.</param>
     /// <returns>A list of user billing information records.</returns>
-    public List<UserBillingInformation> GetUserBillingInfos(
+    public async Task<List<UserBillingInformation>> GetUserBillingInfosAsync(
         Expression<Func<UserBillingInformation, bool>>? predicate = null)
     {
         if (predicate != null)
-            return UserBillingInformations.Where(predicate).ToList();
-        return UserBillingInformations.ToList();
+            return await UserBillingInformations.Where(predicate).ToListAsync();
+        return await UserBillingInformations.ToListAsync();
     }
 
     /// <summary>
@@ -736,9 +736,9 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
     /// </summary>
     /// <param name="predicate">The predicate to filter the record.</param>
     /// <returns>The found user billing information record, or null if no record is found.</returns>
-    public UserBillingInformation? FindUserBillingInfo(Expression<Func<UserBillingInformation, bool>> predicate)
+    public async Task<UserBillingInformation?> FindUserBillingInfoAsync(Expression<Func<UserBillingInformation, bool>> predicate)
     {
-        return UserBillingInformations.FirstOrDefault(predicate);
+        return await UserBillingInformations.FirstOrDefaultAsync(predicate);
     }
 
     #endregion
@@ -765,17 +765,17 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         if (shouldSave) await SaveChangesAsync();
     }
     
-    public List<UserPlaySession> GetUserPlaySessions(
+    public async Task<List<UserPlaySession>> GetUserPlaySessionsAsync(
         Expression<Func<UserPlaySession, bool>>? predicate = null)
     {
         if (predicate != null)
-            return UserPlaySessions.Where(predicate).ToList();
-        return UserPlaySessions.ToList();
+            return await UserPlaySessions.Where(predicate).ToListAsync();
+        return await UserPlaySessions.ToListAsync();
     }
     
-    public UserPlaySession? FindUserPlaySession(Expression<Func<UserPlaySession, bool>> predicate)
+    public async Task<UserPlaySession?> FindUserPlaySessionAsync(Expression<Func<UserPlaySession, bool>> predicate)
     {
-        return UserPlaySessions.FirstOrDefault(predicate);
+        return await UserPlaySessions.FirstOrDefaultAsync(predicate);
     }
 
     
@@ -809,17 +809,17 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         if (shouldSave) await SaveChangesAsync();
     }
     
-    public List<UserCape> GetUserCapes(
+    public async Task<List<UserCape>> GetUserCapesAsync(
         Expression<Func<UserCape, bool>>? predicate = null)
     {
         if (predicate != null)
-            return UserCapes.Where(predicate).ToList();
-        return UserCapes.ToList();
+            return await UserCapes.Where(predicate).ToListAsync();
+        return await UserCapes.ToListAsync();
     }
     
-    public UserCape? FindUserCape(Expression<Func<UserCape, bool>> predicate)
+    public async Task<UserCape?> FindUserCapeAsync(Expression<Func<UserCape, bool>> predicate)
     {
-        return UserCapes.FirstOrDefault(predicate);
+        return await UserCapes.FirstOrDefaultAsync(predicate);
     }
 
     #endregion
@@ -903,17 +903,17 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         if (shouldSave) await SaveChangesAsync();
     }
     
-    public List<Cape> GetCapes(
+    public async Task<List<Cape>> GetCapesAsync(
         Expression<Func<Cape, bool>>? predicate = null)
     {
         if (predicate != null)
-            return Capes.Where(predicate).ToList();
-        return Capes.ToList();
+            return await Capes.Where(predicate).ToListAsync();
+        return await Capes.ToListAsync();
     }
     
-    public Cape? FindCape(Expression<Func<Cape, bool>> predicate)
+    public async Task<Cape?> FindCapeAsync(Expression<Func<Cape, bool>> predicate)
     {
-        return Capes.FirstOrDefault(predicate);
+        return await Capes.FirstOrDefaultAsync(predicate);
     }
 
     #endregion
@@ -940,17 +940,17 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         if (shouldSave) await SaveChangesAsync();
     }
     
-    public List<ServerJoin> GetServerJoins(
+    public async Task<List<ServerJoin>> GetServerJoinsAsync(
         Expression<Func<ServerJoin, bool>>? predicate = null)
     {
         if (predicate != null)
-            return ServerJoins.Where(predicate).ToList();
-        return ServerJoins.ToList();
+            return await ServerJoins.Where(predicate).ToListAsync();
+        return await ServerJoins.ToListAsync();
     }
     
-    public ServerJoin? FindServerJoin(Expression<Func<ServerJoin, bool>> predicate)
+    public async Task<ServerJoin?> FindServerJoinAsync(Expression<Func<ServerJoin, bool>> predicate)
     {
-        return ServerJoins.FirstOrDefault(predicate);
+        return await ServerJoins.FirstOrDefaultAsync(predicate);
     }
 
     public async Task ClearExpiredServerJoinsAsync(bool shouldSave = false)
