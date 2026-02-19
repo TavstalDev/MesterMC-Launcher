@@ -68,7 +68,7 @@ public class SessionServerController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.NotFound, "User not found for the provided selectedProfile UUID");
         
-        UserPlaySession? session = _dbContext.FindUserPlaySession(x => x.Token == request.accessToken);
+        UserPlaySession? session = await _dbContext.FindUserPlaySessionAsync(x => x.Token == request.accessToken);
         if (session == null)
             return ReturnResponseCode(HttpStatusCode.NotFound, "No active session found for the provided access token");
         
@@ -111,7 +111,7 @@ public class SessionServerController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
         
-        ServerJoin? join = _dbContext.FindServerJoin(x => x.ServerId == serverId && (x.UserIp == ip || ip == null));
+        ServerJoin? join = await _dbContext.FindServerJoinAsync(x => x.ServerId == serverId && (x.UserIp == ip || ip == null));
         if (join == null) 
             return ReturnResponseCode(HttpStatusCode.NotFound, "No matching server join found for the provided serverId and IP address");
         
@@ -190,10 +190,10 @@ public class SessionServerController : CustomControllerBase
             });
         }
 
-        var userCape = _dbContext.FindUserCape(x => x.UserId == user.Id && x.IsSelected);
+        var userCape = await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.IsSelected);
         if (userCape != null)
         {
-            var cape = _dbContext.FindCape(x => x.Id == userCape.CapeId);
+            var cape = await _dbContext.FindCapeAsync(x => x.Id == userCape.CapeId);
             if (cape != null)
             {
                 var capeData = await _dbContext.FindFileDataAsync(x => x.Id == cape.FileId);
