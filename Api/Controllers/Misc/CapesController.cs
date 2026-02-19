@@ -1,0 +1,125 @@
+using System.Net;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SixLabors.ImageSharp;
+using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Database;
+using Tavstal.MesterMC.Api.Models.Database.User;
+using Tavstal.MesterMC.Api.Services.Database;
+
+namespace Tavstal.MesterMC.Api.Controllers.Misc;
+
+[Route("/capes")]
+[Authorize(AuthenticationSchemes = "Bearer,Basic")]
+public class CapesController : CustomControllerBase
+{
+    private readonly CustomUserManager _userManager;
+    private readonly CustomDbContext _dbContext;
+    
+    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
+    {
+        _userManager = userManager;
+        _dbContext = dbContext;
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> UploadCape(IFormFile file)
+    {
+        CustomUser? user = await GetCurrentUserAsync(_userManager);
+        if (user == null)
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+        
+        // TODO: Add claim check
+        
+        if (file.Length > 1024 * 512) // 500 KB limit
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+        
+        if (!file.FileName.EndsWith(".png"))
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+
+        await using var stream = file.OpenReadStream();
+        using var sha256 = SHA256.Create();
+        byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+        string fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+        stream.Position = 0;
+        
+        FileData? existingCape = await _dbContext.FindFileDataAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE);
+        if (existingCape != null)
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape with the same content already exists.");
+        
+        try 
+        {
+            // 4. Check Format and Dimensions using ImageSharp
+            using var image = await Image.LoadAsync(stream);
+            var info = image.Metadata.DecodedImageFormat;
+
+            if (info?.Name != "PNG") 
+                return BadRequest("Invalid image format (not a real PNG).");
+
+            int width = image.Width;
+            int height = image.Height;
+
+            if (!((width == 64 && (height == 32 || height == 64)) || (width == 512 && (height == 256 || height == 512)))) 
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
+                
+            stream.Position = 0;
+        }
+        catch (Exception)
+        {
+            Logger.LogError($"Failed to upload cape file: {fileHash}");
+            return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
+        }
+
+        FileData fd = await _dbContext.AddFileDataAsync(new FileData
+        {
+            Hash = fileHash,
+            FileName = $"{Guid.NewGuid():N}.png",
+            ContentType = "image/png",
+            Type = EFileDataType.CAPE,
+        }, true);
+        fd.SaveFile(stream);
+        Cape cape = await _dbContext.AddCapeAsync(new Cape
+        {
+            Name = file.FileName.Split('.')[0],
+            FileId = fd.Id,
+            IsPublic = true
+        }, true);
+        await _dbContext.AddUserCapeAsync(new UserCape
+        {
+            UserId = user.Id,
+            CapeId = cape.Id,
+            IsSelected = false,
+            Reason = "Uploaded by user",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        }, true);
+        return ReturnResponseCode(HttpStatusCode.OK, "Cape uploaded successfully");
+    }
+
+    
+    [HttpDelete("{capeId}")]
+    public async Task<IActionResult> DeleteCape(ulong capeId)
+    {
+        CustomUser? user = await GetCurrentUserAsync(_userManager);
+        if (user == null)
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+
+        // TODO: Add claim check
+
+        Cape? cape = await _dbContext.FindCapeAsync(x => x.Id == capeId);
+        if (cape == null)
+            return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found");
+        
+        cape.FileData.DeleteFile();
+        await _dbContext.RemoveFileDataAsync(cape.FileData);
+        await _dbContext.RemoveCapeAsync(cape);
+
+        var capes = await _dbContext.GetUserCapesAsync(x => x.CapeId == capeId);
+        foreach (var userCape in capes)
+          await _dbContext.RemoveUserCapeAsync(userCape);
+
+        await _dbContext.SaveChangesAsync();
+        return ReturnResponseCode(HttpStatusCode.OK, "Cape deleted successfully");
+    }
+}
