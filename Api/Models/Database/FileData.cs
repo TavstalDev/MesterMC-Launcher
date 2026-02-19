@@ -92,6 +92,16 @@ public class FileData
         return $"{baseUrl}/yggdrasil/textures/{Hash}";
     }
     
+    public Stream GetFileStream()
+    {
+        if (!Exists())
+            return Stream.Null;
+        
+        string dirPath = Startup.UploadDirectory;
+        string filePath = Path.Combine(dirPath, GetContainingDirectoryName(), FileName);
+        return new FileStream(filePath, FileMode.Open, FileAccess.Read);
+    }
+    
     /* ######################################################################
      *                         NAVIGATION PROPERTIES
      * ###################################################################### */
