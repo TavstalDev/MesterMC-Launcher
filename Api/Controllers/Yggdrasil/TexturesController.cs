@@ -43,6 +43,8 @@ public class TexturesController : CustomControllerBase
         byte[]? bytes = fileData.GetFileData();
         if (bytes == null)
           return ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to retrieve texture data.");
+        Response.Headers.CacheControl =
+            "public,max-age=31536000,immutable";
         return File(bytes, fileData.ContentType);
     }
 }
