@@ -55,7 +55,7 @@ public class CapesController : CustomControllerBase
             var info = image.Metadata.DecodedImageFormat;
 
             if (info?.Name != "PNG") 
-                return BadRequest("Invalid image format (not a real PNG).");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
             int width = image.Width;
             int height = image.Height;
