@@ -16,6 +16,7 @@ public sealed class CustomUserLogin : IdentityUserLogin<string>
     public override string UserId { get; set; }
     
     [StringLength(255)]
+    [JsonIgnore]
     public override string? ProviderKey { get; set; }
     
     [StringLength(32)]
