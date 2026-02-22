@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database;
@@ -24,7 +25,7 @@ public class CapesController : CustomControllerBase
     }
     
     [HttpPost]
-    public async Task<IActionResult> UploadCape(IFormFile file)
+    public async Task<IActionResult> UploadCape([BindRequired] IFormFile file)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -99,7 +100,7 @@ public class CapesController : CustomControllerBase
 
     
     [HttpDelete("{capeId}")]
-    public async Task<IActionResult> DeleteCape(ulong capeId)
+    public async Task<IActionResult> DeleteCape([BindRequired, FromRoute] ulong capeId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)

@@ -124,7 +124,7 @@ public class AvatarController : CustomControllerBase
 
     #region Admin Endpoints
     [HttpPost("{userId}/avatar")]
-    public async Task<IActionResult> UploadAvatarAdmin([BindRequired, FromQuery] string userId, [BindRequired] IFormFile file)
+    public async Task<IActionResult> UploadAvatarAdmin([BindRequired, FromRoute] string userId, [BindRequired] IFormFile file)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -188,7 +188,7 @@ public class AvatarController : CustomControllerBase
     }
 
     [HttpDelete("{userId}/avatar")]
-    public async Task<IActionResult> DeleteAvatarAdmin([BindRequired, FromQuery] string userId)
+    public async Task<IActionResult> DeleteAvatarAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)

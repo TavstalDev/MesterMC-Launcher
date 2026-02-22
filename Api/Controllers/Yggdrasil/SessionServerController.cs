@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Bodies.Yggdrasil;
@@ -139,7 +140,7 @@ public class SessionServerController : CustomControllerBase
     /// <response code="404">User not found.</response>
     /// <response code="500">An error occurred while processing the request.</response>
     [HttpGet("profile/{uuid}")]
-    public async Task<IActionResult> GetProfile(string uuid, [FromQuery] bool unsigned = true)
+    public async Task<IActionResult> GetProfile([BindRequired, FromRoute] string uuid, [FromQuery] bool unsigned = true)
     {
         try
         {

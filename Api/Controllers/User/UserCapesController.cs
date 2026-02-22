@@ -22,7 +22,7 @@ public class UserCapesController : CustomControllerBase
     }
     
     [HttpPatch("cape/{capeId}")]
-    public async Task<IActionResult> SelectCape([BindRequired, FromQuery] ulong capeId)
+    public async Task<IActionResult> SelectCape([BindRequired, FromRoute] ulong capeId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -68,7 +68,7 @@ public class UserCapesController : CustomControllerBase
 
     #region Admin Endpoints
     [HttpPatch("{userId}/cape/{capeId}")]
-    public async Task<IActionResult> SelectCapeAdmin([BindRequired, FromQuery] string userId, [BindRequired, FromQuery] ulong capeId)
+    public async Task<IActionResult> SelectCapeAdmin([BindRequired, FromRoute] string userId, [BindRequired, FromRoute] ulong capeId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -102,7 +102,7 @@ public class UserCapesController : CustomControllerBase
     }
 
     [HttpDelete("{userId}/cape")]
-    public async Task<IActionResult> ClearSelectedCapeAdmin([BindRequired, FromQuery] string userId)
+    public async Task<IActionResult> ClearSelectedCapeAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)

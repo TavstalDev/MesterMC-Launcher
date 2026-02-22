@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Services.Database;
 
@@ -35,7 +36,7 @@ public class TexturesController : CustomControllerBase
     /// <response code="404">Texture not found.</response>
     /// <response code="500">Failed to retrieve texture data.</response>
     [HttpGet("{hash}")]
-    public async Task<IActionResult> GetTexture(string hash)
+    public async Task<IActionResult> GetTexture([BindRequired, FromRoute] string hash)
     {
         var fileData = await _dbContext.FindFileDataAsync(x => x.Hash == hash && (x.Type == EFileDataType.SKIN || x.Type == EFileDataType.CAPE));
         if (fileData == null)

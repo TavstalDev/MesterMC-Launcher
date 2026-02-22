@@ -129,7 +129,7 @@ public class SkinsController : CustomControllerBase
     #region Admin Endpoints
 
     [HttpGet("{userId}/skin")]
-    public async Task<IActionResult> GetSkinAdmin([BindRequired, FromQuery] string userId)
+    public async Task<IActionResult> GetSkinAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -158,7 +158,7 @@ public class SkinsController : CustomControllerBase
     }
     
     [HttpPut("{userId}/skin")]
-    public async Task<IActionResult> UploadSkinAdmin([BindRequired, FromQuery] string userId, [BindRequired] IFormFile file)
+    public async Task<IActionResult> UploadSkinAdmin([BindRequired, FromRoute] string userId, [BindRequired] IFormFile file)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -228,7 +228,7 @@ public class SkinsController : CustomControllerBase
     }
     
     [HttpDelete("{userId}/skin")]
-    public async Task<IActionResult> DeleteSkinAdmin([BindRequired, FromQuery] string userId)
+    public async Task<IActionResult> DeleteSkinAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)

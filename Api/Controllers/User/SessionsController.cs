@@ -34,7 +34,7 @@ public class SessionsController : CustomControllerBase
     }
 
     [HttpDelete("sessions/{sessionId}")]
-    public async Task<IActionResult> RevokeSession([BindRequired, FromQuery] ulong sessionId)
+    public async Task<IActionResult> RevokeSession([BindRequired, FromRoute] ulong sessionId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -65,7 +65,7 @@ public class SessionsController : CustomControllerBase
     
     #region Admin Endpoints
     [HttpGet("{userId}/sessions")]
-    public async Task<IActionResult> GetSessionsAdmin([BindRequired, FromQuery] string userId)
+    public async Task<IActionResult> GetSessionsAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -85,7 +85,7 @@ public class SessionsController : CustomControllerBase
     }
 
     [HttpDelete("{userId}/sessions/{sessionId}")]
-    public async Task<IActionResult> RevokeSessionAdmin([BindRequired, FromQuery] string userId, [BindRequired, FromQuery] ulong sessionId)
+    public async Task<IActionResult> RevokeSessionAdmin([BindRequired, FromRoute] string userId, [BindRequired, FromRoute] ulong sessionId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -109,7 +109,7 @@ public class SessionsController : CustomControllerBase
     }
 
     [HttpDelete("{userId}/sessions")]
-    public async Task<IActionResult> RevokeAllSessionsAdmin([BindRequired, FromQuery] string userId)
+    public async Task<IActionResult> RevokeAllSessionsAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
