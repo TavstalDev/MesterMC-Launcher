@@ -36,6 +36,8 @@ public class FileData
                 return "skins";
             case EFileDataType.CAPE:
                 return "capes";
+            case EFileDataType.NEWS_BANNER:
+                return "news";
             default:
                 return "misc";
         }
