@@ -11,22 +11,38 @@ namespace Tavstal.MesterMC.Api.Controllers.User;
 [Route("/user")]
 public class PublicUserController : CustomControllerBase
 {
+    private readonly Settings _settings;
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     
-    // TODO: Add following endpoints:
-    // - GET /user/{id}: Get public information about a user by their ID (e.g., username, avatar URL, registration date).
-    // - GET /user/{id}/avatar: Get the avatar image for a user by their ID.
-    // - GET /user/{id}/status: Get the online status of a user by their ID (e.g., online, offline, last seen).
-    // - GET /user/{id}/stats: Get public statistics about a user by their ID (e.g., number of logins, last login date).
-    // - GET /user/{id}/badges: Get a list of badges or achievements for a user by their ID. 
-    
-    public PublicUserController(ILogger<PublicUserController> logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
+    public PublicUserController(ILogger<PublicUserController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger)
     {
+        _settings = settings;
         _userManager = userManager;
         _dbContext = dbContext;
     }
-    
+
+    [HttpGet("{userId}")]
+    public async Task<IActionResult> GetUserInfo([BindRequired, FromRoute] string userId)
+    {
+        CustomUser? user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+
+        return ReturnJson(new
+        {
+            user.Id,
+            AvatarUrl = user.Avatar?.GetUrl(_settings.ApiUrl),
+            user.DiscordId,
+            user.UserName,
+            user.CreateDate,
+            user.LastUpdate,
+            user.LockoutEnabled,
+            user.LockoutEnd,
+            user.LockoutReason
+        });
+    }
+
     [HttpGet("{userId}/avatar")]
     public async Task<IActionResult> GetAvatar([BindRequired, FromRoute] string userId)
     {
