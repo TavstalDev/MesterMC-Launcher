@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using ReactiveUI;
@@ -37,7 +38,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         
         DataContext ??= new LauncherViewModel();
         // Temporal news item shown while loading, otherwise the content area would be empty
-        DataContext.NewsItems.Add(new NewsModel(
+        /*DataContext.NewsItems.Add(new NewsModel(
             $"Béta Verzió - {App.Version} - {App.BuildDate}",
             "Üdvözlünk a MesterMC Launcher Béta verziójában! Kérlek vedd figyelembe, hogy ez még egy fejlesztés alatt álló kiadás, így előfordulhatnak hibák és hiányzó funkciók. Köszönjük a türelmed és támogatásod!" +
                    "\n\nAz alábbi funkciók szándékosan ki vannak kapcsolva a béta tesztelés idejére:" +
@@ -47,12 +48,12 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                    "\n\nHa bármilyen problémába ütközöl, kérlek jelezd nekünk a Discord szerverünkön keresztül: https://discord.gg/mestermc" +
                    "\n\nFigyelem! Mivel a launcher még nem rendelkezik code signing tanúsítvánnyal, az antivírus szoftverek hamis pozitív eredményeket adhatnak. Kérlek győződj meg róla, hogy a letöltött fájl a hivatalos forrásból származik.",
             ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/posts/post_image_beta.png"))
-        ));
-        /*DataContext.NewsItems.Add(new NewsModel(
+        ));*/
+        DataContext.NewsItems.Add(new NewsModel(
             "Betöltés...",
             "Hírek betöltése folyamatban, kérlek várj...",
             ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/posts/post_image_01.jpg"))
-        ));*/
+        ));
         DataContext.SelectedNewsItem = DataContext.NewsItems[0];
         DataContext.SelectedNewsIndex = 0;
         
@@ -97,8 +98,8 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                 else
                     DataContext.Username = settings.Users.Keys.ElementAt(0);
             }
-            /* Disabled for BETA testing
-             var items = await LauncherHelper.GetNewsAsync(settings.Launcher.CacheDirectoryPath);
+            
+            var items = await LauncherHelper.GetNewsAsync(settings.Launcher.CacheDirectoryPath);
             
             if (items.Count == 0)
             {
@@ -113,7 +114,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
 
                 try
                 {
-                    image = await ImageHelper.LoadFromWeb(item.GetBannerUri())
+                    image = await ImageHelper.LoadFromWeb(new Uri(item.BannerUrl))
                             ?? ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/posts/post_image_01.jpg"));
                 }
                 catch (Exception ex)
@@ -128,7 +129,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                     oldNewsRemoved = true;
                 }
                 DataContext.NewsItems.Add(new NewsModel(item.Title, item.Content, image));
-            }*/
+            }
         }
         catch (Exception ex)
         {
