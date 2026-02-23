@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Tavstal.MesterMC.Api.Services.Database;
 
-namespace Tavstal.MesterMC.Api.Controllers.User;
+namespace Tavstal.MesterMC.Api.Controllers.Launcher;
 
 [Route("/launcher")]
 public class LauncherController : CustomControllerBase
