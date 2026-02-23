@@ -1009,6 +1009,16 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
             return await News.ToListAsync();
         return await News.Where(predicate).ToListAsync();
     }
+    
+    /// <summary>
+    /// Retrieves the latest news entries from the database asynchronously.
+    /// </summary>
+    /// <param name="count">The number of latest news entries to retrieve.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of the latest news entries.</returns>
+    public async Task<List<News>> GetLatestNewsAsync(int count)
+    {
+        return await News.OrderByDescending(n => n.CreatedAt).Take(count).ToListAsync();
+    }
 
     /// <summary>
     /// Finds a specific news entry in the database asynchronously based on a predicate.
