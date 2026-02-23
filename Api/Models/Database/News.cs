@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
 
 namespace Tavstal.MesterMC.Api.Models.Database;
 
@@ -15,8 +16,15 @@ public class News
     [StringLength(512)]
     public string Content { get; set; }
     
-    [StringLength(64)]
-    public string Banner { get; set; }
+    public ulong BannerId { get; set; }
     
-    public DateTime CreatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    
+    /* ######################################################################
+     *                         NAVIGATION PROPERTIES
+     * ###################################################################### */
+    
+    [ForeignKey("BannerId")]
+    [JsonIgnore]
+    public FileData? Banner { get; set; }
 }
