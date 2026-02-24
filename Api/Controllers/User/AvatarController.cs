@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
+using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers.User;
@@ -17,11 +19,14 @@ public class AvatarController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
+    private readonly MemoryCacheService _memoryCache;
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(1);
     
-    public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
+    public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService cacheService) : base(logger)
     {
         _userManager = userManager;
         _dbContext = dbContext;
+        _memoryCache = cacheService;
     }
     
     [HttpGet("avatar")]
@@ -31,20 +36,29 @@ public class AvatarController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        FileData? existingAvatar = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
-        if (existingAvatar == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found to delete.");
-        
-        string etag = $"\"{existingAvatar.Hash}\"";
-        if (Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) &&
-            incomingEtag == etag)
+        string cacheKey = $"avatar:{user.Id}";
+        if (!_memoryCache.TryGetValue(cacheKey, out (byte[], string, string) cachedAvatar))
         {
-            return ReturnResponseCode(HttpStatusCode.NotModified);
+            FileData? existingAvatar =
+                await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
+            if (existingAvatar == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found to delete.");
+            byte[]? bytes = existingAvatar.GetFileData();
+            if (bytes == null)
+                return ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to retrieve avatar data.");
+            
+            _memoryCache.SetValue(cacheKey, (bytes, existingAvatar.ContentType, existingAvatar.Hash), CacheTtl);
+            Response.Headers.ETag = $"\"{existingAvatar.Hash}\"";
+            Response.Headers.CacheControl = "public,max-age=3600,immutable";
+            return File(existingAvatar.GetFileStream(), existingAvatar.ContentType, enableRangeProcessing: true);
         }
 
-        Response.Headers.CacheControl =
-            "public,max-age=3600,immutable";
-        return File(existingAvatar.GetFileStream(), existingAvatar.ContentType, existingAvatar.FileName, enableRangeProcessing: true);
+        string etag = $"\"{cachedAvatar.Item3}\"";
+        if (Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) && incomingEtag == etag)
+            return ReturnResponseCode(HttpStatusCode.NotModified);
+
+        Response.Headers.CacheControl = "public,max-age=3600,immutable";
+        return File(cachedAvatar.Item1, cachedAvatar.Item2, enableRangeProcessing: true);
     }
 
     [HttpPost("avatar")]
@@ -54,7 +68,8 @@ public class AvatarController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.Create.Avatar))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         if (file.Length > 1024 * 512) // 500 KB limit
             return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
@@ -90,6 +105,7 @@ public class AvatarController : CustomControllerBase
         {
             existingAvatar.DeleteFile();
             await _dbContext.RemoveFileDataAsync(existingAvatar, true);
+            _memoryCache.RemoveValue("avatar:" + user.Id);
         }
 
         FileData fd = await _dbContext.AddFileDataAsync(new FileData
@@ -111,7 +127,8 @@ public class AvatarController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Avatar))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         FileData? existingAvatar = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
         if (existingAvatar == null)
@@ -119,6 +136,7 @@ public class AvatarController : CustomControllerBase
         
         existingAvatar.DeleteFile();
         await _dbContext.RemoveFileDataAsync(existingAvatar, true);
+        _memoryCache.RemoveValue("avatar:" + user.Id);
         return ReturnResponseCode(HttpStatusCode.OK, "Avatar deleted successfully.");
     }
 
@@ -130,7 +148,8 @@ public class AvatarController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.Create.AvatarOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)
@@ -173,6 +192,7 @@ public class AvatarController : CustomControllerBase
         {
             existingAvatar.DeleteFile();
             await _dbContext.RemoveFileDataAsync(existingAvatar, true);
+            _memoryCache.RemoveValue("avatar:" + user.Id);
         }
 
         FileData fd = await _dbContext.AddFileDataAsync(new FileData
@@ -194,7 +214,8 @@ public class AvatarController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.AvatarOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)
@@ -209,6 +230,7 @@ public class AvatarController : CustomControllerBase
         
         existingAvatar.DeleteFile();
         await _dbContext.RemoveFileDataAsync(existingAvatar, true);
+        _memoryCache.RemoveValue("avatar:" + user.Id);
         return ReturnResponseCode(HttpStatusCode.OK, "Avatar deleted successfully.");
     }
     #endregion
