@@ -20,6 +20,6 @@ public class RegisterRequestBody
     [MaxLength(64)]
     public string Password { get; set; }
     
-    [FormFile(1, EFileSizeUnit.Megabytes, ["image/png"], [".png"])]
+    [FormFile(500, EFileSizeUnit.Kilobytes, ["image/png"], [".png"])]
     public IFormFile? Avatar { get; set; }
 }
