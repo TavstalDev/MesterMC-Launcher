@@ -248,8 +248,10 @@ public class Startup
         #region Services
         // Configure identity options for claims
         services.Configure<IdentityOptions>(options => options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier);
-        // Configure IP rate limiting
+        // Add memory caching services
         services.AddMemoryCache();
+        services.AddSingleton<MemoryCacheService>();
+        // Configure IP rate limiting
         #region Rate Limiting
         services.AddRateLimiter(options =>
         {
@@ -276,23 +278,6 @@ public class Startup
     
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, ILogger<Startup> _logger)
     {
-        // TODO: Remove after debugging yggdrasil
-        app.Use(async (context, next) =>
-        {
-            // Log the details of the incoming call
-            _logger.LogCritical("DEBUG-LOG: Incoming {Method} {Path}{Query}", 
-                context.Request.Method, 
-                context.Request.Path, 
-                context.Request.QueryString);
-
-            await next();
-
-            // Log what the server actually returned
-            _logger.LogCritical("DEBUG-LOG: Response {StatusCode} for {Path}", 
-                context.Response.StatusCode, 
-                context.Request.Path);
-        });
-        
         // Use developer exception page
         if (Program.IsDevelopment)
             app.UseDeveloperExceptionPage();
