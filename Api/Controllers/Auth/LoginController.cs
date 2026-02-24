@@ -7,6 +7,7 @@ using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
 using Tavstal.MesterMC.Api.Models.Claims;
+using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
@@ -474,9 +475,10 @@ public class LoginController : CustomControllerBase
             
             List<CustomRole> roles = _userManager.GetUserRoles(user.Id);
             var claims = _userManager.GetAllClaimsOfUser(user.Id);
-
-            //bool hasAvatar = !string.IsNullOrEmpty(user.AvatarPath);
-            // TODO: Change how avatar works
+            FileData? avatar = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
+            bool hasAvatar = avatar?.Exists() ?? false;
+            string? avatarUrl = hasAvatar ? avatar?.GetUrl(_settings.ApiUrl) : string.Empty;
+            
             return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
@@ -484,8 +486,8 @@ public class LoginController : CustomControllerBase
                 Username = user.UserName,
                 DisplayName = user.DisplayName ?? user.UserName,
                 user.Email,
-                //HasAvatar = hasAvatar,
-                //Avatar = hasAvatar ? $"{_settings.ApiUrl}/users/{user.Id}/avatar" : "",
+                HasAvatar = hasAvatar,
+                Avatar = avatarUrl,
                 Roles = roles,
                 Claims = claims,
             });

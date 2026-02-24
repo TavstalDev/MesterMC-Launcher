@@ -1,11 +1,14 @@
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
 using Tavstal.MesterMC.Api.Models.Claims;
+using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
@@ -54,24 +57,53 @@ public class RegisterController : CustomControllerBase
             CustomUser? user = await _dbContext.FindUserAsync(x => x.NormalizedEmail == normalizedEmail || x.NormalizedUserName == normalizedUsername);
             if (user != null)
                 return ReturnResponseCode(HttpStatusCode.Conflict, "User already exists.");
-
-            // TODO: Handle avatar upload and saving
-            /*string? avatarPath = null;
+            
+            FileData? avatarData = null;
             if (request.Avatar is { Length: > 0 })
             {
-                avatarPath = $"~/wwwroot/avatars/{normalizedUsername}.png";
-                using var memoryStream = new MemoryStream();
-                await request.Avatar.CopyToAsync(memoryStream);
-                byte[] fileBytes = memoryStream.ToArray();
-                if (!await IOHelper.SaveFileAsync(avatarPath, fileBytes, ["image/png"]))
-                    avatarPath = null;
-            }*/
+                await using var stream = request.Avatar.OpenReadStream();
+                using var sha256 = SHA256.Create();
+                byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+                string fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                stream.Position = 0;
+                
+                try 
+                {
+                    // Check Format and Dimensions using ImageSharp
+                    using var image = await Image.LoadAsync(stream);
+                    var info = image.Metadata.DecodedImageFormat;
+
+                    if (info?.Name != "PNG") 
+                        return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+
+                    stream.Position = 0;
+                }
+                catch (Exception)
+                {
+                    Logger.LogError($"Failed to upload avatar file: {fileHash}");
+                    return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
+                }
+                
+                avatarData = await _dbContext.AddFileDataAsync(new FileData
+                {
+                    Hash = fileHash,
+                    FileName = $"{Guid.NewGuid():N}.png",
+                    ContentType = "image/png",
+                    Type = EFileDataType.PROFILE_PICTURE
+                }, true);
+                avatarData.SaveFile(stream);
+            }
             
             user = await _dbContext.AddUserAsync(
                 new CustomUser(request.Username, normalizedUsername, request.EmailAddress, normalizedEmail, 
                     StringChiper.GetEncryptedSha256Hash(request.Password, _settings.EncryptionKey), ESkinType.WIDE,
                     null, string.Empty, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
                 true);
+            if (avatarData != null)
+            {
+                avatarData.UserId = user.Id;
+                await _dbContext.UpdateFileDataAsync(avatarData);
+            }
             
             // Add the user to the default role
             var defaultRole = _dbContext.FindRole(x => x.NormalizedName == "DEFAULT");
