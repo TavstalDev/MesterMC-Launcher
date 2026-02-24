@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.MesterMC.Api.Controllers.Misc;
+using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
 
@@ -28,7 +29,8 @@ public class UserCapesController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Capes.Select))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         UserCape? cape = await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.CapeId == capeId);
         if (cape == null)
@@ -55,7 +57,8 @@ public class UserCapesController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Capes.Unselect))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
 
         UserCape? currentlySelectedCape = await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.IsSelected);
         if (currentlySelectedCape == null)
@@ -74,7 +77,8 @@ public class UserCapesController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Capes.SelectOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)
@@ -108,7 +112,8 @@ public class UserCapesController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Capes.UnselectOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
@@ -31,7 +32,8 @@ public class CapesController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Capes.Create))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         if (file.Length > 1024 * 512) // 500 KB limit
             return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
@@ -106,7 +108,8 @@ public class CapesController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Capes.Delete))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
 
         Cape? cape = await _dbContext.FindCapeAsync(x => x.Id == capeId);
         if (cape == null)

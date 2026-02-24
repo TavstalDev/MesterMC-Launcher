@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
 
@@ -27,7 +28,8 @@ public class SessionsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Sessions))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         var userLogins = _dbContext.GetUserLogins(x => x.UserId == user.Id);
         return ReturnJson(userLogins);
@@ -39,8 +41,9 @@ public class SessionsController : CustomControllerBase
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
-        
-        // TODO: Add claim check
+
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Session))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         var userLogin = _dbContext.FindUserLogin(x => x.Id == sessionId && x.UserId == user.Id);
         if (userLogin == null)
@@ -57,7 +60,8 @@ public class SessionsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Sessions))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         await _dbContext.ClearUserLoginsAsync(user.Id, true);
         return ReturnResponseCode(HttpStatusCode.OK, "All sessions revoked successfully.");
@@ -71,7 +75,8 @@ public class SessionsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.View.SessionsOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)
@@ -91,7 +96,8 @@ public class SessionsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.SessionOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)
@@ -115,7 +121,8 @@ public class SessionsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.SessionsOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)

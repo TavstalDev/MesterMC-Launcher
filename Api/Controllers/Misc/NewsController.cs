@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Bodies.News;
+using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services.Database;
 
@@ -104,7 +105,8 @@ public class NewsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.News.Create))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         if (requestBody.Banner.Length > 1024 * 512) // 500 KB limit
             return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
@@ -163,7 +165,8 @@ public class NewsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.News.Update))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
 
         News? news = await _dbContext.FindNewsAsync(x => x.Id == id);
         if (news == null)
@@ -235,7 +238,8 @@ public class NewsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.News.Delete))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
 
         News? news = await _dbContext.FindNewsAsync(x => x.Id == id);
         if (news == null)

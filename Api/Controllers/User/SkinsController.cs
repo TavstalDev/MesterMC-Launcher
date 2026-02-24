@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
@@ -52,7 +53,8 @@ public class SkinsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Skins.Upload))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         if (file.Length > 1024 * 512) // 500 KB limit
             return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
@@ -115,7 +117,8 @@ public class SkinsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Skins.Delete))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         FileData? existingSkin = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
         if (existingSkin == null)
@@ -135,7 +138,8 @@ public class SkinsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Check permissions/claims
+        if (!_userManager.HasPermission(user, CustomPermissions.Skins.ViewOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)
@@ -164,7 +168,8 @@ public class SkinsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Skins.UploadOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)
@@ -234,7 +239,8 @@ public class SkinsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
-        // TODO: Add claim check
+        if (!_userManager.HasPermission(user, CustomPermissions.Skins.DeleteOther))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
         if (targetUser == null)
