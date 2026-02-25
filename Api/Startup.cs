@@ -255,7 +255,9 @@ public class Startup
         #region Rate Limiting
         services.AddRateLimiter(options =>
         {
-            options.AddFixedWindowLimiter("default", config =>
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            // Default
+            options.AddFixedWindowLimiter(RateLimits.DEFAULT, config =>
             {
                 // Set the limit to 100 requests per minute
                 config.PermitLimit = 100;
@@ -263,6 +265,70 @@ public class Startup
                 config.Window = TimeSpan.FromMinutes(1);
                 // Set the queue limit to 10 requests
                 config.QueueLimit = 10;
+                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+            // Auth Register
+            options.AddFixedWindowLimiter(RateLimits.AUTH_REGISTER, config =>
+            {
+                config.PermitLimit = 2;
+                config.Window = TimeSpan.FromMinutes(60);
+                config.QueueLimit = 10;
+                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+            // Auth Login
+            options.AddFixedWindowLimiter(RateLimits.AUTH_LOGIN, config =>
+            {
+                config.PermitLimit = 5;
+                config.Window = TimeSpan.FromMinutes(5);
+                config.QueueLimit = 5;
+                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+            // Auth TFA & Reset
+            options.AddFixedWindowLimiter(RateLimits.AUTH_RESET, config =>
+            {
+                config.PermitLimit = 3;
+                config.Window = TimeSpan.FromMinutes(60);
+                config.QueueLimit = 10;
+                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+            // Upload
+            options.AddFixedWindowLimiter(RateLimits.UPLOAD, config =>
+            {
+                config.PermitLimit = 20;
+                config.Window = TimeSpan.FromMinutes(10);
+                config.QueueLimit = 5;
+                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+            // Download
+            options.AddFixedWindowLimiter(RateLimits.DOWNLOAD, config =>
+            {
+                config.PermitLimit = 30;
+                config.Window = TimeSpan.FromMinutes(5);
+                config.QueueLimit = 5;
+                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+            // Search
+            options.AddFixedWindowLimiter(RateLimits.SEARCH, config =>
+            {
+                config.PermitLimit = 60;
+                config.Window = TimeSpan.FromMinutes(1);
+                config.QueueLimit = 5;
+                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+            // Write
+            options.AddFixedWindowLimiter(RateLimits.WRITE, config =>
+            {
+                config.PermitLimit = 30;
+                config.Window = TimeSpan.FromMinutes(1);
+                config.QueueLimit = 5;
+                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+            // Admin
+            options.AddFixedWindowLimiter(RateLimits.ADMIN, config =>
+            {
+                config.PermitLimit = 20;
+                config.Window = TimeSpan.FromMinutes(1);
+                config.QueueLimit = 5;
                 config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             });
         });
