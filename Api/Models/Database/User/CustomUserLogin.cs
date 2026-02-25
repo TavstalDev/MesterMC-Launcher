@@ -2,6 +2,8 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json;
+using Tavstal.MesterMC.Api.Models.Common;
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;

@@ -1,4 +1,5 @@
 using Tavstal.MesterMC.Api.Models.Attributes;
+using Tavstal.MesterMC.Api.Models.Common;
 
 namespace Tavstal.MesterMC.Api.Models.Bodies.Account;
 

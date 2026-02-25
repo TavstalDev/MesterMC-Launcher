@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Tavstal.MesterMC.Api.Models;
+namespace Tavstal.MesterMC.Api.Models.Common;
 
 public class IpInfo
 {

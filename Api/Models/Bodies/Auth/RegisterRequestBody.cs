@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Tavstal.MesterMC.Api.Models.Attributes;
+using Tavstal.MesterMC.Api.Models.Common;
 
 namespace Tavstal.MesterMC.Api.Models.Bodies.Auth;
 

@@ -1,4 +1,4 @@
-namespace Tavstal.MesterMC.Api.Models;
+namespace Tavstal.MesterMC.Api.Models.Common;
 
 public enum ESkinType
 {

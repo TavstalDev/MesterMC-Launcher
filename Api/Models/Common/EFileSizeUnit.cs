@@ -1,4 +1,4 @@
-namespace Tavstal.MesterMC.Api.Models;
+namespace Tavstal.MesterMC.Api.Models.Common;
 
 /// <summary>
 /// Represents units of file size measurement.

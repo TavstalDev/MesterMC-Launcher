@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Tavstal.MesterMC.Api.Models.Common;
 
 namespace Tavstal.MesterMC.Api.Models.Attributes;
 
