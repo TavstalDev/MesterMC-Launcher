@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Tavstal.MesterMC.Api.Models.Database;
+using Tavstal.MesterMC.Api.Models.Database.Launcher;
 using Tavstal.MesterMC.Api.Models.Database.Server;
 using Tavstal.MesterMC.Api.Models.Database.User;
 
@@ -68,6 +69,10 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
     private DbSet<ServerJoin> ServerJoins { get; set; }
     
     private DbSet<News> News { get; set; }
+    
+    private DbSet<LauncherVersion> LauncherVersions { get; set; }
+    
+    private DbSet<LauncherVersionData> LauncherVersionDatas { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CustomDbContext"/> class.
@@ -1029,5 +1034,140 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
     {
         return await News.FirstOrDefaultAsync(predicate!);
     }
+    #endregion
+
+    #region Launcher
+    #region Launcher Versions
+    /// <summary>
+    /// Adds a new launcher version to the database asynchronously.
+    /// </summary>
+    /// <param name="value">The launcher version to add.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the launcher version.</param>
+    /// <returns>The added launcher version.</returns>
+    public async Task<LauncherVersion> AddLauncherVersionAsync(LauncherVersion value, bool shouldSave = false)
+    {
+        var result = await LauncherVersions.AddAsync(value);
+        if (shouldSave) await SaveChangesAsync();
+        return result.Entity;
+    }
+
+    /// <summary>
+    /// Updates an existing launcher version in the database asynchronously.
+    /// </summary>
+    /// <param name="value">The launcher version to update.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after updating the launcher version.</param>
+    public async Task UpdateLauncherVersionAsync(LauncherVersion value, bool shouldSave = false)
+    {
+        LauncherVersions.Update(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Removes an existing launcher version from the database asynchronously.
+    /// </summary>
+    /// <param name="value">The launcher version to remove.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after removing the launcher version.</param>
+    public async Task RemoveLauncherVersionAsync(LauncherVersion value, bool shouldSave = false)
+    {
+        LauncherVersions.Remove(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Retrieves a list of launcher versions from the database asynchronously.
+    /// </summary>
+    /// <param name="predicate">An optional predicate to filter the launcher versions.</param>
+    /// <returns>A list of launcher versions.</returns>
+    public async Task<List<LauncherVersion>> GetLauncherVersionsAsync(
+        Expression<Func<LauncherVersion, bool>>? predicate = null)
+    {
+        if (predicate == null)
+            return await LauncherVersions.ToListAsync();
+        return await LauncherVersions.Where(predicate).ToListAsync();
+    }
+    
+    /// <summary>
+    /// Finds a specific launcher version in the database asynchronously based on a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to filter the launcher version.</param>
+    /// <returns>The found launcher version, or null if no launcher version is found.</returns>
+    public async Task<LauncherVersion?> FindLauncherVersionAsync(Expression<Func<LauncherVersion, bool>>? predicate = null)
+    {
+        return await LauncherVersions.FirstOrDefaultAsync(predicate!);
+    }
+    
+    /// <summary>
+    /// Finds the latest launcher version in the database asynchronously.
+    /// </summary>
+    /// <returns>
+    /// The latest launcher version, or null if no launcher versions are found.
+    /// </returns>
+    public async Task<LauncherVersion?> FindLatestLauncherVersionAsync()
+    {
+        return await LauncherVersions.OrderByDescending(n => n.CreatedAt).FirstOrDefaultAsync();
+    }
+    #endregion
+    
+    #region Launcher Data
+
+    /// <summary>
+    /// Adds a new launcher version data record to the database asynchronously.
+    /// </summary>
+    /// <param name="value">The launcher version data to add.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the record.</param>
+    /// <returns>The added launcher version data.</returns>
+    public async Task<LauncherVersionData> AddLauncherVersionDataAsync(LauncherVersionData value, bool shouldSave = false)
+    {
+        var result = await LauncherVersionDatas.AddAsync(value);
+        if (shouldSave) await SaveChangesAsync();
+        return result.Entity;
+    }
+
+    /// <summary>
+    /// Updates an existing launcher version data record in the database asynchronously.
+    /// </summary>
+    /// <param name="value">The launcher version data to update.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after updating the record.</param>
+    public async Task UpdateLauncherVersionDataAsync(LauncherVersionData value, bool shouldSave = false)
+    {
+        LauncherVersionDatas.Update(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Removes an existing launcher version data record from the database asynchronously.
+    /// </summary>
+    /// <param name="value">The launcher version data to remove.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after removing the record.</param>
+    public async Task RemoveLauncherVersionDataAsync(LauncherVersionData value, bool shouldSave = false)
+    {
+        LauncherVersionDatas.Remove(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Retrieves a list of launcher version data records from the database asynchronously.
+    /// </summary>
+    /// <param name="predicate">An optional predicate to filter the launcher version data records.</param>
+    /// <returns>A list of launcher version data records.</returns>
+    public async Task<List<LauncherVersionData>> GetLauncherVersionDatasAsync(
+        Expression<Func<LauncherVersionData, bool>>? predicate = null)
+    {
+        if (predicate == null)
+            return await LauncherVersionDatas.ToListAsync();
+        return await LauncherVersionDatas.Where(predicate).ToListAsync();
+    }
+
+    /// <summary>
+    /// Finds a specific launcher version data record in the database asynchronously based on a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to filter the launcher version data record.</param>
+    /// <returns>The found launcher version data record, or null if no record is found.</returns>
+    public async Task<LauncherVersionData?> FindLauncherVersionDataAsync(Expression<Func<LauncherVersionData, bool>>? predicate = null)
+    {
+        return await LauncherVersionDatas.FirstOrDefaultAsync(predicate!);
+    }
+
+    #endregion
     #endregion
 }
