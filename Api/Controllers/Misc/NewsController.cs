@@ -6,6 +6,7 @@ using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Bodies.News;
 using Tavstal.MesterMC.Api.Models.Claims;
+using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services.Database;
 
@@ -30,7 +31,7 @@ public class NewsController : CustomControllerBase
     public async Task<IActionResult> GetNews()
     {
         List<News> news = await _dbContext.GetNewsAsync();
-        List<NewsResponseBody> newsResponse = new List<NewsResponseBody>();
+        List<NewsResponseBody> newsResponse = [];
         foreach (News n in news)
         {
             string bannerUrl = string.Empty;
@@ -54,7 +55,7 @@ public class NewsController : CustomControllerBase
     public async Task<IActionResult> GetLatestNews()
     {
         List<News> news = await _dbContext.GetLatestNewsAsync(5);
-        List<NewsResponseBody> newsResponse = new List<NewsResponseBody>();
+        List<NewsResponseBody> newsResponse = [];
         foreach (News n in news)
         {
             string bannerUrl = string.Empty;
