@@ -1168,6 +1168,18 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         return await LauncherVersionDatas.FirstOrDefaultAsync(predicate!);
     }
 
+    /// <summary>
+    /// Clears all launcher version data records associated with the specified version ID.
+    /// </summary>
+    /// <param name="versionId">The ID of the launcher version whose data records are to be cleared.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after clearing the data records.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task ClearLauncherVersionDatasAsync(ulong versionId, bool shouldSave = false)
+    {
+        var datas = await LauncherVersionDatas.Where(x => x.VersionId == versionId).ToListAsync();
+        LauncherVersionDatas.RemoveRange(datas);
+        if (shouldSave) await SaveChangesAsync();
+    }
     #endregion
     #endregion
 }

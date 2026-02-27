@@ -1,7 +1,10 @@
 using System.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Tavstal.MesterMC.Api.Models.Bodies.Launcher;
 using Tavstal.MesterMC.Api.Models.Database.Launcher;
+using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
 
@@ -15,11 +18,6 @@ public class LauncherController : CustomControllerBase
     private readonly CustomDbContext _dbContext;
     private readonly MemoryCacheService _memoryCacheService;
     private readonly TimeSpan CacheTTL = TimeSpan.FromHours(1);
-    
-    // TODO: Add following endpoints:
-    // - POST /launcher/version: Add a new launcher version (admin only).
-    // - DELETE /launcher/version/{id}: Remove a launcher version (admin only).
-    // - PATCH /launcher/version/{id}: Update details of a specific launcher version (admin only).
     
     public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService memoryCacheService) : base(logger)
     {
@@ -84,6 +82,59 @@ public class LauncherController : CustomControllerBase
     }
 
     #region Admin Endpoints
-    
+
+    [HttpPost("version")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    public async Task<IActionResult> CreateLauncherVersion([FromForm] CreateLauncherVersionRequest request)
+    {
+        CustomUser? user = await GetCurrentUserAsync(_userManager);
+        if (user == null)
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+        
+        // TODO: Check permissions
+        
+        // TODO
+        
+        return ReturnResponseCode(HttpStatusCode.OK, "Launcher version created successfully.");
+    }
+
+    [HttpPut("version/{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    public async Task<IActionResult> UpdateLauncherVersion([BindRequired, FromRoute] ulong id, [FromForm] UpdateLauncherVersionRequest request)
+    {
+        CustomUser? user = await GetCurrentUserAsync(_userManager);
+        if (user == null)
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+        
+        // TODO: Check permissions
+        
+        LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
+        if (version == null)
+            return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version not found.");
+        
+        // TODO
+        
+        return ReturnResponseCode(HttpStatusCode.OK, "Launcher version updated successfully.");
+    }
+
+    [HttpDelete("version/{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    public async Task<IActionResult> DeleteLauncherVersion([BindRequired, FromRoute] ulong id)
+    {
+        CustomUser? user = await GetCurrentUserAsync(_userManager);
+        if (user == null)
+            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+        
+        // TODO: Check permissions
+        
+        LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
+        if (version == null)
+            return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version not found.");
+        
+        await _dbContext.ClearLauncherVersionDatasAsync(version.Id);
+        await _dbContext.RemoveLauncherVersionAsync(version, true);
+        return ReturnResponseCode(HttpStatusCode.OK, "Launcher version deleted successfully.");
+    }
+
     #endregion
 }
