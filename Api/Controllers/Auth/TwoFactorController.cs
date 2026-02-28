@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
 using OtpNet;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
@@ -12,6 +13,9 @@ using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
+/// <summary>
+/// Controller for managing two-factor authentication (2FA) operations.
+/// </summary>
 [ApiController]
 [Route("/2fa")]
 [Tags("Authentication: 2FA")]
@@ -21,8 +25,15 @@ public class TwoFactorController : CustomControllerBase {
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
     private readonly Settings _settings;
-    // TODO: Test TwoFactor Auth System
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TwoFactorController"/> class.
+    /// </summary>
+    /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
+    /// <param name="dbContext">Database context for accessing user data.</param>
+    /// <param name="emailService">Service for sending emails.</param>
+    /// <param name="settings">Application settings.</param>
     public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings) : base(logger)
     {
         _userManager = userManager;
@@ -31,6 +42,14 @@ public class TwoFactorController : CustomControllerBase {
         _settings = settings;
     }
     
+    /// <summary>
+    /// Enables two-factor authentication for the authenticated user.
+    /// </summary>
+    /// <param name="twoFactorCode">The 2FA code provided by the user.</param>
+    /// <response code="200">Two-factor authentication enabled successfully.</response>
+    /// <response code="401">Unauthorized. User is not authenticated.</response>
+    /// <response code="403">Forbidden. Two-factor authentication is already enabled.</response>
+    /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPatch("enable")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status500InternalServerError)]
@@ -62,6 +81,14 @@ public class TwoFactorController : CustomControllerBase {
         }
     }
     
+    /// <summary>
+    /// Disables two-factor authentication for the authenticated user.
+    /// </summary>
+    /// <param name="twoFactorCode">The 2FA code provided by the user.</param>
+    /// <response code="200">Two-factor authentication disabled successfully.</response>
+    /// <response code="401">Unauthorized. User is not authenticated.</response>
+    /// <response code="403">Forbidden. Two-factor authentication is not enabled.</response>
+    /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPatch("disable")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status500InternalServerError)]
@@ -93,6 +120,13 @@ public class TwoFactorController : CustomControllerBase {
         }
     }
     
+    /// <summary>
+    /// Generates a new 2FA secret for the authenticated user.
+    /// </summary>
+    /// <response code="200">2FA secret generated successfully.</response>
+    /// <response code="401">Unauthorized. User is not authenticated.</response>
+    /// <response code="403">Forbidden. Two-factor authentication is already enabled.</response>
+    /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPatch("generate")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status500InternalServerError)]
@@ -126,6 +160,13 @@ public class TwoFactorController : CustomControllerBase {
         }
     }
     
+    /// <summary>
+    /// Regenerates recovery codes for the authenticated user.
+    /// </summary>
+    /// <response code="200">Recovery codes regenerated successfully.</response>
+    /// <response code="401">Unauthorized. User is not authenticated.</response>
+    /// <response code="403">Forbidden. Two-factor authentication is not enabled.</response>
+    /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPatch("regenerate/recovery")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status500InternalServerError)]

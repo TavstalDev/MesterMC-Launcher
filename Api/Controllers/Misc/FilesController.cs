@@ -1,11 +1,15 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
+using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers.Misc;
 
+/// <summary>
+/// Controller for managing file retrieval operations.
+/// </summary>
 [ApiController]
 [Route("files")]
 public class FilesController : CustomControllerBase
@@ -14,13 +18,31 @@ public class FilesController : CustomControllerBase
     private readonly MemoryCacheService _memoryCache;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(1);
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FilesController"/> class.
+    /// </summary>
+    /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="dbContext">Database context for accessing file data.</param>
+    /// <param name="memoryCache">Service for caching file data.</param>
     public FilesController(ILogger<FilesController> logger, CustomDbContext dbContext, MemoryCacheService memoryCache) : base(logger)
     {
         _dbContext = dbContext;
         _memoryCache = memoryCache;
     }
     
+    /// <summary>
+    /// Retrieves a file by its hash.
+    /// </summary>
+    /// <param name="hash">The hash of the file to retrieve.</param>
+    /// <response code="200">File retrieved successfully.</response>
+    /// <response code="304">File not modified since the last request.</response>
+    /// <response code="404">File not found.</response>
+    /// <response code="500">Failed to retrieve file data.</response>
     [HttpGet("{hash}")]
+    [TextResponse(StatusCodes.Status200OK),
+     TextResponse(StatusCodes.Status304NotModified),
+     TextResponse(StatusCodes.Status404NotFound),
+     TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetFile([FromRoute] string hash)
     {
         string cacheKey = $"file:{hash}";
@@ -59,6 +81,11 @@ public class FilesController : CustomControllerBase
         return File(bytes, contentType);
     }
     
+    /// <summary>
+    /// Determines if the file type is public.
+    /// </summary>
+    /// <param name="type">The file type to check.</param>
+    /// <returns>True if the file type is public; otherwise, false.</returns>
     private bool IsPublicFileType(EFileDataType type)
     {
         switch (type)

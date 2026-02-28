@@ -15,8 +15,15 @@ namespace Tavstal.MesterMC.Api.Controllers;
 /// </summary>
 public abstract class CustomControllerBase : Controller
 {
+    /// <summary>
+    /// Logger instance used for logging within the controller.
+    /// </summary>
     protected readonly ILogger Logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CustomControllerBase"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance to be used by the controller.</param>
     protected CustomControllerBase(ILogger logger)
     {
         Logger = logger;

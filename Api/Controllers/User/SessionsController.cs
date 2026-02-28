@@ -2,12 +2,18 @@ using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
+using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
+/// <summary>
+/// Controller for managing user sessions.
+/// </summary>
 [Route("/user")]
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class SessionsController : CustomControllerBase
@@ -15,13 +21,27 @@ public class SessionsController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SessionsController"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="userManager">The custom user manager.</param>
+    /// <param name="dbContext">The database context.</param>
     public SessionsController(ILogger<SessionsController> logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
     {
         _userManager = userManager;
         _dbContext = dbContext;
     }
 
+    /// <summary>
+    /// Retrieves the current user's active sessions.
+    /// </summary>
+    /// <returns>A list of active sessions or an appropriate HTTP status code.</returns>
+    /// <response code="200">Sessions retrieved successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to view sessions.</response>
     [HttpGet("sessions")]
+    [JsonResponse(typeof(List<CustomUserLogin>)),TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetSessions()
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -35,7 +55,18 @@ public class SessionsController : CustomControllerBase
         return ReturnJson(userLogins);
     }
 
+    /// <summary>
+    /// Revokes a specific session for the current user.
+    /// </summary>
+    /// <param name="sessionId">The ID of the session to revoke.</param>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Session revoked successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to revoke the session.</response>
+    /// <response code="404">Session not found.</response>
     [HttpDelete("sessions/{sessionId}")]
+    [EnableRateLimiting(RateLimits.WRITE)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeSession([BindRequired, FromRoute] ulong sessionId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -53,7 +84,16 @@ public class SessionsController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Session revoked successfully.");
     }
 
+    /// <summary>
+    /// Revokes all sessions for the current user.
+    /// </summary>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">All sessions revoked successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to revoke all sessions.</response>
     [HttpDelete("sessions")]
+    [EnableRateLimiting(RateLimits.WRITE)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> RevokeAllSessions()
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -68,7 +108,18 @@ public class SessionsController : CustomControllerBase
     }
     
     #region Admin Endpoints
+    /// <summary>
+    /// Retrieves the active sessions for a specific user (admin only).
+    /// </summary>
+    /// <param name="userId">The ID of the target user.</param>
+    /// <returns>A list of active sessions or an appropriate HTTP status code.</returns>
+    /// <response code="200">Sessions retrieved successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to view sessions for another user.</response>
+    /// <response code="404">Target user not found.</response>
     [HttpGet("{userId}/sessions")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [JsonResponse(typeof(List<CustomUserLogin>)),TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSessionsAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -89,7 +140,19 @@ public class SessionsController : CustomControllerBase
         return ReturnJson(userLogins);
     }
 
+    /// <summary>
+    /// Revokes a specific session for another user (admin only).
+    /// </summary>
+    /// <param name="userId">The ID of the target user.</param>
+    /// <param name="sessionId">The ID of the session to revoke.</param>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Session revoked successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to revoke the session for another user.</response>
+    /// <response code="404">Target user or session not found.</response>
     [HttpDelete("{userId}/sessions/{sessionId}")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeSessionAdmin([BindRequired, FromRoute] string userId, [BindRequired, FromRoute] ulong sessionId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -114,7 +177,18 @@ public class SessionsController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Session revoked successfully.");
     }
 
+    /// <summary>
+    /// Revokes all sessions for another user (admin only).
+    /// </summary>
+    /// <param name="userId">The ID of the target user.</param>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">All sessions revoked successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to revoke all sessions for another user.</response>
+    /// <response code="404">Target user not found.</response>
     [HttpDelete("{userId}/sessions")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeAllSessionsAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);

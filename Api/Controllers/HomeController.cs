@@ -8,6 +8,10 @@ namespace Tavstal.MesterMC.Api.Controllers;
 /// </summary>
 public class HomeController : CustomControllerBase
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HomeController"/> class.
+    /// </summary>
+    /// <param name="logger">Logger instance for logging.</param>
     protected HomeController(ILogger<HomeController> logger) : base(logger) { }
     
     /// <summary>

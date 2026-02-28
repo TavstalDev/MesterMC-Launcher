@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
 using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
@@ -18,6 +19,9 @@ using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
+/// <summary>
+/// Controller for handling user registration and email confirmation.
+/// </summary>
 [ApiController]
 [Route("/register")]
 [Tags("Authentication: Registration")]
@@ -28,6 +32,14 @@ public class RegisterController : CustomControllerBase
     private readonly EmailService _emailService;
     private readonly Settings _settings;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RegisterController"/> class.
+    /// </summary>
+    /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="dbContext">Database context for accessing user data.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
+    /// <param name="emailService">Service for sending emails.</param>
+    /// <param name="settings">Application settings.</param>
     public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, EmailService emailService, Settings settings) : base(logger)
     {
         _dbContext = dbContext;
@@ -36,7 +48,17 @@ public class RegisterController : CustomControllerBase
         _settings = settings;
     }
     
+    /// <summary>
+    /// Registers a new user.
+    /// </summary>
+    /// <param name="request">The registration request body containing user details.</param>
+    /// <response code="201">User registered successfully.</response>
+    /// <response code="400">Bad request. Invalid input data.</response>
+    /// <response code="403">Forbidden. Password is compromised.</response>
+    /// <response code="409">Conflict. User already exists.</response>
+    /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPost("")]
+    [EnableRateLimiting(RateLimits.AUTH_REGISTER)]
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status409Conflict), TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Register([FromBody] RegisterRequestBody request)
@@ -137,7 +159,17 @@ public class RegisterController : CustomControllerBase
     }
 
     
+    /// <summary>
+    /// Confirms a user's registration using a confirmation token.
+    /// </summary>
+    /// <param name="request">The confirmation request body containing user ID and token.</param>
+    /// <response code="200">User confirmed successfully.</response>
+    /// <response code="400">Bad request. Invalid confirmation token.</response>
+    /// <response code="403">Forbidden. User is already confirmed.</response>
+    /// <response code="404">Not found. User does not exist.</response>
+    /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPatch("confirm")]
+    [EnableRateLimiting(RateLimits.AUTH_REGISTER)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
@@ -181,7 +213,10 @@ public class RegisterController : CustomControllerBase
         }
     }
 
-    
+    /// <summary>
+    /// Sends a confirmation email to the user with a confirmation token.
+    /// </summary>
+    /// <param name="user">The user to send the confirmation email to.</param>
     private async Task SendConfirmEmail(CustomUser user)
     {
         if (string.IsNullOrEmpty(user.Email))

@@ -2,13 +2,19 @@ using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
 using Tavstal.MesterMC.Api.Controllers.Misc;
+using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
+/// <summary>
+/// Controller for managing user capes.
+/// </summary>
 [Route("/user")]
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class UserCapesController : CustomControllerBase
@@ -16,13 +22,34 @@ public class UserCapesController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UserCapesController"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="userManager">The custom user manager.</param>
+    /// <param name="dbContext">The database context.</param>
     public UserCapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
     {
         _userManager = userManager;
         _dbContext = dbContext;
     }
     
+    /// <summary>
+    /// Selects a cape for the current user.
+    /// </summary>
+    /// <param name="capeId">The ID of the cape to select.</param>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Cape selected successfully.</response>
+    /// <response code="400">Cape is already selected.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to select a cape.</response>
+    /// <response code="404">Cape not found for the user.</response>
     [HttpPatch("cape/{capeId}")]
+    [TextResponse(StatusCodes.Status200OK),
+     TextResponse(StatusCodes.Status400BadRequest),
+     TextResponse(StatusCodes.Status401Unauthorized),
+     TextResponse(StatusCodes.Status403Forbidden),
+     TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SelectCape([BindRequired, FromRoute] ulong capeId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -50,7 +77,19 @@ public class UserCapesController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Cape selected successfully");
     }
 
+    /// <summary>
+    /// Clears the currently selected cape for the current user.
+    /// </summary>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Selected cape cleared successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to clear the selected cape.</response>
+    /// <response code="404">No cape is currently selected for the user.</response>
     [HttpDelete("cape")]
+    [TextResponse(StatusCodes.Status200OK),
+     TextResponse(StatusCodes.Status401Unauthorized),
+     TextResponse(StatusCodes.Status403Forbidden),
+     TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearSelectedCape()
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -70,7 +109,24 @@ public class UserCapesController : CustomControllerBase
     }
 
     #region Admin Endpoints
+    /// <summary>
+    /// Selects a cape for another user (admin only).
+    /// </summary>
+    /// <param name="userId">The ID of the target user.</param>
+    /// <param name="capeId">The ID of the cape to select.</param>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Cape selected successfully.</response>
+    /// <response code="400">Cape is already selected.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to select a cape for another user.</response>
+    /// <response code="404">Target user or cape not found.</response>
     [HttpPatch("{userId}/cape/{capeId}")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+        [TextResponse(StatusCodes.Status200OK),
+        TextResponse(StatusCodes.Status400BadRequest),
+        TextResponse(StatusCodes.Status401Unauthorized),
+        TextResponse(StatusCodes.Status403Forbidden),
+        TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SelectCapeAdmin([BindRequired, FromRoute] string userId, [BindRequired, FromRoute] ulong capeId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -105,7 +161,21 @@ public class UserCapesController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Cape selected successfully");
     }
 
+    /// <summary>
+    /// Clears the currently selected cape for another user (admin only).
+    /// </summary>
+    /// <param name="userId">The ID of the target user.</param>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Selected cape cleared successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to clear the selected cape for another user.</response>
+    /// <response code="404">Target user or selected cape not found.</response>
     [HttpDelete("{userId}/cape")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+        [TextResponse(StatusCodes.Status200OK),
+            TextResponse(StatusCodes.Status401Unauthorized),
+            TextResponse(StatusCodes.Status403Forbidden),
+            TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ClearSelectedCapeAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
@@ -13,6 +14,9 @@ using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
+/// <summary>
+/// Controller for handling account recovery operations, including password and 2FA recovery.
+/// </summary>
 [ApiController]
 [Route("/recovery")]
 [Tags("Authentication: Recovery")]
@@ -22,8 +26,15 @@ public class RecoveryController : CustomControllerBase
     private readonly CustomDbContext _dbContext;
     private readonly EmailService _emailService;
     private readonly Settings _settings;
-    // TODO: Test Recovery System
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RecoveryController"/> class.
+    /// </summary>
+    /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
+    /// <param name="dbContext">Database context for accessing user data.</param>
+    /// <param name="emailService">Service for sending emails.</param>
+    /// <param name="settings">Application settings.</param>
     public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings) : base(logger)
     {
         _userManager = userManager;
@@ -33,7 +44,16 @@ public class RecoveryController : CustomControllerBase
     }
     
     
+    /// <summary>
+    /// Handles requests to send a recovery email to the user.
+    /// </summary>
+    /// <param name="email">The email address of the user requesting recovery.</param>
+    /// <response code="201">Recovery email sent successfully.</response>
+    /// <response code="403">Forbidden. Email is not confirmed or recovery request is too frequent.</response>
+    /// <response code="404">Not found. User does not exist.</response>
+    /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPost("request")]
+    [EnableRateLimiting(RateLimits.AUTH_RESET)]
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RequestRecoveryAsync([BindRequired] string email)
@@ -86,7 +106,16 @@ public class RecoveryController : CustomControllerBase
         }
     }
     
+    /// <summary>
+    /// Handles password recovery requests.
+    /// </summary>
+    /// <param name="request">The recovery request body containing email, recovery token, and new password.</param>
+    /// <response code="200">Password reset successful.</response>
+    /// <response code="403">Forbidden. Too many recovery attempts or token expired.</response>
+    /// <response code="404">Not found. User or required claims do not exist.</response>
+    /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPost("password")]
+    [EnableRateLimiting(RateLimits.AUTH_RESET)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RecoverPasswordAsync([BindRequired, FromBody] RecoverPasswordRequestBody request)
@@ -185,7 +214,16 @@ public class RecoveryController : CustomControllerBase
         }
     }
     
+    /// <summary>
+    /// Handles requests to recover two-factor authentication (2FA) settings.
+    /// </summary>
+    /// <param name="request">The recovery request body containing email and backup code.</param>
+    /// <response code="200">2FA reset successful.</response>
+    /// <response code="403">Forbidden. Too many recovery attempts.</response>
+    /// <response code="404">Not found. User or required claims do not exist.</response>
+    /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPost("2fa")]
+    [EnableRateLimiting(RateLimits.AUTH_RESET)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RecoverTwoFactorAsync([BindRequired, FromBody] RecoverTwoFactorRequestBody request)

@@ -3,7 +3,10 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
 using SixLabors.ImageSharp;
+using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
@@ -12,6 +15,9 @@ using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers.Misc;
 
+/// <summary>
+/// Controller for managing capes, including uploading and deleting capes.
+/// </summary>
 [Route("/capes")]
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class CapesController : CustomControllerBase
@@ -19,13 +25,30 @@ public class CapesController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CapesController"/> class.
+    /// </summary>
+    /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
+    /// <param name="dbContext">Database context for accessing cape data.</param>
     public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
     {
         _userManager = userManager;
         _dbContext = dbContext;
     }
     
+    /// <summary>
+    /// Uploads a new cape for the authenticated user.
+    /// </summary>
+    /// <param name="file">The cape file to upload.</param>
+    /// <response code="200">Cape uploaded successfully.</response>
+    /// <response code="400">Invalid file format, size, or duplicate content.</response>
+    /// <response code="401">Unauthorized. User is not authenticated.</response>
+    /// <response code="403">Forbidden. Insufficient permissions.</response>
     [HttpPost]
+    [EnableRateLimiting(RateLimits.UPLOAD)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), 
+     TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UploadCape([BindRequired] IFormFile file)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -101,7 +124,20 @@ public class CapesController : CustomControllerBase
     }
 
     
+    /// <summary>
+    /// Deletes a cape by its ID.
+    /// </summary>
+    /// <param name="capeId">The ID of the cape to delete.</param>
+    /// <response code="200">Cape deleted successfully.</response>
+    /// <response code="400">Invalid request.</response>
+    /// <response code="401">Unauthorized. User is not authenticated.</response>
+    /// <response code="403">Forbidden. Insufficient permissions.</response>
+    /// <response code="404">Cape not found.</response>
     [HttpDelete("{capeId}")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+        [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), 
+        TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
+        TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteCape([BindRequired, FromRoute] ulong capeId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);

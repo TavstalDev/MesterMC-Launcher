@@ -3,6 +3,9 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
+using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Launcher;
 using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
@@ -14,6 +17,9 @@ using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers.Launcher;
 
+/// <summary>
+/// Controller for managing launcher versions and their associated data.
+/// </summary>
 [ApiController]
 [Route("/launcher")]
 public class LauncherController : CustomControllerBase
@@ -23,6 +29,13 @@ public class LauncherController : CustomControllerBase
     private readonly MemoryCacheService _memoryCacheService;
     private readonly TimeSpan CacheTTL = TimeSpan.FromHours(1);
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LauncherController"/> class.
+    /// </summary>
+    /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
+    /// <param name="dbContext">Database context for accessing launcher data.</param>
+    /// <param name="memoryCacheService">Service for caching launcher data.</param>
     public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService memoryCacheService) : base(logger)
     {
         _userManager = userManager;
@@ -30,17 +43,29 @@ public class LauncherController : CustomControllerBase
         _memoryCacheService = memoryCacheService;
     }
 
+    /// <summary>
+    /// Retrieves all launcher versions.
+    /// </summary>
+    /// <response code="200">Returns a list of launcher versions.</response>
+    /// <response code="404">No launcher versions found.</response>
     [HttpGet("versions")]
+    [JsonResponse(typeof(List<LauncherVersion>)), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLauncherVersions()
     {
         var versions = await _dbContext.GetLauncherVersionsAsync();
-        if (!versions.Any())
+        if (versions.Count == 0)
             return ReturnResponseCode(HttpStatusCode.NotFound, "No launcher versions found.");
         
         return ReturnJson(versions);
     }
 
+    /// <summary>
+    /// Retrieves the latest launcher version.
+    /// </summary>
+    /// <response code="200">Returns the latest launcher version.</response>
+    /// <response code="404">No launcher versions found.</response>
     [HttpGet("versions/latest")]
+    [JsonResponse(typeof(LauncherVersion)), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLatestLauncherVersion()
     {
         var version = await _dbContext.FindLatestLauncherVersionAsync();
@@ -49,7 +74,15 @@ public class LauncherController : CustomControllerBase
         return ReturnJson(version);
     }
 
+    /// <summary>
+    /// Retrieves details of a specific launcher version by ID.
+    /// </summary>
+    /// <param name="id">The ID of the launcher version.</param>
+    /// <response code="200">Returns the launcher version details.</response>
+    /// <response code="404">Launcher version not found.</response>
     [HttpGet("version/{id}")]
+    [EnableRateLimiting(RateLimits.SEARCH)]
+    [JsonResponse(typeof(LauncherVersion)), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLauncherVersionDetails([BindRequired, FromRoute] ulong id)
     {
         var version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
@@ -58,7 +91,17 @@ public class LauncherController : CustomControllerBase
         return ReturnJson(version);
     }
 
+    /// <summary>
+    /// Retrieves the download link for a specific launcher version and OS.
+    /// </summary>
+    /// <param name="id">The ID of the launcher version.</param>
+    /// <param name="os">The operating system for the launcher version.</param>
+    /// <response code="200">Returns the file to download.</response>
+    /// <response code="404">Launcher version or file data not found.</response>
+    /// <response code="500">Failed to retrieve the file.</response>
     [HttpGet("version/{id}/download")]
+    [EnableRateLimiting(RateLimits.DOWNLOAD)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetLauncherVersionDownloadLink([BindRequired, FromRoute] ulong id, [BindRequired, FromQuery] ELauncherOs os)
     {
         string cacheKey = $"launcher_version:{id}:download_{os}";
@@ -87,8 +130,18 @@ public class LauncherController : CustomControllerBase
 
     #region Admin Endpoints
 
+    /// <summary>
+    /// Creates a new launcher version.
+    /// </summary>
+    /// <param name="request">The request body containing launcher version details.</param>
+    /// <response code="200">Launcher version created successfully.</response>
+    /// <response code="400">Invalid request or duplicate version.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">Insufficient permissions.</response>
     [HttpPost("version")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateLauncherVersion([BindRequired, FromForm] CreateLauncherVersionRequest request)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -114,8 +167,20 @@ public class LauncherController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Launcher version created successfully.");
     }
 
+    /// <summary>
+    /// Updates an existing launcher version.
+    /// </summary>
+    /// <param name="id">The ID of the launcher version to update.</param>
+    /// <param name="request">The request body containing updated launcher version details.</param>
+    /// <response code="200">Launcher version updated successfully.</response>
+    /// <response code="400">Invalid request or duplicate version.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">Insufficient permissions.</response>
+    /// <response code="404">Launcher version not found.</response>
     [HttpPut("version/{id}")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateLauncherVersion([BindRequired, FromRoute] ulong id, [BindRequired, FromForm] UpdateLauncherVersionRequest request)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -148,8 +213,18 @@ public class LauncherController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Launcher version updated successfully.");
     }
 
+    /// <summary>
+    /// Deletes a launcher version.
+    /// </summary>
+    /// <param name="id">The ID of the launcher version to delete.</param>
+    /// <response code="200">Launcher version deleted successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">Insufficient permissions.</response>
+    /// <response code="404">Launcher version not found.</response>
     [HttpDelete("version/{id}")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLauncherVersion([BindRequired, FromRoute] ulong id)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -168,8 +243,20 @@ public class LauncherController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Launcher version deleted successfully.");
     }
 
+    /// <summary>
+    /// Adds data for a specific launcher version.
+    /// </summary>
+    /// <param name="id">The ID of the launcher version.</param>
+    /// <param name="request">The request body containing launcher version data details.</param>
+    /// <response code="200">Launcher version data added successfully.</response>
+    /// <response code="400">Invalid request or file type.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">Insufficient permissions.</response>
+    /// <response code="404">Launcher version not found.</response>
     [HttpPost("version/{id}/data")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AddLauncherVersionData([BindRequired, FromRoute] ulong id, [BindRequired, FromForm] CreateLauncherVersionDataRequest request)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -219,8 +306,19 @@ public class LauncherController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Launcher version data added successfully.");
     }
 
+    /// <summary>
+    /// Deletes data for a specific launcher version.
+    /// </summary>
+    /// <param name="versionId">The ID of the launcher version.</param>
+    /// <param name="dataId">The ID of the launcher version data to delete.</param>
+    /// <response code="200">Launcher version data deleted successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">Insufficient permissions.</response>
+    /// <response code="404">Launcher version data not found.</response>
     [HttpDelete("version/{versionId}/data/{dataId}")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLauncherVersionData([BindRequired, FromRoute] ulong versionId, [BindRequired, FromRoute] ulong dataId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);

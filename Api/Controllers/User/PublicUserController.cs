@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
@@ -9,6 +10,9 @@ using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
+/// <summary>
+/// Controller for managing public user-related operations.
+/// </summary>
 [Route("/user")]
 public class PublicUserController : CustomControllerBase
 {
@@ -16,6 +20,13 @@ public class PublicUserController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PublicUserController"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="userManager">The custom user manager.</param>
+    /// <param name="dbContext">The database context.</param>
+    /// <param name="settings">The application settings.</param>
     public PublicUserController(ILogger<PublicUserController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger)
     {
         _settings = settings;
@@ -23,7 +34,15 @@ public class PublicUserController : CustomControllerBase
         _dbContext = dbContext;
     }
 
+    /// <summary>
+    /// Retrieves information about a specific user.
+    /// </summary>
+    /// <param name="userId">The ID of the user to retrieve information for.</param>
+    /// <returns>A JSON object containing user information or an appropriate HTTP status code.</returns>
+    /// <response code="200">User information retrieved successfully.</response>
+    /// <response code="404">User not found.</response>
     [HttpGet("{userId}")]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUserInfo([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await _userManager.FindByIdAsync(userId);
@@ -44,7 +63,16 @@ public class PublicUserController : CustomControllerBase
         });
     }
 
+    /// <summary>
+    /// Retrieves the avatar of a specific user.
+    /// </summary>
+    /// <param name="userId">The ID of the user whose avatar is to be retrieved.</param>
+    /// <returns>The avatar file or an appropriate HTTP status code.</returns>
+    /// <response code="200">Avatar retrieved successfully.</response>
+    /// <response code="304">Avatar not modified (ETag matches).</response>
+    /// <response code="404">User or avatar not found.</response>
     [HttpGet("{userId}/avatar")]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status304NotModified), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAvatar([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await _userManager.FindByIdAsync(userId);

@@ -3,7 +3,10 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
 using SixLabors.ImageSharp;
+using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
@@ -12,6 +15,9 @@ using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
+/// <summary>
+/// Controller for managing user skins.
+/// </summary>
 [ApiController]
 [Route("/user")]
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
@@ -20,13 +26,27 @@ public class SkinsController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SkinsController"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="userManager">The custom user manager.</param>
+    /// <param name="dbContext">The database context.</param>
     public SkinsController(ILogger<SkinsController > logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
     {
         _userManager = userManager;
         _dbContext = dbContext;
     }
 
+    /// <summary>
+    /// Retrieves the current user's skin.
+    /// </summary>
+    /// <returns>The skin file or an appropriate HTTP status code.</returns>
+    /// <response code="200">Skin retrieved successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="404">No skin found for the user.</response>
     [HttpGet("skin")]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSkin()
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -46,7 +66,19 @@ public class SkinsController : CustomControllerBase
         return File(skin.GetFileStream(), skin.ContentType, skin.FileName);
     }
     
+    /// <summary>
+    /// Uploads a new skin for the current user.
+    /// </summary>
+    /// <param name="file">The skin file to upload. Must be a PNG file and meet size and dimension requirements.</param>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Skin uploaded successfully.</response>
+    /// <response code="400">Invalid file format, size, or dimensions.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to upload a skin.</response>
     [HttpPut("skin")]
+    [EnableRateLimiting(RateLimits.UPLOAD)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
+     TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UploadSkin([BindRequired] IFormFile file)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -110,7 +142,18 @@ public class SkinsController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Skin uploaded successfully");
     }
     
+    /// <summary>
+    /// Deletes the current user's skin.
+    /// </summary>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Skin deleted successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to delete the skin.</response>
+    /// <response code="404">No skin found for the user.</response>
     [HttpDelete("skin")]
+    [EnableRateLimiting(RateLimits.WRITE)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
+     TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSkin()
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -131,7 +174,19 @@ public class SkinsController : CustomControllerBase
 
     #region Admin Endpoints
 
+    /// <summary>
+    /// Retrieves the skin of a specific user (admin only).
+    /// </summary>
+    /// <param name="userId">The ID of the target user.</param>
+    /// <returns>The skin file or an appropriate HTTP status code.</returns>
+    /// <response code="200">Skin retrieved successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to view the skin.</response>
+    /// <response code="404">No skin found for the user.</response>
     [HttpGet("{userId}/skin")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
+     TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSkinAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -161,7 +216,21 @@ public class SkinsController : CustomControllerBase
         return File(skin.GetFileStream(), skin.ContentType, skin.FileName);
     }
     
+    /// <summary>
+    /// Uploads a new skin for a specific user (admin only).
+    /// </summary>
+    /// <param name="userId">The ID of the target user.</param>
+    /// <param name="file">The skin file to upload. Must be a PNG file and meet size and dimension requirements.</param>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Skin uploaded successfully.</response>
+    /// <response code="400">Invalid file format, size, or dimensions.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to upload the skin.</response>
+    /// <response code="404">Target user not found.</response>
     [HttpPut("{userId}/skin")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
+     TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UploadSkinAdmin([BindRequired, FromRoute] string userId, [BindRequired] IFormFile file)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
@@ -232,7 +301,19 @@ public class SkinsController : CustomControllerBase
         return ReturnResponseCode(HttpStatusCode.OK, "Skin uploaded successfully");
     }
     
+    /// <summary>
+    /// Deletes the skin of a specific user (admin only).
+    /// </summary>
+    /// <param name="userId">The ID of the target user.</param>
+    /// <returns>A success message or an appropriate HTTP status code.</returns>
+    /// <response code="200">Skin deleted successfully.</response>
+    /// <response code="401">User not authenticated.</response>
+    /// <response code="403">User does not have permission to delete the skin.</response>
+    /// <response code="404">No skin found for the user.</response>
     [HttpDelete("{userId}/skin")]
+    [EnableRateLimiting(RateLimits.ADMIN)]
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
+     TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSkinAdmin([BindRequired, FromRoute] string userId)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
