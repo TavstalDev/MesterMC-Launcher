@@ -10,6 +10,7 @@ public class LauncherVersion
     public ulong Id { get; set; }
     
     [StringLength(15)]
+    [RegularExpression("^(?:(\\d+)\\.)?(?:(\\d+)\\.)?(\\*|\\d+)$\n")]
     public string Version { get; set; }
     
     public EVersionType VersionType { get; set; }
