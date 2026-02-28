@@ -12,8 +12,8 @@ using Tavstal.MesterMC.Api.Services.Database;
 namespace Tavstal.MesterMC.Api.Migrations
 {
     [DbContext(typeof(CustomDbContext))]
-    [Migration("20260213155435_mmcdb")]
-    partial class mmcdb
+    [Migration("20260228222640_mmcdb1")]
+    partial class mmcdb1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -112,6 +112,70 @@ namespace Tavstal.MesterMC.Api.Migrations
                     b.ToTable("Files");
                 });
 
+            modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.Launcher.LauncherVersion", b =>
+                {
+                    b.Property<ulong>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint unsigned");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<ulong>("Id"));
+
+                    b.Property<string>("Changelog")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)");
+
+                    b.Property<int>("VersionType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LauncherVersions");
+                });
+
+            modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.Launcher.LauncherVersionData", b =>
+                {
+                    b.Property<ulong>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint unsigned");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<ulong>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<ulong>("FileId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<int>("Os")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<ulong>("VersionId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileId");
+
+                    b.HasIndex("VersionId");
+
+                    b.ToTable("LauncherVersionDatas");
+                });
+
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.News", b =>
                 {
                     b.Property<ulong>("Id")
@@ -120,17 +184,15 @@ namespace Tavstal.MesterMC.Api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<ulong>("Id"));
 
-                    b.Property<string>("Banner")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
+                    b.Property<ulong>("BannerId")
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(512)
                         .HasColumnType("varchar(512)");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Title")
@@ -139,6 +201,8 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasColumnType("varchar(128)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BannerId");
 
                     b.ToTable("News");
                 });
@@ -607,6 +671,36 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasForeignKey("UserId");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.Launcher.LauncherVersionData", b =>
+                {
+                    b.HasOne("Tavstal.MesterMC.Api.Models.Database.FileData", "File")
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Tavstal.MesterMC.Api.Models.Database.Launcher.LauncherVersion", "Version")
+                        .WithMany()
+                        .HasForeignKey("VersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("File");
+
+                    b.Navigation("Version");
+                });
+
+            modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.News", b =>
+                {
+                    b.HasOne("Tavstal.MesterMC.Api.Models.Database.FileData", "Banner")
+                        .WithMany()
+                        .HasForeignKey("BannerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Banner");
                 });
 
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.Server.ServerJoin", b =>

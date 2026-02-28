@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Tavstal.MesterMC.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class mmcdb : Migration
+    public partial class mmcdb1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -82,22 +82,22 @@ namespace Tavstal.MesterMC.Api.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "News",
+                name: "LauncherVersions",
                 columns: table => new
                 {
                     Id = table.Column<ulong>(type: "bigint unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Title = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: false)
+                    Version = table.Column<string>(type: "varchar(15)", maxLength: 15, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Content = table.Column<string>(type: "varchar(512)", maxLength: 512, nullable: false)
+                    VersionType = table.Column<int>(type: "int", nullable: false),
+                    Changelog = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Banner = table.Column<string>(type: "varchar(64)", maxLength: 64, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_News", x => x.Id);
+                    table.PrimaryKey("PK_LauncherVersions", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -394,6 +394,61 @@ namespace Tavstal.MesterMC.Api.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "LauncherVersionDatas",
+                columns: table => new
+                {
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    VersionId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    FileId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    Os = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LauncherVersionDatas", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LauncherVersionDatas_Files_FileId",
+                        column: x => x.FileId,
+                        principalTable: "Files",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_LauncherVersionDatas_LauncherVersions_VersionId",
+                        column: x => x.VersionId,
+                        principalTable: "LauncherVersions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "News",
+                columns: table => new
+                {
+                    Id = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Title = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Content = table.Column<string>(type: "varchar(512)", maxLength: 512, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BannerId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_News", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_News_Files_BannerId",
+                        column: x => x.BannerId,
+                        principalTable: "Files",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "UserCapes",
                 columns: table => new
                 {
@@ -484,6 +539,21 @@ namespace Tavstal.MesterMC.Api.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LauncherVersionDatas_FileId",
+                table: "LauncherVersionDatas",
+                column: "FileId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LauncherVersionDatas_VersionId",
+                table: "LauncherVersionDatas",
+                column: "VersionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_News_BannerId",
+                table: "News",
+                column: "BannerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ServerJoins_UserId",
                 table: "ServerJoins",
                 column: "UserId");
@@ -523,6 +593,9 @@ namespace Tavstal.MesterMC.Api.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "LauncherVersionDatas");
+
+            migrationBuilder.DropTable(
                 name: "News");
 
             migrationBuilder.DropTable(
@@ -539,6 +612,9 @@ namespace Tavstal.MesterMC.Api.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "LauncherVersions");
 
             migrationBuilder.DropTable(
                 name: "Capes");
