@@ -14,6 +14,9 @@ using KeyGeneration = OtpSharp.KeyGeneration;
 
 namespace Tavstal.MesterMC.Api.Services.Database;
 
+/// <summary>
+/// Initializes a new instance of the <see cref="CustomUserManager"/> class.
+/// </summary>
 public class CustomUserManager(
     IUserStore<CustomUser> store,
     IOptions<IdentityOptions> optionsAccessor,
@@ -26,13 +29,13 @@ public class CustomUserManager(
     ILogger<CustomUserManager> logger,
     CustomDbContext context,
     IConfiguration configuration,
+    MemoryCacheService memoryCacheService,
     Settings settings)
     : UserManager<CustomUser>(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer,
         errors, services, logger)
 {
-    // ReSharper disable once NotAccessedField.Local
-    private readonly ILogger _logger = logger;
-    private readonly IConfiguration _configuration = configuration;
+    private readonly TimeSpan CompPassTTL = TimeSpan.FromHours(1);
+    
 
     #region Roles & Claims
 
@@ -536,6 +539,13 @@ public class CustomUserManager(
     }
     #endregion
     
+    /// <summary>
+    /// Retrieves a user based on their credentials token.
+    /// </summary>
+    /// <param name="token">The token used to identify the user.</param>
+    /// <returns>
+    /// The <see cref="CustomUser"/> object if the token is valid and associated with a user; otherwise, null.
+    /// </returns>
     public CustomUser? GetUserByCredentials(string token)
     {
         var userToken = context.FindUserToken(x => x.Value == token);
@@ -549,12 +559,20 @@ public class CustomUserManager(
         return context.FindUser(x => x.Id == userToken.UserId);
     }
     
+    /// <summary>
+    /// Retrieves a user based on an authentication string.
+    /// </summary>
+    /// <param name="authenticationString">The authentication string (e.g., Basic or Bearer token).</param>
+    /// <returns>
+    /// The <see cref="CustomUser"/> object if the authentication string is valid and associated with a user; otherwise, null.
+    /// </returns>
     public async Task<CustomUser?> GetUserByAuthenticationStringAsync(string? authenticationString)
     {
         if (string.IsNullOrEmpty(authenticationString))
             return null;
             
-        if (authenticationString.ToLower().StartsWith("basic"))
+        string lowerAuthString = authenticationString.ToLower();
+        if (lowerAuthString.StartsWith("basic"))
         {
             string value = authenticationString.Remove(0, 6);
             if (value.EndsWith("=="))
@@ -568,7 +586,7 @@ public class CustomUserManager(
             return await context.FindUserAsync(x => (x.NormalizedEmail == normalizedValue || x.NormalizedUserName == normalizedValue) && x.PasswordHash == StringChiper.GetEncryptedSha256Hash(raw[1], settings.EncryptionKey));
         }
 
-        if (authenticationString.ToLower().StartsWith("bearer"))
+        if (lowerAuthString.StartsWith("bearer"))
         {
             string token = authenticationString.Remove(0, 7);
             var userToken = context.FindUserToken(x => x.Value == token);
@@ -585,7 +603,14 @@ public class CustomUserManager(
         return null;
     }
     
-    public async Task<bool> IsCompromisedPassword(string password)
+    /// <summary>
+    /// Checks if a password has been compromised using the Pwned Passwords API.
+    /// </summary>
+    /// <param name="password">The password to check.</param>
+    /// <returns>
+    /// A boolean value indicating whether the password has been compromised (true) or not (false).
+    /// </returns>
+    public async Task<bool> IsCompromisedPasswordAsync(string password)
     {
         using var sha1 = SHA1.Create();
         byte[] hashBytes = sha1.ComputeHash(Encoding.UTF8.GetBytes(password));
@@ -594,10 +619,18 @@ public class CustomUserManager(
         string prefix = hashString.Substring(0, 5);
         string suffix = hashString.Substring(5);
 
-        using var client = new HttpClient();
-        // TODO: Cache the response for the prefix to avoid making too many requests to the API
-        var response = await client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
-
+        string cacheKey = $"pwned:{prefix}";
+        if (!memoryCacheService.TryGetValue(cacheKey, out string? response))
+        {
+            using var client = new HttpClient();
+            response = await client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
+            if (!string.IsNullOrEmpty(cacheKey))
+                memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
+        }
+        
+        if (string.IsNullOrEmpty(response))
+            return false;
+        
         return response.Contains(suffix);
     }
 

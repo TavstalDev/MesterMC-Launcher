@@ -47,7 +47,7 @@ public class RegisterController : CustomControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             
-            if (await _userManager.IsCompromisedPassword(request.Password)) 
+            if (await _userManager.IsCompromisedPasswordAsync(request.Password)) 
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Password is compromised.");
             
             if (!request.EmailAddress.IsValidEmail())
@@ -65,7 +65,7 @@ public class RegisterController : CustomControllerBase
                 await using var stream = request.Avatar.OpenReadStream();
                 using var sha256 = SHA256.Create();
                 byte[] hashBytes = await sha256.ComputeHashAsync(stream);
-                string fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                string fileHash = Convert.ToHexStringLower(hashBytes);
                 stream.Position = 0;
                 
                 try 
