@@ -80,7 +80,7 @@ public class AvatarController : CustomControllerBase
         await using var stream = file.OpenReadStream();
         using var sha256 = SHA256.Create();
         byte[] hashBytes = await sha256.ComputeHashAsync(stream);
-        string fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+        string fileHash = Convert.ToHexStringLower(hashBytes);
         stream.Position = 0;
         
         try 
@@ -167,7 +167,7 @@ public class AvatarController : CustomControllerBase
         await using var stream = file.OpenReadStream();
         using var sha256 = SHA256.Create();
         byte[] hashBytes = await sha256.ComputeHashAsync(stream);
-        string fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+        string fileHash = Convert.ToHexStringLower(hashBytes);
         stream.Position = 0;
         
         try 
