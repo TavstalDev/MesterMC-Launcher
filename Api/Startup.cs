@@ -288,7 +288,7 @@ public class Startup
             {
                 config.PermitLimit = 3;
                 config.Window = TimeSpan.FromMinutes(60);
-                config.QueueLimit = 10;
+                config.QueueLimit = 5;
                 config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             });
             // Upload
