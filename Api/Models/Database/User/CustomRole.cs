@@ -4,24 +4,49 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;
 
+/// <summary>
+/// Represents a custom role in the system, extending the IdentityRole class with additional properties
+/// such as Level, Name, NormalizedName, and ConcurrencyStamp.
+/// </summary>
 public class CustomRole : IdentityRole<string>
 {
+    /// <summary>
+    /// Gets or sets the unique identifier for the role.
+    /// </summary>
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [StringLength(36)]
     public override string Id { get; set; }
     
+    /// <summary>
+    /// Gets or sets the level of the role, which can be used to define role hierarchy or permissions.
+    /// </summary>
     public byte Level { get; set; }
     
+    /// <summary>
+    /// Gets or sets the name of the role.
+    /// </summary>
     [StringLength(32)]
     public new string Name { get; set; }
     
+    /// <summary>
+    /// Gets or sets the normalized name of the role, typically used for case-insensitive comparisons.
+    /// </summary>
     [StringLength(64)]
     public new string NormalizedName { get; set; }
     
+    /// <summary>
+    /// Gets or sets the concurrency stamp, a unique value used to handle concurrency conflicts.
+    /// </summary>
     [StringLength(36)]
     public new string ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CustomRole"/> class with the specified level, name, and normalized name.
+    /// </summary>
+    /// <param name="level">The level of the role.</param>
+    /// <param name="name">The name of the role.</param>
+    /// <param name="normalizedName">The normalized name of the role.</param>
     public CustomRole(byte level, string name, string normalizedName)
     {
         Level = level;
@@ -29,6 +54,13 @@ public class CustomRole : IdentityRole<string>
         NormalizedName = normalizedName;
     }
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CustomRole"/> class with the specified role name, level, name, and normalized name.
+    /// </summary>
+    /// <param name="roleName">The name of the role.</param>
+    /// <param name="level">The level of the role.</param>
+    /// <param name="name">The name of the role.</param>
+    /// <param name="normalizedName">The normalized name of the role.</param>
     public CustomRole(string roleName, byte level, string name, string normalizedName) : base(roleName)
     {
         Level = level;

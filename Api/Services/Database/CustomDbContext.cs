@@ -670,6 +670,11 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
     }
 
     
+    /// <summary>
+    /// Clears expired user logins and their associated tokens from the database asynchronously.
+    /// </summary>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after clearing the expired logins and tokens.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task ClearExpiredUserLoginsAsync(bool shouldSave = false)
     {
         var expiredLogins = await UserLogins.Where(l => l.ExpireDate <= DateTimeOffset.UtcNow).ToListAsync();
@@ -750,6 +755,12 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
     
     #region User Play Sessions
 
+    /// <summary>
+    /// Adds a new user play session to the database asynchronously.
+    /// </summary>
+    /// <param name="value">The user play session to add.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the session.</param>
+    /// <returns>The added user play session.</returns>
     public async Task<UserPlaySession> AddUserPlaySessionAsync(UserPlaySession value,
         bool shouldSave = false)
     {
@@ -757,19 +768,34 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         if (shouldSave) await SaveChangesAsync();
         return result.Entity;
     }
-     
+
+    /// <summary>
+    /// Updates an existing user play session in the database asynchronously.
+    /// </summary>
+    /// <param name="value">The user play session to update.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after updating the session.</param>
     public async Task UpdateUserPlaySessionAsync(UserPlaySession value, bool shouldSave = false)
     {
         UserPlaySessions.Update(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Removes an existing user play session from the database asynchronously.
+    /// </summary>
+    /// <param name="value">The user play session to remove.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after removing the session.</param>
     public async Task RemoveUserPlaySessionAsync(UserPlaySession value, bool shouldSave = false)
     {
         UserPlaySessions.Remove(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Retrieves a list of user play sessions from the database asynchronously.
+    /// </summary>
+    /// <param name="predicate">An optional predicate to filter the user play sessions.</param>
+    /// <returns>A list of user play sessions.</returns>
     public async Task<List<UserPlaySession>> GetUserPlaySessionsAsync(
         Expression<Func<UserPlaySession, bool>>? predicate = null)
     {
@@ -777,13 +803,22 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
             return await UserPlaySessions.Where(predicate).ToListAsync();
         return await UserPlaySessions.ToListAsync();
     }
-    
+
+    /// <summary>
+    /// Finds a specific user play session in the database asynchronously based on a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to filter the user play session.</param>
+    /// <returns>The found user play session, or null if no session is found.</returns>
     public async Task<UserPlaySession?> FindUserPlaySessionAsync(Expression<Func<UserPlaySession, bool>> predicate)
     {
         return await UserPlaySessions.FirstOrDefaultAsync(predicate);
     }
 
-    
+    /// <summary>
+    /// Clears expired user play sessions from the database asynchronously.
+    /// </summary>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after clearing the expired sessions.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task ClearExpiredUserPlaySessionsAsync(bool shouldSave = false)
     {
         var expiredSessions = await UserPlaySessions.Where(s => s.ExpiresAt <= DateTimeOffset.UtcNow).ToListAsync();
@@ -794,26 +829,47 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
 
     #region User Capes
 
-     public async Task<UserCape> AddUserCapeAsync(UserCape value,
+     /// <summary>
+    /// Adds a new user cape to the database asynchronously.
+    /// </summary>
+    /// <param name="value">The user cape to add.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the cape.</param>
+    /// <returns>The added user cape.</returns>
+    public async Task<UserCape> AddUserCapeAsync(UserCape value,
         bool shouldSave = false)
     {
         var result = await UserCapes.AddAsync(value);
         if (shouldSave) await SaveChangesAsync();
         return result.Entity;
     }
-     
+
+    /// <summary>
+    /// Updates an existing user cape in the database asynchronously.
+    /// </summary>
+    /// <param name="value">The user cape to update.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after updating the cape.</param>
     public async Task UpdateUserCapeAsync(UserCape value, bool shouldSave = false)
     {
         UserCapes.Update(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Removes an existing user cape from the database asynchronously.
+    /// </summary>
+    /// <param name="value">The user cape to remove.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after removing the cape.</param>
     public async Task RemoveUserCapeAsync(UserCape value, bool shouldSave = false)
     {
         UserCapes.Remove(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Retrieves a list of user capes from the database asynchronously.
+    /// </summary>
+    /// <param name="predicate">An optional predicate to filter the user capes.</param>
+    /// <returns>A list of user capes.</returns>
     public async Task<List<UserCape>> GetUserCapesAsync(
         Expression<Func<UserCape, bool>>? predicate = null)
     {
@@ -821,11 +877,17 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
             return await UserCapes.Where(predicate).ToListAsync();
         return await UserCapes.ToListAsync();
     }
-    
+
+    /// <summary>
+    /// Finds a specific user cape in the database asynchronously based on a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to filter the user cape.</param>
+    /// <returns>The found user cape, or null if no cape is found.</returns>
     public async Task<UserCape?> FindUserCapeAsync(Expression<Func<UserCape, bool>> predicate)
     {
         return await UserCapes.FirstOrDefaultAsync(predicate);
     }
+
 
     #endregion
     
@@ -853,25 +915,46 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
     #endregion
 
     #region FileData
+    /// <summary>
+    /// Adds a new file data record to the database asynchronously.
+    /// </summary>
+    /// <param name="value">The file data record to add.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the record.</param>
+    /// <returns>The added file data record.</returns>
     public async Task<FileData> AddFileDataAsync(FileData value, bool shouldSave = false)
     {
         var result = await Files.AddAsync(value);
         if (shouldSave) await SaveChangesAsync();
         return result.Entity;
     }
-    
+
+    /// <summary>
+    /// Updates an existing file data record in the database asynchronously.
+    /// </summary>
+    /// <param name="value">The file data record to update.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after updating the record.</param>
     public async Task UpdateFileDataAsync(FileData value, bool shouldSave = false)
     {
         Files.Update(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Removes an existing file data record from the database asynchronously.
+    /// </summary>
+    /// <param name="value">The file data record to remove.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after removing the record.</param>
     public async Task RemoveFileDataAsync(FileData value, bool shouldSave = false)
     {
         Files.Remove(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Retrieves a list of file data records from the database asynchronously.
+    /// </summary>
+    /// <param name="predicate">An optional predicate to filter the file data records.</param>
+    /// <returns>A list of file data records.</returns>
     public async Task<List<FileData>> GetFileDatasAsync(
         Expression<Func<FileData, bool>>? predicate = null)
     {
@@ -879,15 +962,27 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
             return await Files.ToListAsync();
         return await Files.Where(predicate).ToListAsync();
     }
-    
+
+    /// <summary>
+    /// Finds a specific file data record in the database asynchronously based on a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to filter the file data record.</param>
+    /// <returns>The found file data record, or null if no record is found.</returns>
     public async Task<FileData?> FindFileDataAsync(Expression<Func<FileData, bool>>? predicate = null)
     {
         return await Files.FirstOrDefaultAsync(predicate!);
     }
+
     #endregion
 
     #region Capes
 
+    /// <summary>
+    /// Adds a new cape to the database asynchronously.
+    /// </summary>
+    /// <param name="value">The cape to add.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the cape.</param>
+    /// <returns>The added cape.</returns>
     public async Task<Cape> AddCapeAsync(Cape value,
         bool shouldSave = false)
     {
@@ -895,19 +990,34 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         if (shouldSave) await SaveChangesAsync();
         return result.Entity;
     }
-     
+
+    /// <summary>
+    /// Updates an existing cape in the database asynchronously.
+    /// </summary>
+    /// <param name="value">The cape to update.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after updating the cape.</param>
     public async Task UpdateCapeAsync(Cape value, bool shouldSave = false)
     {
         Capes.Update(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Removes an existing cape from the database asynchronously.
+    /// </summary>
+    /// <param name="value">The cape to remove.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after removing the cape.</param>
     public async Task RemoveCapeAsync(Cape value, bool shouldSave = false)
     {
         Capes.Remove(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Retrieves a list of capes from the database asynchronously.
+    /// </summary>
+    /// <param name="predicate">An optional predicate to filter the capes.</param>
+    /// <returns>A list of capes.</returns>
     public async Task<List<Cape>> GetCapesAsync(
         Expression<Func<Cape, bool>>? predicate = null)
     {
@@ -915,16 +1025,28 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
             return await Capes.Where(predicate).ToListAsync();
         return await Capes.ToListAsync();
     }
-    
+
+    /// <summary>
+    /// Finds a specific cape in the database asynchronously based on a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to filter the cape.</param>
+    /// <returns>The found cape, or null if no cape is found.</returns>
     public async Task<Cape?> FindCapeAsync(Expression<Func<Cape, bool>> predicate)
     {
         return await Capes.FirstOrDefaultAsync(predicate);
     }
 
+
     #endregion
     
     #region Server Joins
 
+    /// <summary>
+    /// Adds a new server join record to the database asynchronously.
+    /// </summary>
+    /// <param name="value">The server join record to add.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the record.</param>
+    /// <returns>The added server join record.</returns>
     public async Task<ServerJoin> AddServerJoinAsync(ServerJoin value,
         bool shouldSave = false)
     {
@@ -932,19 +1054,34 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
         if (shouldSave) await SaveChangesAsync();
         return result.Entity;
     }
-     
+
+    /// <summary>
+    /// Updates an existing server join record in the database asynchronously.
+    /// </summary>
+    /// <param name="value">The server join record to update.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after updating the record.</param>
     public async Task UpdateServerJoinAsync(ServerJoin value, bool shouldSave = false)
     {
         ServerJoins.Update(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Removes an existing server join record from the database asynchronously.
+    /// </summary>
+    /// <param name="value">The server join record to remove.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after removing the record.</param>
     public async Task RemoverServerJoinAsync(ServerJoin value, bool shouldSave = false)
     {
         ServerJoins.Remove(value);
         if (shouldSave) await SaveChangesAsync();
     }
-    
+
+    /// <summary>
+    /// Retrieves a list of server join records from the database asynchronously.
+    /// </summary>
+    /// <param name="predicate">An optional predicate to filter the server join records.</param>
+    /// <returns>A list of server join records.</returns>
     public async Task<List<ServerJoin>> GetServerJoinsAsync(
         Expression<Func<ServerJoin, bool>>? predicate = null)
     {
@@ -952,18 +1089,29 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
             return await ServerJoins.Where(predicate).ToListAsync();
         return await ServerJoins.ToListAsync();
     }
-    
+
+    /// <summary>
+    /// Finds a specific server join record in the database asynchronously based on a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to filter the server join record.</param>
+    /// <returns>The found server join record, or null if no record is found.</returns>
     public async Task<ServerJoin?> FindServerJoinAsync(Expression<Func<ServerJoin, bool>> predicate)
     {
         return await ServerJoins.FirstOrDefaultAsync(predicate);
     }
 
+    /// <summary>
+    /// Clears expired server join records from the database asynchronously.
+    /// </summary>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after clearing the expired records.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task ClearExpiredServerJoinsAsync(bool shouldSave = false)
     {
         var expiredJoins = await ServerJoins.Where(sj => sj.ExpiresAt <= DateTimeOffset.UtcNow).ToListAsync();
         ServerJoins.RemoveRange(expiredJoins);
         if (shouldSave) await SaveChangesAsync();
     }
+
     #endregion
     
     #region News

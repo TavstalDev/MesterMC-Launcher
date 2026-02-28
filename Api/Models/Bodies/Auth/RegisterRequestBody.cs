@@ -4,23 +4,42 @@ using Tavstal.MesterMC.Api.Models.Common;
 
 namespace Tavstal.MesterMC.Api.Models.Bodies.Auth;
 
+/// <summary>
+/// Represents the request body for registering a new user.
+/// </summary>
 public class RegisterRequestBody
 {
+    /// <summary>
+    /// Gets or sets the username of the user.
+    /// This field is required and must be between 3 and 16 characters long.
+    /// </summary>
     [Required]
     [MinLength(3)]
     [MaxLength(16)]
     public string Username { get; set; }
     
+    /// <summary>
+    /// Gets or sets the email address of the user.
+    /// This field is required and must be between 5 and 320 characters long.
+    /// </summary>
     [Required]
     [MinLength(5)]
     [MaxLength(320)]
     public string EmailAddress { get; set; }
     
+    /// <summary>
+    /// Gets or sets the password of the user.
+    /// This field is required and must be between 8 and 64 characters long.
+    /// </summary>
     [Required]
     [MinLength(8)]
     [MaxLength(64)]
     public string Password { get; set; }
     
+    /// <summary>
+    /// Gets or sets the avatar file for the user.
+    /// This field is optional and must be a PNG image with a maximum size of 500 kilobytes.
+    /// </summary>
     [FormFile(500, EFileSizeUnit.Kilobytes, ["image/png"], [".png"])]
     public IFormFile? Avatar { get; set; }
 }
