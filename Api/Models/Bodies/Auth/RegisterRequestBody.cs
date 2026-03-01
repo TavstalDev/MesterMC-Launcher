@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Common;
 
@@ -16,7 +17,7 @@ public class RegisterRequestBody
     [Required]
     [MinLength(3)]
     [MaxLength(16)]
-    public string Username { get; set; }
+    public required string Username { get; set; }
     
     /// <summary>
     /// Gets or sets the email address of the user.
@@ -25,7 +26,7 @@ public class RegisterRequestBody
     [Required]
     [MinLength(5)]
     [MaxLength(320)]
-    public string EmailAddress { get; set; }
+    public required string EmailAddress { get; set; }
     
     /// <summary>
     /// Gets or sets the password of the user.
@@ -34,7 +35,7 @@ public class RegisterRequestBody
     [Required]
     [MinLength(8)]
     [MaxLength(64)]
-    public string Password { get; set; }
+    public required string Password { get; set; }
     
     /// <summary>
     /// Gets or sets the avatar file for the user.

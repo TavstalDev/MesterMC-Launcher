@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Tavstal.MesterMC.Api.Models.Bodies.Auth;
 
 /// <summary>
@@ -9,6 +11,7 @@ public class LoginTFASessionRequestBody
     /// Gets or initializes the two-factor authentication code.
     /// This code is required to complete the login process.
     /// </summary>
+    [Required]
     public required string TwoFactorCode { get; init; }
     
     /// <summary>

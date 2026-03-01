@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Tavstal.MesterMC.Api.Models.Bodies.Auth;
 
 /// <summary>
@@ -9,11 +11,13 @@ public class LauncherLoginTFASessionRequestBody
     /// Gets or initializes the session token for the login session.
     /// This token is required to authenticate the session.
     /// </summary>
+    [Required]
     public required string SessionToken { get; init; }
     
     /// <summary>
     /// Gets or initializes the two-factor authentication code.
     /// This code is required to complete the login process.
     /// </summary>
+    [Required]
     public required string TwoFactorCode { get; init; }
 }

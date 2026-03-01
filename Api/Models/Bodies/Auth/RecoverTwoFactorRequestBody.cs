@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Tavstal.MesterMC.Api.Models.Bodies.Auth;
 
 /// <summary>
@@ -9,12 +11,14 @@ public class RecoverTwoFactorRequestBody
     /// Gets or sets the email address associated with the user's account.
     /// This field is required.
     /// </summary>
+    [Required]
     public required string Email { get; set; }
     
     /// <summary>
     /// Gets or sets the backup code used to recover the two-factor authentication session.
     /// This field is required.
     /// </summary>
+    [Required]
     public required string BackupCode { get; set; }
     
     /// <summary>

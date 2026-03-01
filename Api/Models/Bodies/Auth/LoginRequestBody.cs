@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Tavstal.MesterMC.Api.Models.Bodies.Auth;
 
 /// <summary>
@@ -9,12 +11,14 @@ public class LoginRequestBody
     /// Gets or initializes the email address of the user.
     /// This field is required.
     /// </summary>
+    [Required]
     public required string Email { get; init; }
     
     /// <summary>
     /// Gets or initializes the password of the user.
     /// This field is required.
     /// </summary>
+    [Required]
     public required string Password { get; init; }
     
     /// <summary>

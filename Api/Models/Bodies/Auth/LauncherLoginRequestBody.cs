@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Tavstal.MesterMC.Api.Models.Bodies.Auth;
 
 /// <summary>
@@ -8,11 +10,13 @@ public class LauncherLoginRequestBody
     /// <summary>
     /// Gets or initializes the username of the user.
     /// </summary>
+    [Required]
     public required string Username { get; init; }
     
     /// <summary>
     /// Gets or initializes the password of the user.
     /// </summary>
+    [Required]
     public required string Password { get; init; }
     
     /// <summary>

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Tavstal.MesterMC.Api.Models.Bodies.Auth;
 
 /// <summary>
@@ -8,9 +10,11 @@ public class ConfirmRegisterRequestBody
     /// <summary>
     /// Gets or sets the unique identifier of the user.
     /// </summary>
+    [Required]
     public required string UserId { get; set; }
     /// <summary>
     /// Gets or sets the confirmation token for verifying the registration.
     /// </summary>
+    [Required]
     public required string ConfirmationToken { get; set; } 
 }
