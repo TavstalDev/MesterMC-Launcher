@@ -26,10 +26,8 @@ public static class CustomDbInitializer
                 context.Roles.AddRange(new List<CustomRole>
                 {
                     new(1, "Default", "DEFAULT"),
-                    new(1, "Restricted", "RESTRICTED"),
-                    new(1, "UnderTermination", "UNDER_TERMINATION"),
-                    new (2, "Moderator", "MODERATOR"),
-                    new(3, "Admin", "ADMIN"),
+                    new (90, "Moderator", "MODERATOR"),
+                    new(100, "Admin", "ADMIN"),
                 });
                 await context.SaveChangesAsync();
 

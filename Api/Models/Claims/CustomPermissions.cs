@@ -1,11 +1,14 @@
-﻿namespace Tavstal.MesterMC.Api.Models.Claims;
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+namespace Tavstal.MesterMC.Api.Models.Claims;
 
+// Static class containing all custom permissions used in the application.
 public static class CustomPermissions
 {
     public static class Account
     {
         public static class View
         {
+            public const string Avatar = "mmc.permission.account.view.avatar";
             public const string Sessions = "mmc.permission.account.view.sessions";
             
             // Elevated Permissions
@@ -40,6 +43,7 @@ public static class CustomPermissions
 
     public static class Skins
     {
+        public const string View = "mmc.permission.skins.view";
         public const string Upload = "mmc.permission.skins.upload";
         public const string Delete = "mmc.permission.skins.delete";
         
