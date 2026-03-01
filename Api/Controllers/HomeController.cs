@@ -12,7 +12,7 @@ public class HomeController : CustomControllerBase
     /// Initializes a new instance of the <see cref="HomeController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
-    protected HomeController(ILogger<HomeController> logger) : base(logger) { }
+    public HomeController(ILogger<HomeController> logger) : base(logger) { }
     
     /// <summary>
     /// Handles the root endpoint ("/") and returns an HTTP 200 OK response.
@@ -22,6 +22,6 @@ public class HomeController : CustomControllerBase
     [Route("/"), ApiExplorerSettings(IgnoreApi = true)]
     public IActionResult Index()
     {
-        return ReturnResponseCode(HttpStatusCode.OK);
+        return ReturnResponseCode(HttpStatusCode.OK, "The API is running.");
     }
 }

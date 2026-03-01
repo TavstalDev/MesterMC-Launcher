@@ -47,6 +47,7 @@ public class CapesController : CustomControllerBase
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     [HttpPost]
     [EnableRateLimiting(RateLimits.UPLOAD)]
+    [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), 
      TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UploadCape([BindRequired] IFormFile file)

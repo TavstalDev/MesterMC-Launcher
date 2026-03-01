@@ -168,8 +168,9 @@ public class NewsController : CustomControllerBase
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     [HttpPost]
     [EnableRateLimiting(RateLimits.ADMIN)]
+    [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CreateNews([BindRequired, FromBody] NewsCreateRequestBody requestBody)
+    public async Task<IActionResult> CreateNews([FromForm] NewsCreateRequestBody requestBody)
     {
         var user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -239,8 +240,9 @@ public class NewsController : CustomControllerBase
     /// <response code="404">News article not found.</response>
     [HttpPut("{id}")]
     [EnableRateLimiting(RateLimits.ADMIN)]
+    [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateNews([BindRequired, FromRoute] ulong id, [BindRequired, FromBody] NewsUpdateRequestBody requestBody)
+    public async Task<IActionResult> UpdateNews([BindRequired, FromRoute] ulong id, [FromForm] NewsUpdateRequestBody requestBody)
     {
         var user = await GetCurrentUserAsync(_userManager);
         if (user == null)

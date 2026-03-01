@@ -93,9 +93,13 @@ public class RecoveryController : CustomControllerBase
             
             await _dbContext.SaveChangesAsync();
             
-            await _emailService.SendEmailAsync(user.Email, "Account Recovery",
-                $"<h1>Account Recovery</h1><p>To recover your account, please use the following link: " +
-                $"<strong>{_settings.WebsiteUrl}/reset-password?recoveryToken={recoveryToken}</strong></p><p>The link is valid for 15 minutes.</p>");
+            string recoveryLink = $"{_settings.WebsiteUrl}/reset-password?recoveryToken={recoveryToken}";
+            await _emailService.SendEmailAsync(user.Email, user.UserName, "Account Recovery", 
+                $"Click the button below or copy and paste the following link into your browser to recover your account: {recoveryLink}" +
+                "<br><br>The link is valid for 15 minutes." +
+                "<br><br>If you did not request this recovery email, you can ignore it.", 
+                recoveryLink, 
+                "Recover Account");
             
             return ReturnResponseCode(HttpStatusCode.Created, "Recovery email sent successfully.");
         }
@@ -116,9 +120,10 @@ public class RecoveryController : CustomControllerBase
     /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPost("password")]
     [EnableRateLimiting(RateLimits.AUTH_RESET)]
+    [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RecoverPasswordAsync([BindRequired, FromBody] RecoverPasswordRequestBody request)
+    public async Task<IActionResult> RecoverPasswordAsync([FromBody] RecoverPasswordRequestBody request)
     {
         try
         {
@@ -224,9 +229,10 @@ public class RecoveryController : CustomControllerBase
     /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPost("2fa")]
     [EnableRateLimiting(RateLimits.AUTH_RESET)]
+    [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RecoverTwoFactorAsync([BindRequired, FromBody] RecoverTwoFactorRequestBody request)
+    public async Task<IActionResult> RecoverTwoFactorAsync([FromBody] RecoverTwoFactorRequestBody request)
     {
         try
         {

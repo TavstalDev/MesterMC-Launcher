@@ -141,8 +141,9 @@ public class LauncherController : CustomControllerBase
     [HttpPost("version")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.ADMIN)]
+    [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CreateLauncherVersion([BindRequired, FromForm] CreateLauncherVersionRequest request)
+    public async Task<IActionResult> CreateLauncherVersion([FromBody] CreateLauncherVersionRequest request)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -180,8 +181,9 @@ public class LauncherController : CustomControllerBase
     [HttpPut("version/{id}")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.ADMIN)]
+    [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateLauncherVersion([BindRequired, FromRoute] ulong id, [BindRequired, FromForm] UpdateLauncherVersionRequest request)
+    public async Task<IActionResult> UpdateLauncherVersion([BindRequired, FromRoute] ulong id, [FromBody] UpdateLauncherVersionRequest request)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)
@@ -256,8 +258,9 @@ public class LauncherController : CustomControllerBase
     [HttpPost("version/{id}/data")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.ADMIN)]
+    [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddLauncherVersionData([BindRequired, FromRoute] ulong id, [BindRequired, FromForm] CreateLauncherVersionDataRequest request)
+    public async Task<IActionResult> AddLauncherVersionData([BindRequired, FromRoute] ulong id, [FromForm] CreateLauncherVersionDataRequest request)
     {
         CustomUser? user = await GetCurrentUserAsync(_userManager);
         if (user == null)

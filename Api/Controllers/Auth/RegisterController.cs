@@ -47,11 +47,11 @@ public class RegisterController : CustomControllerBase
         _emailService = emailService;
         _settings = settings;
     }
-    
+
     /// <summary>
-    /// Registers a new user.
+    /// Registers a new user using a multipart/form-data request.
     /// </summary>
-    /// <param name="request">The registration request body containing user details.</param>
+    /// <param name="request">The registration request body containing user details and an optional avatar file.</param>
     /// <response code="201">User registered successfully.</response>
     /// <response code="400">Bad request. Invalid input data.</response>
     /// <response code="403">Forbidden. Password is compromised.</response>
@@ -59,16 +59,14 @@ public class RegisterController : CustomControllerBase
     /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPost("")]
     [EnableRateLimiting(RateLimits.AUTH_REGISTER)]
-    [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status403Forbidden), 
+    [Consumes("multipart/form-data")]
+    [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status400BadRequest),
+     TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status409Conflict), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Register([FromBody] RegisterRequestBody request)
+    public async Task<IActionResult> RegisterForm([FromForm] RegisterRequestBody request)
     {
         try
         {
-            // Checks if the request is valid
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-            
             if (await _userManager.IsCompromisedPasswordAsync(request.Password)) 
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Password is compromised.");
             
@@ -157,7 +155,6 @@ public class RegisterController : CustomControllerBase
             return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
-
     
     /// <summary>
     /// Confirms a user's registration using a confirmation token.
@@ -170,10 +167,11 @@ public class RegisterController : CustomControllerBase
     /// <response code="500">Internal server error. Unexpected error occurred.</response>
     [HttpPatch("confirm")]
     [EnableRateLimiting(RateLimits.AUTH_REGISTER)]
+    [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ConfirmRegistration([BindRequired, FromBody] ConfirmRegisterRequestBody request)
+    public async Task<IActionResult> ConfirmRegistration([FromBody] ConfirmRegisterRequestBody request)
     {
         try
         {
@@ -200,8 +198,8 @@ public class RegisterController : CustomControllerBase
             await _dbContext.SaveChangesAsync();
 
             // Send a confirmation email to the user
-            await _emailService.SendEmailAsync(user.Email, "Account Confirmation",
-                "<h1>Your account has been confirmed</h1><p>Thank you for confirming your account. You can now log in.</p>");
+            await _emailService.SendEmailAsync(user.Email, user.UserName, "Account Confirmation",
+                "Your account has been confirmed<br/>Thank you for confirming your account. You can now log in.");
 
             return ReturnResponseCode(HttpStatusCode.OK, "User confirmed successfully");
         }
@@ -237,7 +235,10 @@ public class RegisterController : CustomControllerBase
         else
             token = claim.ClaimValue;
         
-        await _emailService.SendEmailAsync(user.Email, "Registration Confirmation",
-            $"<h1>Confirm your email</h1><p>Click <a href=\"{_settings.WebsiteUrl}/register/confirm?userId={user.Id}&token={Uri.EscapeDataString(token)}\">here</a> to confirm your email.</p>");
+        string confirmationLink = $"{_settings.WebsiteUrl}/register/confirm?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+        await _emailService.SendEmailAsync(user.Email, user.UserName, "Registration Confirmation",
+            $"Confirm your account by clicking the button below, or by copying and pasting the following link into your browser: {confirmationLink}<br/><br/>", 
+            confirmationLink, 
+            "Confirm Account");
     }
 }

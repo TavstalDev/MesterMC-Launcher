@@ -63,6 +63,9 @@ public class AvatarController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Avatar))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+        
         string cacheKey = $"avatar:{user.Id}";
         if (!_memoryCache.TryGetValue(cacheKey, out (byte[], string, string) cachedAvatar))
         {
@@ -100,6 +103,7 @@ public class AvatarController : CustomControllerBase
     /// <response code="500">An error occurred while processing the avatar upload.</response>
     [HttpPost("avatar")]
     [EnableRateLimiting(RateLimits.UPLOAD)]
+    [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK),
      TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status401Unauthorized),
@@ -214,7 +218,8 @@ public class AvatarController : CustomControllerBase
     /// <response code="500">An error occurred while processing the avatar upload.</response>
     [HttpPost("{userId}/avatar")]
     [EnableRateLimiting(RateLimits.ADMIN)]
-        [TextResponse(StatusCodes.Status200OK),
+    [Consumes("multipart/form-data")]
+    [TextResponse(StatusCodes.Status200OK),
         TextResponse(StatusCodes.Status400BadRequest),
         TextResponse(StatusCodes.Status401Unauthorized),
         TextResponse(StatusCodes.Status403Forbidden),

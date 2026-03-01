@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Services;
@@ -43,7 +44,7 @@ public class FilesController : CustomControllerBase
      TextResponse(StatusCodes.Status304NotModified),
      TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetFile([FromRoute] string hash)
+    public async Task<IActionResult> GetFile([BindRequired, FromRoute] string hash)
     {
         string cacheKey = $"file:{hash}";
         byte[]? bytes;

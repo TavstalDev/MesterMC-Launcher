@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
+using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
@@ -78,6 +79,9 @@ public class PublicUserController : CustomControllerBase
         CustomUser? user = await _userManager.FindByIdAsync(userId);
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+        
+        if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Avatar))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
         
         FileData? existingAvatar = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
         if (existingAvatar == null)

@@ -60,10 +60,11 @@ public class LoginController : CustomControllerBase
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPost("/login")]
     [EnableRateLimiting(RateLimits.AUTH_LOGIN)]
+    [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LoginAsync([BindRequired, FromBody] LoginRequestBody request)
+    public async Task<IActionResult> LoginAsync([FromBody] LoginRequestBody request)
     {
         try
         {
@@ -196,10 +197,11 @@ public class LoginController : CustomControllerBase
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPatch("/login/2fa")]
     [EnableRateLimiting(RateLimits.AUTH_LOGIN)]
+    [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LoginTwoFactorAsync([BindRequired, FromBody] LoginTFASessionRequestBody request)
+    public async Task<IActionResult> LoginTwoFactorAsync([FromBody] LoginTFASessionRequestBody request)
     {
         try
         {
@@ -315,10 +317,11 @@ public class LoginController : CustomControllerBase
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPost("/login/launcher")]
     [EnableRateLimiting(RateLimits.AUTH_LOGIN)]
+    [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LoginLauncherAsync([BindRequired, FromBody] LauncherLoginRequestBody request)
+    public async Task<IActionResult> LoginLauncherAsync([FromBody] LauncherLoginRequestBody request)
     {
         try
         {
@@ -426,10 +429,11 @@ public class LoginController : CustomControllerBase
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPatch("/login/launcher/2fa")]
     [EnableRateLimiting(RateLimits.AUTH_LOGIN)]
+    [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LoginTwoFactorAsync([BindRequired, FromBody] LauncherLoginTFASessionRequestBody request)
+    public async Task<IActionResult> LoginTwoFactorAsync([FromBody] LauncherLoginTFASessionRequestBody request)
     {
         try
         {

@@ -51,7 +51,7 @@ public abstract class CustomControllerBase : Controller
     /// </summary>
     /// <param name="status">The HTTP status code to return.</param>
     /// <returns>An IActionResult representing the HTTP response.</returns>
-    public IActionResult ReturnResponseCode(HttpStatusCode status) => StatusCode((int)status);
+    protected IActionResult ReturnResponseCode(HttpStatusCode status) => StatusCode((int)status);
 
     /// <summary>
     /// Returns an HTTP response with the specified status code, message, and value.
@@ -60,7 +60,7 @@ public abstract class CustomControllerBase : Controller
     /// <param name="message">The message to include in the response.</param>
     /// <param name="value">The value to include in the response.</param>
     /// <returns>An IActionResult representing the HTTP response.</returns>
-    public IActionResult ReturnResponseCode(HttpStatusCode status, string message, object value) => StatusCode(
+    protected IActionResult ReturnResponseCode(HttpStatusCode status, string message, object value) => StatusCode(
         (int)status, JObject.FromObject(new { Message = message, Value = value }).ToString(Formatting.None));
 
     /// <summary>
@@ -69,21 +69,21 @@ public abstract class CustomControllerBase : Controller
     /// <param name="status">The HTTP status code to return.</param>
     /// <param name="message">The message to include in the response.</param>
     /// <returns>An IActionResult representing the HTTP response.</returns>
-    public IActionResult ReturnResponseCode(HttpStatusCode status, string message) => StatusCode((int)status, message);
+    protected IActionResult ReturnResponseCode(HttpStatusCode status, string message) => StatusCode((int)status, message);
 
     /// <summary>
     /// Returns a JSON response with the specified JSON string.
     /// </summary>
     /// <param name="json">The JSON string to include in the response.</param>
     /// <returns>An IActionResult representing the JSON response.</returns>
-    public IActionResult ReturnJson(string json) => Content(json, "application/json");
+    protected IActionResult ReturnJson(string json) => Content(json, "application/json");
 
     /// <summary>
     /// Returns a JSON response with the specified object serialized to JSON.
     /// </summary>
     /// <param name="json">The object to serialize and include in the response.</param>
     /// <returns>An IActionResult representing the JSON response.</returns>
-    public IActionResult ReturnJson(object json) =>
+    protected IActionResult ReturnJson(object json) =>
         Content(JsonConvert.SerializeObject(json, Formatting.None), "application/json");
 
     /// <summary>
@@ -91,14 +91,14 @@ public abstract class CustomControllerBase : Controller
     /// </summary>
     /// <param name="json">The JObject to include in the response.</param>
     /// <returns>An IActionResult representing the JSON response.</returns>
-    public IActionResult ReturnJson(JObject json) => Content(json.ToString(Formatting.None), "application/json");
+    protected IActionResult ReturnJson(JObject json) => Content(json.ToString(Formatting.None), "application/json");
 
     /// <summary>
     /// Returns a JSON response with the specified JArray.
     /// </summary>
     /// <param name="json">The JArray to include in the response.</param>
     /// <returns>An IActionResult representing the JSON response.</returns>
-    public IActionResult ReturnJson(JArray json) => Content(json.ToString(Formatting.None), "application/json");
+    protected IActionResult ReturnJson(JArray json) => Content(json.ToString(Formatting.None), "application/json");
 
     /// <summary>
     /// Redirects to an error page with the specified status code and message.
@@ -106,7 +106,7 @@ public abstract class CustomControllerBase : Controller
     /// <param name="status">The HTTP status code to include in the redirect.</param>
     /// <param name="message">The error message to include in the redirect.</param>
     /// <returns>An IActionResult representing the redirect response.</returns>
-    public IActionResult RedirectError(HttpStatusCode status, string message) =>
+    protected IActionResult RedirectError(HttpStatusCode status, string message) =>
         Redirect($"/oops?id={(int)status}&message={message}");
     
     /// <summary>

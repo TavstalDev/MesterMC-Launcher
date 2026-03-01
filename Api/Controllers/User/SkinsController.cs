@@ -53,6 +53,9 @@ public class SkinsController : CustomControllerBase
         if (user == null)
             return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
         
+        if (!_userManager.HasPermission(user, CustomPermissions.Skins.View))
+            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+        
         FileData? skin = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
         if (skin == null)
             return ReturnResponseCode(HttpStatusCode.NotFound, "No skin found for the user");
@@ -77,6 +80,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="403">User does not have permission to upload a skin.</response>
     [HttpPut("skin")]
     [EnableRateLimiting(RateLimits.UPLOAD)]
+    [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
      TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UploadSkin([BindRequired] IFormFile file)
@@ -229,6 +233,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="404">Target user not found.</response>
     [HttpPut("{userId}/skin")]
     [EnableRateLimiting(RateLimits.ADMIN)]
+    [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UploadSkinAdmin([BindRequired, FromRoute] string userId, [BindRequired] IFormFile file)
