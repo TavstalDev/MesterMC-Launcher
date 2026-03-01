@@ -11,21 +11,51 @@ namespace Tavstal.MesterMC.Api.Services;
 /// </summary>
 public class EmailService
 {
-    private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<EmailService> _logger;
     private readonly Settings _settings;
+    private string _emailBlankDoc = string.Empty;
+    private string _emailActionDoc = string.Empty;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="EmailService"/> class.
     /// </summary>
-    /// <param name="configuration">The application configuration instance.</param>
+    /// <param name="environment">The web host environment used to access application-specific paths.</param>
     /// <param name="logger">The logger instance for logging messages.</param>
     /// <param name="settings">The settings containing email configuration details.</param>
-    public EmailService(IConfiguration configuration, ILogger<EmailService> logger, Settings settings)
+    public EmailService(IWebHostEnvironment environment, ILogger<EmailService> logger, Settings settings)
     {
-        _configuration = configuration;
+        _environment = environment;
         _logger = logger;
         _settings = settings;
+        // Async initialization
+        Task.Run(async () => await InitAsync());
+    }
+
+    private async Task InitAsync()
+    {
+        string templateDir = Path.Combine(_environment.WebRootPath, "templates");
+        if (!Directory.Exists(templateDir))
+        {
+            _logger.LogError("Email template directory not found at path: {Path}", templateDir);
+            return;
+        }
+        
+        string templatePath = Path.Combine(templateDir, "emailBlank.html");
+        if (!File.Exists(templatePath))
+        {
+            _logger.LogError("Email document not found at path: {Path}", templatePath);
+            return;
+        }
+        _emailBlankDoc = await File.ReadAllTextAsync(templatePath);
+        
+        templatePath = Path.Combine(templateDir, "emailAction.html");
+        if (!File.Exists(templatePath))
+        {
+            _logger.LogError("Email document not found at path: {Path}", templatePath);
+            return;
+        }
+        _emailActionDoc = await File.ReadAllTextAsync(templatePath);
     }
     
     /// <summary>
@@ -56,5 +86,24 @@ public class EmailService
 
         await smtp.SendAsync(email);
         await smtp.DisconnectAsync(true);
+    }
+
+    public async Task SendEmailAsync(string to, string username, string subject, string body)
+    {
+        string finalBody = _emailBlankDoc.Replace("{{TITLE}}", subject)
+            .Replace("{{MESSAGE_BODY}}", body)
+            .Replace("{{USERNAME}}", username);
+        await SendEmailAsync(to, subject, finalBody);
+    }
+    
+    public async Task SendEmailAsync(string to, string username, string subject, string body, string actionUrl,
+        string buttonText)
+    {
+        string finalBody = _emailActionDoc.Replace("{{TITLE}}", subject)
+            .Replace("{{MESSAGE_BODY}}", body)
+            .Replace("{{USERNAME}}", username)
+            .Replace("{{ACTION_URL}}", actionUrl)
+            .Replace("{{BUTTON_TEXT}}", buttonText);
+        await SendEmailAsync(to, subject, finalBody);
     }
 }
