@@ -261,12 +261,13 @@ public partial class LauncherViewModel : ObservableObject
     private async Task PlayAsync(string accessToken, string playerName, string? uuid = null)
     {
         MinecraftInstance? instance = App.createMinecraftInstance(null);
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (instance == null) 
             return;
         
         LoginStatus = ELoginStatus.SUCCESS;
         var config = await LauncherHelper.GetLauncherSettingsAsync();
-        config.Users.TryAdd(playerName, accessToken); // TODO
+        config.Users.TryAdd(playerName, "reserved"); // Maybe it will be used in the future.
         config.LastUser = config.Users.Keys.ToList().IndexOf(playerName);
         await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CommonJsonContext.Default.CoreConfig);
         
