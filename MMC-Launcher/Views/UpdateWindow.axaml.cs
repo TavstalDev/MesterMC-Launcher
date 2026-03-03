@@ -14,6 +14,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Newtonsoft.Json;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Common.Models;
@@ -220,16 +221,15 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             }
             
             // 8. Update cache refresh date & fetch news
-            if (DateTime.UtcNow > settings.CacheRefreshDate)
+            string newsPath = Path.Combine(settings.Launcher.CacheDirectoryPath, "news.json");
+            if (DateTime.UtcNow > settings.CacheRefreshDate || !File.Exists(newsPath))
             {
-                /*SetStatus("Hírek lekérése...");
+                SetStatus("Hírek lekérése...");
                 await Task.Delay(_stepDelay);
                 var newsItems = await NewsHelper.FetchNewsAsync();
+                _logger.Warn("Fetched news items: " + (newsItems == null ? "null" : JsonConvert.SerializeObject(newsItems, Formatting.Indented)));
                 if (newsItems is { Count: > 0 })
-                {
-                    string newsPath = Path.Combine(settings.Launcher.CacheDirectoryPath, "news.json");
                     await JsonHelper.WriteJsonFileAsync(newsPath, newsItems, CommonJsonContext.Default.ListNewsData);
-                }*/
                 
                 settings.CacheRefreshDate = DateTime.UtcNow.AddDays(1);
                 await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);

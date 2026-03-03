@@ -10,6 +10,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Helpers;
@@ -79,7 +80,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             }).DisposeWith(disposables);
         });
         
-        _ = InitializeAsync();
+        Dispatcher.UIThread.InvokeAsync(async () => await InitializeAsync());
     }
     
     private async Task InitializeAsync()
@@ -110,12 +111,17 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             bool oldNewsRemoved = false;
             foreach (var item in items)
             {
-                Bitmap image;
+                Bitmap? image;
 
                 try
                 {
-                    image = await ImageHelper.LoadFromWeb(new Uri(item.BannerUrl))
-                            ?? ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/posts/post_image_01.jpg"));
+                    _logger.Warn("Loading news image from URL: " + item.BannerUrl);
+                    image = await ImageHelper.LoadFromWeb(new Uri(item.BannerUrl), _logger);
+                    if (image == null)
+                    {
+                        _logger.Error("Failed to load news image from URL, using fallback image.");
+                        ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/posts/post_image_01.jpg"));
+                    }
                 }
                 catch (Exception ex)
                 {
