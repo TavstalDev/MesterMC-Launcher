@@ -115,7 +115,7 @@ public class Settings
         CertPassword = configuration["YGGDRASIL_CERT_PASSWORD"] ?? string.Empty;
         if (CertPassword == " ")
             CertPassword = string.Empty; // Treat a password of " " as an empty password
-        Cert = File.ReadAllBytes(Path.Combine(Program.ContentRoot, "Certs/yggdrasil.pfx"));
+        Cert = File.ReadAllBytes(Path.Combine(Program.ContentRoot, "localhost.pfx"));
         ServerName = configuration["Yggdrasil:ServerName"] ?? throw new ArgumentNullException("ServerName");
         ImplementationName = configuration["Yggdrasil:ImplementationName"] ?? throw new ArgumentNullException("ImplementationName");
         ImplementationVersion = configuration["Yggdrasil:ImplementationVersion"] ?? throw new ArgumentNullException("ImplementationVersion");
