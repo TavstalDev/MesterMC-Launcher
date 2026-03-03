@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
+using Newtonsoft.Json;
 
 namespace Tavstal.MesterMC.Api.Models.Database.User;
 
@@ -67,4 +68,12 @@ public class CustomRole : IdentityRole<string>
         Name = name;
         NormalizedName = normalizedName;
     }
+    
+    /// <summary>
+    /// Collection navigation for the user-role join table.
+    /// Marked with InverseProperty so EF pairs this with CustomUserRole.Role and avoids creating a shadow FK.
+    /// </summary>
+    [InverseProperty(nameof(CustomUserRole.Role))]
+    [JsonIgnore]
+    public virtual ICollection<CustomUserRole> UserRoles { get; set; } = new List<CustomUserRole>();
 }

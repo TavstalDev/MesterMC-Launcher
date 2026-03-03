@@ -112,12 +112,23 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
             .Property(x => x.Value)
             .HasDefaultValueSql("UUID()")
             .ValueGeneratedOnAdd();
+        
+        builder.Entity<CustomUserRole>(entity =>
+        {
+            entity.HasKey(ur => new { ur.UserId, ur.RoleId });
 
-        builder.Entity<CustomUserRole>()
-            .HasOne(c => c.User) // Navigation property in IdentityUserClaim
-            .WithMany(u => u.UserRoles) // Navigation property in CustomUser
-            .HasForeignKey(c => c.UserId) // Foreign key
-            .IsRequired(); // Ensure the relationship is requir
+            entity.HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .IsRequired();
+
+            entity.HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .IsRequired();
+
+            entity.ToTable("AspNetUserRoles");
+        });
 
         // Ensure that the foreign key is correctly mapped
         builder.Entity<CustomUserLogin>(entity =>
