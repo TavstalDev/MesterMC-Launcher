@@ -124,15 +124,21 @@ public class FileData
         string filePath = Path.Combine(dirPath, GetContainingDirectoryName(), FileName);
         File.Delete(filePath);
     }
-
+    
     /// <summary>
-    /// Generates a URL for accessing the file based on the provided base URL.
+    /// Generates a URL for accessing the file based on its hash and the specified base URL.
     /// </summary>
-    /// <param name="baseUrl">The base URL to use for generating the file URL.</param>
-    /// <returns>The generated file URL.</returns>
-    public string GetUrl(string baseUrl)
+    /// <param name="baseUrl">The base URL to use for constructing the file URL.</param>
+    /// <param name="isYggdrasil">
+    /// A boolean indicating whether the URL should follow the Yggdrasil format.
+    /// If true, the URL will point to the Yggdrasil textures endpoint; otherwise, it will point to the files endpoint.
+    /// </param>
+    /// <returns>
+    /// A string representing the constructed URL for the file.
+    /// </returns>
+    public string GetUrl(string baseUrl, bool isYggdrasil = false)
     {
-        return $"{baseUrl}/yggdrasil/textures/{Hash}";
+        return isYggdrasil ? $"{baseUrl}/yggdrasil/textures/{Hash}" : $"{baseUrl}/files/{Hash}";
     }
     
     /// <summary>
