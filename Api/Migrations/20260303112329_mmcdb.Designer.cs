@@ -12,8 +12,8 @@ using Tavstal.MesterMC.Api.Services.Database;
 namespace Tavstal.MesterMC.Api.Migrations
 {
     [DbContext(typeof(CustomDbContext))]
-    [Migration("20260228222640_mmcdb1")]
-    partial class mmcdb1
+    [Migration("20260303112329_mmcdb")]
+    partial class mmcdb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -479,14 +479,9 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
 
-                    b.Property<string>("RoleId1")
-                        .HasColumnType("varchar(36)");
-
                     b.HasKey("UserId", "RoleId");
 
                     b.HasIndex("RoleId");
-
-                    b.HasIndex("RoleId1");
 
                     b.ToTable("AspNetUserRoles", (string)null);
                 });
@@ -738,15 +733,11 @@ namespace Tavstal.MesterMC.Api.Migrations
 
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.CustomUserRole", b =>
                 {
-                    b.HasOne("Tavstal.MesterMC.Api.Models.Database.User.CustomRole", null)
-                        .WithMany()
+                    b.HasOne("Tavstal.MesterMC.Api.Models.Database.User.CustomRole", "Role")
+                        .WithMany("UserRoles")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Tavstal.MesterMC.Api.Models.Database.User.CustomRole", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId1");
 
                     b.HasOne("Tavstal.MesterMC.Api.Models.Database.User.CustomUser", "User")
                         .WithMany("UserRoles")
@@ -809,6 +800,11 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.CustomRole", b =>
+                {
+                    b.Navigation("UserRoles");
                 });
 
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.CustomUser", b =>
