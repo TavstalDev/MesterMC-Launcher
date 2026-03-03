@@ -160,16 +160,19 @@ public static class ValidationHelper
             var root = new NbtCompoundTag();
             var serversList = new NbtListTag(NbtTagType.Compound);
 
-            // Define a default server entry
-            var serverTag = new NbtCompoundTag
+            // Add the server entry to the servers list
+            serversList.Add(new NbtCompoundTag
             {
                 { "name", new NbtStringTag("MesterMC Hub") }, // Server name
                 { "ip", new NbtStringTag("play.mestermc.hu") }, // Server IP address
                 { "acceptTextures", new NbtIntTag(1) }, // Accept textures flag
-            };
-
-            // Add the server entry to the servers list
-            serversList.Add(serverTag);
+            });
+            serversList.Add(new NbtCompoundTag
+            {
+                { "name", new NbtStringTag("Test Server") }, // Server name
+                { "ip", new NbtStringTag("localhost") }, // Server IP address
+                { "acceptTextures", new NbtIntTag(1) }, // Accept textures flag
+            });
             root.Add("servers", serversList);
 
             // Write the NBT data to the `servers.dat` file
