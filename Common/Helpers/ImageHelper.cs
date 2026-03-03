@@ -1,5 +1,6 @@
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Tavstal.KonkordLauncher.Core.Models;
 
 namespace Tavstal.KonkordLauncher.Common.Helpers;
 
@@ -41,10 +42,21 @@ public static class ImageHelper
     /// Loads an image from a web URL.
     /// </summary>
     /// <param name="url">The URL of the image to load.</param>
+    /// <param name="logger">Optional custom logger</param>
     /// <returns>A <see cref="Bitmap"/> object if the image is successfully downloaded and loaded; otherwise, null.</returns>
-    public static async Task<Bitmap?> LoadFromWeb(Uri url)
+    public static async Task<Bitmap?> LoadFromWeb(Uri url, CoreLogger? logger = null)
     {
+#if  DEBUG
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+
+        using var httpClient = new HttpClient(handler);
+#else
         using var httpClient = new HttpClient();
+#endif
         try
         {
             var response = await httpClient.GetAsync(url);
@@ -54,7 +66,10 @@ public static class ImageHelper
         }
         catch (HttpRequestException ex)
         {
-            Console.WriteLine($"An error occurred while downloading image '{url}' : {ex.Message}");
+            if (logger != null)
+                logger.Error($"An error occurred while downloading image '{url}' : {ex.Message}");
+            else
+                Console.WriteLine($"An error occurred while downloading image '{url}' : {ex.Message}");
             return null;
         }
     }
