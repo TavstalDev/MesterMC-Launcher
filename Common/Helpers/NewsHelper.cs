@@ -34,7 +34,7 @@ public static class NewsHelper
         try
         {
             // Construct the endpoint URL for fetching news
-            var endpoint = new Uri(new (MesterMcEndpoints.ApiBaseEndpoint), "news").ToString();
+            var endpoint = new Uri(new (MesterMcEndpoints.ApiBaseEndpoint), "news/latest").ToString();
 
             // Fetch the raw JSON response from the server
             string? rawJson = await HttpHelper.GetStringAsync(endpoint);
