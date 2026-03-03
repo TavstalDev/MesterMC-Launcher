@@ -2,7 +2,6 @@ using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
 using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;

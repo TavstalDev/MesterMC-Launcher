@@ -62,10 +62,10 @@ public static class ModService
         new("yet_another_config_lib_v3-3.7.1+1.21.6-fabric.jar", "7d71fbee0e2ca0f38a475309d23c9d084cd68edd4be6544eecdb5aec1f36d1ed", "https://cdn.modrinth.com/data/1eAoo2KR/versions/WxYlHLu6/yet_another_config_lib_v3-3.7.1%2B1.21.6-fabric.jar"),
         new("yosbr-0.1.2.jar", "db4c744fd71f5617639cb0fdff72378b08d2852004f4045c62090de1bf53afcb", "https://cdn.modrinth.com/data/WwbubTsV/versions/KMOzdYko/yosbr-0.1.2.jar"),
         new("Zoomify-2.14.6+1.21.6.jar", "f730fc2f5e2b0a5f285f9ed01a307f2c5cecb13e5527fcb6971b4b398c85549a", "https://cdn.modrinth.com/data/w7ThoJFB/versions/qMqviL3t/Zoomify-2.14.6%2B1.21.6.jar"),
-        new("CustomSkinLoader_Fabric-14.27.jar", "393dc6b04042b7ff56a163bac319ceb573edcf77f74272f1c93799da03368f1d", "https://cdn.modrinth.com/data/idMHQ4n2/versions/Fsrt5ueW/CustomSkinLoader_Fabric-14.27.jar"),
+        // TODO: Replace the download url with the actual release
+        new("CustomSkinLoader_Fabric-14.27-SNAPSHOT-00.jar", "0b0a27fadb96dc537b249cb6db17472f809a577f95021e1c394a3fa907e56bc8", "https://cdn.modrinth.com/data/idMHQ4n2/versions/Fsrt5ueW/CustomSkinLoader_Fabric-14.27.jar"),
         new("splashscreen-1.1.1.jar", "4db8d45dfd719bc2ac8f9d997b6f5245fa7fbdec744491ffa8218b5e16a3e06f", "https://cdn.modrinth.com/data/cxe0fRnA/versions/gWPlubql/splashscreen-1.1.1.jar"),
         
-
         
         // Disabled mods
         new("litematica-fabric-1.21.8-0.23.5.jar", "1f04fa397b9d544286d95c5582e96a7dd9ae5a5ea3755d8e69fa34a748c406e0", "https://cdn.modrinth.com/data/bEpr0Arc/versions/XWl870Bx/litematica-fabric-1.21.8-0.23.5.jar", true),

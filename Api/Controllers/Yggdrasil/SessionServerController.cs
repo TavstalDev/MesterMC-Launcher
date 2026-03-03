@@ -226,7 +226,7 @@ public class SessionServerController : CustomControllerBase
             {
                 textures.Add("SKIN", new Dictionary<string, object>
                 {
-                    { "url", skin.GetUrl(_settings.ApiUrl) },
+                    { "url", skin.GetUrl(_settings.ApiUrl, true) },
                     {
                         "metadata", new Dictionary<string, object>
                         {
@@ -249,7 +249,7 @@ public class SessionServerController : CustomControllerBase
                     {
                         textures.Add("CAPE", new Dictionary<string, object>
                         {
-                            { "url", capeData.GetUrl(_settings.ApiUrl) },
+                            { "url", capeData.GetUrl(_settings.ApiUrl, true) },
                         });
                     }
                 }

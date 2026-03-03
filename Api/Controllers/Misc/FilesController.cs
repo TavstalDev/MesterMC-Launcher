@@ -51,7 +51,7 @@ public class FilesController : CustomControllerBase
         string contentType;
         if (!_memoryCache.TryGetValue<(byte[], string)>(cacheKey, out var fd))
         {
-            var fileData = await _dbContext.FindFileDataAsync(x => x.Hash == hash && IsPublicFileType(x.Type));
+            var fileData = await _dbContext.FindFileDataAsync(x => x.Hash == hash && (x.Type == EFileDataType.CAPE || x.Type == EFileDataType.SKIN || x.Type == EFileDataType.PROFILE_PICTURE || x.Type == EFileDataType.NEWS_BANNER));
             if (fileData == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "File not found.");
             bytes = fileData.GetFileData();
@@ -80,24 +80,5 @@ public class FilesController : CustomControllerBase
         HttpContext.Response.Headers.ETag = etag;
         HttpContext.Response.Headers.CacheControl = "public,max-age=86400,immutable";
         return File(bytes, contentType);
-    }
-    
-    /// <summary>
-    /// Determines if the file type is public.
-    /// </summary>
-    /// <param name="type">The file type to check.</param>
-    /// <returns>True if the file type is public; otherwise, false.</returns>
-    private bool IsPublicFileType(EFileDataType type)
-    {
-        switch (type)
-        {
-            case EFileDataType.SKIN:
-            case EFileDataType.CAPE:
-            case EFileDataType.PROFILE_PICTURE:
-            case EFileDataType.NEWS_BANNER:
-                return true;
-            default:
-                return false;
-        }
     }
 }

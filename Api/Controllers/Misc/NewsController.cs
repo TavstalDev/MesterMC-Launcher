@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
@@ -36,7 +37,7 @@ public class NewsController : CustomControllerBase
     /// <param name="dbContext">Database context for accessing news data.</param>
     /// <param name="settings">Application settings.</param>
     /// <param name="cacheService">Service for caching news data.</param>
-    protected NewsController(ILogger<NewsController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings, MemoryCacheService cacheService) : base(logger)
+    public NewsController(ILogger<NewsController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings, MemoryCacheService cacheService) : base(logger)
     {
         _userManager = userManager;
         _dbContext = dbContext;
@@ -88,7 +89,7 @@ public class NewsController : CustomControllerBase
     /// <response code="200">Returns the latest news articles.</response>
     [HttpGet("latest")]
     [JsonResponse(typeof(List<NewsResponseBody>))]
-    public async Task<IActionResult> GetLatestNews()
+    public async Task<IActionResult> GetLatestNews([FromQuery] int count = 5)
     {
         if (_cacheService.TryGetValue("news:latest", out List<NewsResponseBody>? cachedNews) && cachedNews != null)
         {
@@ -97,7 +98,7 @@ public class NewsController : CustomControllerBase
             return ReturnJson(cachedNews);
         }
         
-        List<News> news = await _dbContext.GetLatestNewsAsync(5);
+        List<News> news = await _dbContext.GetLatestNewsAsync(count);
         List<NewsResponseBody> newsResponse = [];
         foreach (News n in news)
         {
@@ -167,6 +168,7 @@ public class NewsController : CustomControllerBase
     /// <response code="401">Unauthorized. User is not authenticated.</response>
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     [HttpPost]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
@@ -239,6 +241,7 @@ public class NewsController : CustomControllerBase
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     /// <response code="404">News article not found.</response>
     [HttpPut("{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
@@ -323,6 +326,7 @@ public class NewsController : CustomControllerBase
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     /// <response code="404">News article not found.</response>
     [HttpDelete("{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteNews([BindRequired, FromRoute] ulong id)

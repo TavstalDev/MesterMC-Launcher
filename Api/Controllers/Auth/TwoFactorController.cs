@@ -1,7 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.RateLimiting;
 using OtpNet;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
