@@ -5,11 +5,11 @@ namespace Tavstal.KonkordLauncher.Common.Models;
 
 public class NewsData
 {
-    [JsonPropertyName("title"), JsonProperty("title")]
+    [JsonPropertyName("Title"), JsonProperty("Title")]
     public string Title { get; set; }
-    [JsonPropertyName("content"), JsonProperty("content")]
+    [JsonPropertyName("Content"), JsonProperty("Content")]
     public string Content { get; set; }
-    [JsonPropertyName("banner"), JsonProperty("banner")]
+    [JsonPropertyName("BannerUrl"), JsonProperty("BannerUrl")]
     public string BannerUrl { get; set; }
     
     public NewsData(string title, string content, string bannerUrl)
