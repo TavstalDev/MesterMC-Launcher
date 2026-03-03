@@ -575,7 +575,7 @@ public class CustomUserManager(
         if (lowerAuthString.StartsWith("basic"))
         {
             string value = authenticationString.Remove(0, 6);
-            if (value.EndsWith("=="))
+            if (value.EndsWith("="))
                 value = Encoding.UTF8.GetString(Convert.FromBase64String(value));
             
             var raw = value.Split(value.Contains(':') ? ":" : ".");
