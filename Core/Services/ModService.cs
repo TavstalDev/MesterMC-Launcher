@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 
@@ -63,7 +65,7 @@ public static class ModService
         new("yosbr-0.1.2.jar", "db4c744fd71f5617639cb0fdff72378b08d2852004f4045c62090de1bf53afcb", "https://cdn.modrinth.com/data/WwbubTsV/versions/KMOzdYko/yosbr-0.1.2.jar"),
         new("Zoomify-2.14.6+1.21.6.jar", "f730fc2f5e2b0a5f285f9ed01a307f2c5cecb13e5527fcb6971b4b398c85549a", "https://cdn.modrinth.com/data/w7ThoJFB/versions/qMqviL3t/Zoomify-2.14.6%2B1.21.6.jar"),
         // TODO: Replace the download url with the actual release
-        new("CustomSkinLoader_Fabric-14.27-SNAPSHOT-00.jar", "0b0a27fadb96dc537b249cb6db17472f809a577f95021e1c394a3fa907e56bc8", "https://cdn.modrinth.com/data/idMHQ4n2/versions/Fsrt5ueW/CustomSkinLoader_Fabric-14.27.jar"),
+        new("CustomSkinLoader_Fabric-14.27-SNAPSHOT-01.jar", "f6761073b3332fd2e12b5fd3f6d6db6974d03af08ae83fc59e00684fb237f1db", "https://github.com/TavstalDev/MCCustomSkinLoader/releases/download/14.27-SNAPSHOT-01/CustomSkinLoader_Fabric-14.27-SNAPSHOT-01.jar"),
         new("splashscreen-1.1.1.jar", "4db8d45dfd719bc2ac8f9d997b6f5245fa7fbdec744491ffa8218b5e16a3e06f", "https://cdn.modrinth.com/data/cxe0fRnA/versions/gWPlubql/splashscreen-1.1.1.jar"),
         
         
@@ -162,5 +164,86 @@ public static class ModService
         }
         
         await Task.WhenAll(tasks);
+    }
+
+    /// <summary>
+    /// Verifies and ensures the configuration file for the CustomSkinLoader exists and is valid.
+    /// If the configuration file is missing or contains invalid critical values, it is created or updated with default values.
+    /// </summary>
+    /// <param name="gameDirectory">The root directory of the game where the CustomSkinLoader configuration will be located.</param>
+    public static async Task VerifyCustomSkinLoaderConfigAsync(string gameDirectory)
+    {
+        if (!Directory.Exists(gameDirectory))
+            Directory.CreateDirectory(gameDirectory);
+        
+        string configDir = Path.Combine(gameDirectory, "CustomSkinLoader");
+        if (!Directory.Exists(configDir))
+            Directory.CreateDirectory(configDir);
+        
+        var defaultConfig = new
+        {
+            version = "14.27",
+            buildNumber = "00",
+            loadList = new object[] {
+                new {
+                    name = "GameProfile",
+                    type = "GameProfile"
+                },
+                new {
+                    name = "Mojang",
+                    type = "MojangAPI",
+                    apiRoot = "https://api.mojang.com",
+                    sessionRoot = "https://sessionserver.mojang.com"
+                }
+            },
+            enableDynamicSkull = true,
+            enableTransparentSkin = false,
+            forceLoadAllTextures = true,
+            enableCape = true,
+            threadPoolSize = 8,
+            enableLogStdOut = false,
+            cacheExpiry = 30,
+            forceUpdateSkull = false,
+            enableLocalProfileCache = false,
+            enableCacheAutoClean = false,
+            forceDisableCache = false
+        };
+        
+        string configFile = Path.Combine(configDir, "CustomSkinLoader.json");
+        if (!File.Exists(configFile))
+        {
+            _logger.Info("CustomSkinLoader config not found, creating default config.");
+            string json = JsonConvert.SerializeObject(defaultConfig, Formatting.Indented);
+            await File.WriteAllTextAsync(configFile, json);
+            return;
+        }
+        string existingJson = await File.ReadAllTextAsync(configFile);
+        JObject config = JObject.Parse(existingJson);
+        
+        // Verify important config values 
+        // Following values are critical:
+        // loadList: Must match
+        // enableTransparentSkin: Must be false
+        
+        bool modified = false;
+        if (config["loadList"] == null || !JToken.DeepEquals(config["loadList"], JToken.FromObject(defaultConfig.loadList)))
+        {
+            _logger.Info("CustomSkinLoader config loadList is invalid, resetting to default.");
+            config["loadList"] = JToken.FromObject(defaultConfig.loadList);
+            modified = true;
+        }
+        
+        if (config["enableTransparentSkin"] == null || config["enableTransparentSkin"]!.Value<bool>() != defaultConfig.enableTransparentSkin)
+        {
+            _logger.Info("CustomSkinLoader config enableTransparentSkin is invalid, resetting to default.");
+            config["enableTransparentSkin"] = defaultConfig.enableTransparentSkin;
+            modified = true;
+        }
+        
+        if (modified)
+        {
+            string json = config.ToString(Formatting.Indented);
+            await File.WriteAllTextAsync(configFile, json);
+        }
     }
 }

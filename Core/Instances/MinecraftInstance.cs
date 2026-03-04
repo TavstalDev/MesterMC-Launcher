@@ -198,6 +198,7 @@ public class MinecraftInstance
             _logger.Debug("Verifying mods...");
             startTime = DateTime.Now;
             ModService.VerifyMods(Path.Combine(versionDetails.GameDir, "mods"));
+            await ModService.VerifyCustomSkinLoaderConfigAsync(versionDetails.GameDir);
             endTime = DateTime.Now;
             _logger.Info($"Mods verified in {(endTime - startTime).TotalMilliseconds}ms.");
             
