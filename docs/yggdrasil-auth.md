@@ -2,6 +2,13 @@
 
 This document provides instructions on how to set up and use a custom Yggdrasil authentication server for Minecraft. This allows you to authenticate users using your own server instead of the official Mojang servers.
 
+## Table of Contents
+- [Server](#server)
+- [Client](#client)
+- [HTTPS Development certificate](#https-development-certificate)
+  - [Generating certificate](#generating-certificate)
+  - [Using pregenerated certificate](#using-pregenerated-certificate)
+
 ## Server
 
 1. Authlib-Injector is required to run the server. You can download it from [here](https://github.com/yushijinhun/authlib-injector).
