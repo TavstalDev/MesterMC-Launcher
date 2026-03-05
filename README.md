@@ -25,22 +25,11 @@ My personal opinion is the best way to prevent cheating and unauthorized access 
 ![Settings](docs/images/launcher2.png)
 ![Starting](docs/images/launcher3.png)
 ![Failed login example](docs/images/launcher4.png)
-![img5](docs/images/launcher5.png)
-![img6](docs/images/launcher6.png)
+![TFA example](docs/images/launcher5.png)
 
 ## Installation
 
-### Windows
-
-TODO
-
-### Linux
-
-TODO
-
-### MacOS
-
-TODO
+Please check the [installation guide](./docs/installation.md) for detailed instructions on how to install and set up the MesterMC Launcher on your system.
 
 ## License
 
