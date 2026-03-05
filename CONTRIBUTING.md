@@ -49,3 +49,5 @@ Example template:
 - This project is written in C\#. Follow standard C\# conventions (naming, file structure).
 - Prefer .NET idioms and use `async`/`await` for asynchronous code.
 - Keep methods small and focused. Add XML doc comments for public APIs.
+
+[Getting Started](./docs/getting-started.md)
