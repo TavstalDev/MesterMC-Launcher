@@ -2,6 +2,14 @@
 
 This document shows common Entity Framework Core commands and tips for the ASP\.NET Core `Api` project. 
 
+## Table of Contents
+- [Prerequisites](#prerequisites)
+- [Common Commands](#common-commands)
+  - [Add a Migration](#add-a-migration)
+  - [Update the Database](#update-the-database)
+  - [List Migrations](#list-migrations)
+  - [Remove Last Migration](#remove-last-migration)
+
 ## Prerequisites
 1. Have a local MySQL or MariaDb Server running and accessible.
 2. Install .NET 9.0 SDK.
@@ -13,6 +21,7 @@ dotnet tool install --global dotnet-ef
 dotnet tool restore
 ```
 5. Create a database named `mmc` in your local SQL Server instance (or update the connection string in `appsettings.json` and `appsettings.Development.json` accordingly).
+6. It is recommended to run the update command to fill the database with the initial schema before running the API for the first time.
 
 ## Common Commands
 
