@@ -2,13 +2,15 @@
 
 To install the MesterMC Launcher, follow the instructions below based on your operating system.
 
-### Windows
+## Steps
 
-### Linux
+1. Download the latest release of the MesterMC Launcher from the [releases page](https://github.com/TavstalDev/MesterMC-Launcher/releases)
+   - For Windows, download the `MMC-Launcher-<version>-Win.exe` file.
+   - For Linux, download the `MMC-Launcher-<version>-Linux` file.
+   - For MacOS, there is currently no pre-built version available. Please follow the build instructions to build the launcher from source.
+2. Run the downloaded installer or executable file and follow the on-screen instructions to complete the installation process.
+3. Once the installation is complete, you can launch the MesterMC Launcher from your applications menu or desktop shortcut.
 
+## Installation Imagges
 
-
-### MacOS
-
-Currently, the MesterMC Launcher has not been tested on MacOS, and it is not guaranteed to work. 
-If you want to try running the launcher on MacOS please follow the [build instructions](./build-and-run.md) to build the launcher from source.
+TOOO
