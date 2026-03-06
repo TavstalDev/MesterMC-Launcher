@@ -60,12 +60,12 @@ public static class HttpHelper
             };
             client = new HttpClient(handler);
             #else
-            client = new HttpClient(handler);
+            client = new HttpClient();
             #endif
         }
 
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("KonkordLauncher/2.0.0 (+https://tavstaldev.github.io)");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd($"MesterMC-Launcher/v1 (+https://mestermc.hu)");
         client.Timeout = TimeSpan.FromSeconds(20);
         return client;
     }
