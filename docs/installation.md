@@ -13,4 +13,9 @@ To install the MesterMC Launcher, follow the instructions below based on your op
 
 ## Installation Imagges
 
-TOOO
+![Welcome Screen](./images/installer0.png)
+![License](./images/installer1.png)
+![Installation Location](./images/installer2.png)
+![Shortcuts](./images/installer3.png)
+![Review](./images/installer4.png)
+![Completion](./images/installer5.png)
