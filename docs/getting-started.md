@@ -47,3 +47,68 @@ YGGDRASIL_CERT_PASSWORD=changeit
 ```
 4. Adjust the `appsettings.json` and the `appsettings.Development.json` files in the `Api` project to match your database configuration and other settings.
 5. Continue with the [Database setup](./database.md) guide to set up the database and run migrations.
+
+### Appsettings.json example:
+```json
+{
+  "Kestrel": {
+    "Endpoints": {
+      "Https": {
+        "Url": "https://localhost:36767",
+        "Certificate": {
+          "Path": "localhost.pfx",
+          "Password": "changeit"
+        }
+      }
+    }
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "Jwt": {
+    "Issuer": "https://api.mestermc.com",
+    "Audience": "https://api.mestermc.com",
+    "EncryptionKey": "$JWT_ENCRYPT"
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "server=127.0.0.1;port=3306;database=mmc;uid=$DB_USER;pwd=$DB_PASSWORD;"
+  },
+  "CORS": {
+    "Default": {
+      "AllowAnyOrigin": true,
+      "AllowAnyHeader": true,
+      "AllowAnyMethod": true,
+      "Sites": [
+        "https://api.mestermc.com",
+        "https://mestermc.com"
+      ]
+    }
+  },
+  "Email": {
+    "Provider": "",
+    "Port": 587
+  },
+  "Discord": {
+    "GuildId": "000000000000000000",
+    "RedirectUri": "https://mestermc.com/oauth/callback?provider=discord"
+  },
+  "Servers": {
+    "API": "https://api.mestermc.com",
+    "Website": "https://mestermc.com"
+  },
+  "UploadDir": "wwwroot/uploads",
+  "Yggdrasil": {
+    "SkinDomains": [
+      ".mestermc.com"
+    ],
+    "PublicKey": "$YGGDRASIL_PUBLIC_KEY",
+    "ServerName": "MesterMC",
+    "ImplementationName": "yggdrasil-mock-server",
+    "ImplementationVersion": "1.0.0"
+  }
+}
+```
