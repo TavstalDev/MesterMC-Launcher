@@ -2,6 +2,8 @@
 
 This document provides instructions on how to set up and use a custom Yggdrasil authentication server for Minecraft. This allows you to authenticate users using your own server instead of the official Mojang servers.
 
+> Please note that the yggdrasil authentication was implemented after I parted from the MesterMC network, so I had no intension to make it a complicated and hardly reproducible process.
+
 ## Table of Contents
 - [Server](#server)
 - [Client](#client)
