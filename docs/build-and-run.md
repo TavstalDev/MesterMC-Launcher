@@ -37,7 +37,7 @@ dotnet build ./MMC-Launcher.sln -c Debug
 ## Running
 1. Run the `Api` (`Api: Development`) project first. The default endpoint is `https://localhost:36767/docs`
 ```bash
-dotnet run --project ./MMC-Api/MMC-Api.csproj
+dotnet run --project ./Api/Api.csproj
 ```
 2. Start your Minecraft server with authlib-injector as described.
 3. Run the generated `MMC-Launcher` executable from disk. You can find it in `./MMC-Launcher/bin/Debug/net9.0/<RID>/publish/` after building. 
