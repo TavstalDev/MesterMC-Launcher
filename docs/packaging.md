@@ -65,7 +65,7 @@ You can create a local development code-signing certificate, export it to a .pfx
 A. Create a self-signed code-signing certificate and export to PFX:
 > Run in an elevated PowerShell or pwsh session if required
 ### 1) Create a code signing cert in CurrentUser store
-```pwershell
+```powershell
 $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=MMC-Dev" -CertStoreLocation "Cert:\CurrentUser\My" -NotAfter (Get-Date).AddYears(5)
 ```
 
