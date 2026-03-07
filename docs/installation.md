@@ -8,10 +8,14 @@ To install the MesterMC Launcher, follow the instructions below based on your op
    - For Windows, download the `MMC-Launcher-<version>-Win.exe` file.
    - For Linux, download the `MMC-Launcher-<version>-Linux` file.
    - For MacOS, there is currently no pre-built version available. Please follow the build instructions to build the launcher from source.
-2. Run the downloaded installer or executable file and follow the on-screen instructions to complete the installation process.
-3. Once the installation is complete, you can launch the MesterMC Launcher from your applications menu or desktop shortcut.
+2. Make the downloaded file executable if necessary (Linux and MacOS):
+   - Linux: Run `chmod +x MMC-Launcher-<version>-Linux` in the terminal.
+   - MacOS: Run `chmod +x MMC-Launcher-<version>-Mac` in the terminal.
+3. Run the downloaded installer or executable file and follow the on-screen instructions to complete the installation process.
+4. Once the installation is complete, you can launch the MesterMC Launcher from your applications menu or desktop shortcut.
 
-## Installation Imagges
+
+## Installation images
 
 ![Welcome Screen](./images/installer0.png)
 ![License](./images/installer1.png)
