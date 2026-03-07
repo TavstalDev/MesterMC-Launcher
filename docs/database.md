@@ -20,8 +20,17 @@ dotnet tool install --global dotnet-ef
 # or, if using a tool manifest in the repo:
 dotnet tool restore
 ```
-5. Create a database named `mmc` in your local SQL Server instance (or update the connection string in `appsettings.json` and `appsettings.Development.json` accordingly).
+5. Create a database named `mmc` in your local MySQL/MariaDB server instance (or update the connection string in `appsettings.json` and `appsettings.Development.json` accordingly).
 6. It is recommended to run the update command to fill the database with the initial schema before running the API for the first time.
+
+### Connection String
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "server=127.0.0.1;port=3306;database=mmc;uid=$DB_USER;pwd=$DB_PASSWORD;"
+  }
+}
+```
 
 ## Common Commands
 
