@@ -1,7 +1,10 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Services;
+using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
@@ -13,15 +16,24 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [Tags("Yggdrasil")]
 public class StatusController : CustomControllerBase
 {
+    private readonly CustomDbContext _dbContext;
+    private readonly CustomUserManager _userManager;
+    private readonly MemoryCacheService _cacheService;
     private readonly Settings _settings;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="StatusController"/> class.
     /// </summary>
+    /// <param name="cacheService">Service for caching data in memory.</param>
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="settings">The application settings.</param>
-    public StatusController(ILogger<StatusController> logger, Settings settings) : base(logger)
+    /// <param name="userManager">Service for managing users.</param>
+    /// <param name="dbContext">Database context for accessing data.</param>
+    public StatusController(CustomDbContext dbContext, CustomUserManager userManager, MemoryCacheService cacheService, ILogger<StatusController> logger, Settings settings) : base(logger)
     {
+        _dbContext = dbContext;
+        _userManager = userManager;
+        _cacheService = cacheService;
         _settings = settings;
     }
     
@@ -64,15 +76,26 @@ public class StatusController : CustomControllerBase
     /// </returns>
     /// <response code="200">Returns the status counts.</response>
     [HttpGet("status")]
-    public IActionResult Status()
+    public Task<IActionResult> Status()
     {
-        // TODO: Implement actual status checks for users, tokens, and pending authentications
-        return ReturnJson(new Dictionary<string, object>
+        if (_cacheService.TryGetValue("yggdrasil_status", out string? cachedResult) && !string.IsNullOrEmpty(cachedResult))
+            return Task.FromResult(ReturnJson(cachedResult));
+        
+        try
         {
-            { "user.count", 0 },
-            { "token.count", 0 },
-            { "pendingAuthentication.count", 0 }
-        });
+            var result = JsonConvert.SerializeObject(new Dictionary<string, object>
+            {
+                { "user.count", _userManager.Users.Count() },
+                { "token.count", _dbContext.UserTokens.Count() },
+                { "pendingAuthentication.count", 0 } // Not implemented
+            }, Formatting.Indented);
+            _cacheService.SetValue("yggdrasil_status", result, TimeSpan.FromMinutes(5));
+            return Task.FromResult(ReturnJson(result));
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException<IActionResult>(exception);
+        }
     }
     
     /// <summary>
@@ -86,6 +109,6 @@ public class StatusController : CustomControllerBase
     [HttpGet("minecraftservices/publickeys")]
     public IActionResult GetPublicKeys()
     {
-        return ReturnJson(new { profileKeys = new object[] { } });
+        return ReturnJson(new { profileKeys = Array.Empty<object>() });
     }
 }
