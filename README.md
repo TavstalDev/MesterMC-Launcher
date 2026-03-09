@@ -13,10 +13,13 @@ The launcher uses the backend of my other launcher, [Konkord Launcher](https://g
 It supports Windows 10/11 and Linux, MacOS was planned but was never tested and is not guaranteed to work.
 
 ### Clearing up some misconceptions about the launcher:
+First of all, the launcher is not a client, it is a launcher, which means that it is only responsible for launching the game by downloading the necessary files and starting the game with the correct parameters.
+
 The launcher does not contain any anti-cheat or anti-tamper features, and it does not have any built-in security measures to prevent unauthorized access or modifications. 
 The launcher is designed to be a simple and lightweight tool for launching Minecraft, and it does not include any advanced features or functionality beyond that.
 
-My personal opinion is the best way to prevent cheating and unauthorized access is to have a good server-side anti-cheat system, and to keep the server software up to date with the latest security patches.
+If the circumstances were different, I would have made the launcher with a custom client in mind and I would have implemented security measures to make unauthorized access as hard as possible. 
+However, due to the circumstances, I had to make the launcher as quickly as possible and I had to prioritize getting it working over implementing security measures.
 
 ## Screenshots
 
