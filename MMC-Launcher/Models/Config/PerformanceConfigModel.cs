@@ -2,6 +2,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Tavstal.MesterMC.Launcher.Models.Config;
 
+/// <summary>
+/// Represents the configuration model for performance settings, including options for custom libraries,
+/// game optimizations, and GPU usage.
+/// </summary>
 public partial class PerformanceConfigModel : ObservableObject
 {
     /// <summary>
@@ -39,8 +43,21 @@ public partial class PerformanceConfigModel : ObservableObject
     /// </summary>
     [ObservableProperty] private bool _useDedicatedGpu;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PerformanceConfigModel"/> class with default values.
+    /// </summary>
     public PerformanceConfigModel() {}
-    
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PerformanceConfigModel"/> class with the specified settings.
+    /// </summary>
+    /// <param name="useCustomGlfw">Indicates whether a custom GLFW library should be used.</param>
+    /// <param name="customGlfwPath">The file path to the custom GLFW library.</param>
+    /// <param name="useCustomOpenAl">Indicates whether a custom OpenAL library should be used.</param>
+    /// <param name="customOpenAlPath">The file path to the custom OpenAL library.</param>
+    /// <param name="enableFeralGameMode">Indicates whether Feral GameMode should be enabled.</param>
+    /// <param name="enableMangoHud">Indicates whether MangoHud should be enabled.</param>
+    /// <param name="useDedicatedGpu">Indicates whether a dedicated GPU should be used.</param>
     public PerformanceConfigModel(bool useCustomGlfw, string? customGlfwPath, bool useCustomOpenAl, string? customOpenAlPath, bool enableFeralGameMode, bool enableMangoHud, bool useDedicatedGpu)
     {
         _useCustomGlfw = useCustomGlfw;

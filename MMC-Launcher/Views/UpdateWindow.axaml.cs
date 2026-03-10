@@ -16,14 +16,14 @@ using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Newtonsoft.Json;
 using ReactiveUI;
-using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Common.Models;
-using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Endpoints;
 using Tavstal.KonkordLauncher.Core.Services;
+using Tavstal.MesterMC.Launcher.Helpers;
+using Tavstal.MesterMC.Launcher.Models.Json;
 using Tavstal.MesterMC.Launcher.Views.Models;
 
 namespace Tavstal.MesterMC.Launcher.Views;
@@ -169,7 +169,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             if (string.IsNullOrEmpty(settings.Java.JavaPath) && javaInstallations.Count > 0)
             {
                 settings.Java.JavaPath = javaInstallations[0].Path;
-                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
+                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CustomJsonContext.Default.CoreConfigDto);
             }
 
             // 4. Check for Updates
@@ -181,7 +181,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
 
                 settings.Launcher.NextUpdateCheck =
                     DateTime.UtcNow.AddHours(settings.Launcher.UpdateInterval == 0 ? 1 : settings.Launcher.UpdateInterval);
-                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
+                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CustomJsonContext.Default.CoreConfigDto);
 
                 if (await CheckUpdateAsync())
                 {
@@ -229,10 +229,10 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 var newsItems = await NewsHelper.FetchNewsAsync();
                 _logger.Warn("Fetched news items: " + (newsItems == null ? "null" : JsonConvert.SerializeObject(newsItems, Formatting.Indented)));
                 if (newsItems is { Count: > 0 })
-                    await JsonHelper.WriteJsonFileAsync(newsPath, newsItems, CommonJsonContext.Default.ListNewsData);
+                    await JsonHelper.WriteJsonFileAsync(newsPath, newsItems, CustomJsonContext.Default.ListNewsDto);
                 
                 settings.CacheRefreshDate = DateTime.UtcNow.AddDays(1);
-                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
+                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CustomJsonContext.Default.CoreConfigDto);
             }
             
             // 9. Start Main Window

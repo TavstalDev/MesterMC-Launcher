@@ -13,9 +13,9 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ReactiveUI;
-using Tavstal.KonkordLauncher.Common.Helpers;
 using Tavstal.KonkordLauncher.Common.Models;
 using Tavstal.KonkordLauncher.Core.Models;
+using Tavstal.MesterMC.Launcher.Helpers;
 using Tavstal.MesterMC.Launcher.Models;
 using Tavstal.MesterMC.Launcher.Views.Models;
 

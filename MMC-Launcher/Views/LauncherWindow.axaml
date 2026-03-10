@@ -7,6 +7,7 @@
     xmlns:models="clr-namespace:Tavstal.MesterMC.Launcher.Models"
     xmlns:vm="clr-namespace:Tavstal.MesterMC.Launcher.Views.Models"
     xmlns:local="clr-namespace:Tavstal.MesterMC.Launcher"
+    xmlns:converters="clr-namespace:Tavstal.MesterMC.Launcher.Models.Converters"
     Title="MMC Launcher"
     Width="1280"
     Height="665"
@@ -23,7 +24,7 @@
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <Window.Resources>
-        <models:LoginStatusConverter x:Key="LoginConverter" />
+        <converters:LoginStatusConverter x:Key="LoginConverter" />
     </Window.Resources>
 
     <Viewbox x:Name="RootViewbox" Stretch="Uniform">
@@ -630,7 +631,7 @@
                             Height="38"
                             Classes="CategoryButton"
                             Command="{Binding HandleSettingsCategoryCommand}"
-                            CommandParameter="{x:Static models:ESettingsCategory.Window}">
+                            CommandParameter="{x:Static models:ESettingsCategory.WINDOW}">
                             <Grid>
                                 <Image Stretch="Fill" />
                                 <TextBlock Classes="CategoryButton" Text="ABLAK" />
@@ -643,7 +644,7 @@
                             Height="38"
                             Classes="CategoryButton"
                             Command="{Binding HandleSettingsCategoryCommand}"
-                            CommandParameter="{x:Static models:ESettingsCategory.Java}">
+                            CommandParameter="{x:Static models:ESettingsCategory.JAVA}">
                             <Grid>
                                 <Image Stretch="Fill" />
                                 <TextBlock Classes="CategoryButton" Text="JAVA" />
@@ -656,7 +657,7 @@
                             Height="38"
                             Classes="CategoryButton"
                             Command="{Binding HandleSettingsCategoryCommand}"
-                            CommandParameter="{x:Static models:ESettingsCategory.Performance}">
+                            CommandParameter="{x:Static models:ESettingsCategory.PERFORMANCE}">
                             <Grid>
                                 <Image Stretch="Fill" />
                                 <TextBlock Classes="CategoryButton" Text="TELJESÍTMÉNY" />

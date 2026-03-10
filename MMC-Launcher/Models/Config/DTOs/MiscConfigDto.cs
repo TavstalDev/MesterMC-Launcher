@@ -11,13 +11,13 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace Tavstal.KonkordLauncher.Common.Models.Config;
+namespace Tavstal.MesterMC.Launcher.Models.Config.DTOs;
 
 /// <summary>
 /// Represents miscellaneous configuration settings for the launcher, including custom commands,
 /// library paths, and additional runtime options.
 /// </summary>
-public class MiscConfig
+public class MiscConfigDto
 {
     /// <summary>
     /// Gets or sets a value indicating whether a custom GLFW library should be used.
@@ -62,9 +62,9 @@ public class MiscConfig
     public bool UseDedicatedGpu { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MiscConfig"/> class with default values.
+    /// Initializes a new instance of the <see cref="MiscConfigDto"/> class with default values.
     /// </summary>
-    public MiscConfig()
+    public MiscConfigDto()
     {
         UseCustomGlfw = false;
         CustomGlfwPath = string.Empty;
@@ -76,7 +76,7 @@ public class MiscConfig
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MiscConfig"/> class with specified values.
+    /// Initializes a new instance of the <see cref="MiscConfigDto"/> class with specified values.
     /// </summary>
     /// <param name="useCustomGlfw">Whether a custom GLFW library should be used.</param>
     /// <param name="customGlfwPath">The file system path to the custom GLFW library.</param>
@@ -85,7 +85,7 @@ public class MiscConfig
     /// <param name="enableFeralGameMode">Whether Feral GameMode should be enabled.</param>
     /// <param name="enableMangoHud">Whether MangoHud should be enabled.</param>
     /// <param name="useDedicatedGpu">Whether a dedicated GPU should be used.</param>
-    public MiscConfig(bool useCustomGlfw, string customGlfwPath, bool useCustomOpenAl, string customOpenAlPath, bool enableFeralGameMode, bool enableMangoHud, bool useDedicatedGpu)
+    public MiscConfigDto(bool useCustomGlfw, string customGlfwPath, bool useCustomOpenAl, string customOpenAlPath, bool enableFeralGameMode, bool enableMangoHud, bool useDedicatedGpu)
     {
         UseCustomGlfw = useCustomGlfw;
         CustomGlfwPath = customGlfwPath;

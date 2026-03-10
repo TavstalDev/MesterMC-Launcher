@@ -9,15 +9,15 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using DiscordRPC;
-using Tavstal.KonkordLauncher.Common.Helpers;
-using Tavstal.KonkordLauncher.Common.Models.Config;
-using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Instances;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
 using Tavstal.KonkordLauncher.Core.Models.MojangApi.Meta;
+using Tavstal.MesterMC.Launcher.Helpers;
+using Tavstal.MesterMC.Launcher.Models.Config.DTOs;
+using Tavstal.MesterMC.Launcher.Models.Json;
 using Tavstal.MesterMC.Launcher.Views;
 
 namespace Tavstal.MesterMC.Launcher;
@@ -138,7 +138,7 @@ public partial class App : Application
     //#region Game Instance
     public static MinecraftInstance createMinecraftInstance(IProgressReporter? progressReporter)
     {
-        CoreConfig launcherSettings = LauncherHelper.GetLauncherSettings();
+        CoreConfigDto launcherSettings = LauncherHelper.GetLauncherSettings();
 
         // Attempt to force the use of a dedicated GPU if configured
         var environmentVariables = launcherSettings.EnableEnvironmentVariables
@@ -271,7 +271,7 @@ public partial class App : Application
         _instance?.UpdateJavaPath(javaPath);
         var settings = LauncherHelper.GetLauncherSettings();
         settings.Java.JavaPath = javaPath;
-        JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
+        JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, settings, CustomJsonContext.Default.CoreConfigDto);
     }
     //#endregion
     

@@ -11,7 +11,7 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace Tavstal.KonkordLauncher.Common.Models.Java;
+namespace Tavstal.MesterMC.Launcher.Models.Config.Java;
 
 /// <summary>
 /// Represents a collection of Java mirrors for different JDK versions and architectures.

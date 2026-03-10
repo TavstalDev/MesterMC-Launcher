@@ -12,16 +12,16 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReactiveUI;
-using Tavstal.KonkordLauncher.Common.Helpers;
-using Tavstal.KonkordLauncher.Common.Models.Config;
-using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Instances;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
+using Tavstal.MesterMC.Launcher.Helpers;
 using Tavstal.MesterMC.Launcher.Models;
-using Tavstal.MesterMC.Launcher.Models.Config;
+using Tavstal.MesterMC.Launcher.Models.Config.DTOs;
+using Tavstal.MesterMC.Launcher.Models.Json;
+using CoreConfigModel = Tavstal.MesterMC.Launcher.Models.Config.CoreConfigModel;
 
 namespace Tavstal.MesterMC.Launcher.Views.Models;
 
@@ -35,7 +35,7 @@ public partial class LauncherViewModel : ObservableObject
     public bool IsLinux => OSHelper.GetOperatingSystem() == EOperatingSystem.Linux;
     
     #region Observable Properties
-    [ObservableProperty] private ESettingsCategory _currentSettingsCategory = ESettingsCategory.Window;
+    [ObservableProperty] private ESettingsCategory _currentSettingsCategory = ESettingsCategory.WINDOW;
     [ObservableProperty] private CoreConfigModel _coreConfig;
     public ObservableCollection<NewsModel> NewsItems = [];
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(NewsPageDisplay))] private int selectedNewsIndex;
@@ -223,7 +223,7 @@ public partial class LauncherViewModel : ObservableObject
         var config = await LauncherHelper.GetLauncherSettingsAsync();
         if (config.Users.Remove(user))
         {
-            await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CommonJsonContext.Default.CoreConfig);
+            await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CustomJsonContext.Default.CoreConfigDto);
         }
     }
 
@@ -269,13 +269,13 @@ public partial class LauncherViewModel : ObservableObject
         var config = await LauncherHelper.GetLauncherSettingsAsync();
         config.Users.TryAdd(playerName, "reserved"); // Maybe it will be used in the future.
         config.LastUser = config.Users.Keys.ToList().IndexOf(playerName);
-        await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CommonJsonContext.Default.CoreConfig);
+        await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CustomJsonContext.Default.CoreConfigDto);
         
         uuid ??= GameHelper.GetOfflinePlayerUUID(playerName);
         instance.UpdateUserDetails(new ClientDetails(accessToken, playerName, uuid, true));
         await Task.Delay(250); // Small delay to ensure status update is visible
         LoginStatus = ELoginStatus.LAUNCHING;
-        //await Task.Run(async () => await MetricsHelper.SendMetricAsync()); // Send metrics in the background, tracks basic hardware info (cpu, ram, gpu, sum of disk space), so we can track what to optimize for and how our userbase looks like
+        
         startTime = DateTime.UtcNow;
         gameProcess = await instance.Start();
         if (gameProcess != null)
@@ -354,10 +354,10 @@ public partial class LauncherViewModel : ObservableObject
         if (newValue.Java.MinMemory > newValue.Java.MaxMemory)
             newValue.Java.MinMemory = newValue.Java.MaxMemory;
 
-        var settings = new CoreConfig
+        var settings = new CoreConfigDto
         {
             Launcher = oldSettings.Launcher, // Preserve non-observable properties
-            Java = new JavaConfig
+            Java = new JavaConfigDto
             {
                 MinMemory = newValue.Java.MinMemory,
                 MaxMemory = newValue.Java.MaxMemory,
@@ -365,13 +365,13 @@ public partial class LauncherViewModel : ObservableObject
                 JavaPath = newValue.Java.DefaultJavaPath,
                 JvmArguments = newValue.Java.JvmArguments,
             },
-            Minecraft = new MinecraftConfig
+            Minecraft = new MinecraftConfigDto
             {
                 StartMaximized = newValue.Window.StartMaximized,
                 WindowHeight = newValue.Window.WindowHeight,
                 WindowWidth = newValue.Window.WindowWidth,
             },
-            Misc = new MiscConfig
+            Misc = new MiscConfigDto
             {
                 UseCustomGlfw = newValue.Performance.UseCustomGlfw,
                 CustomGlfwPath = newValue.Performance.CustomGlfwPath,
@@ -384,7 +384,7 @@ public partial class LauncherViewModel : ObservableObject
             CacheRefreshDate = oldSettings.CacheRefreshDate
         };
 
-        JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, settings, CommonJsonContext.Default.CoreConfig);
+        JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, settings, CustomJsonContext.Default.CoreConfigDto);
     }
 
     #endregion

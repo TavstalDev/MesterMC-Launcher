@@ -8,17 +8,19 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using System;
+using System.IO;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Tavstal.KonkordLauncher.Core.Helpers;
 
-namespace Tavstal.KonkordLauncher.Common.Models.Config;
+namespace Tavstal.MesterMC.Launcher.Models.Config.DTOs;
 
 /// <summary>
 /// Represents the configuration settings for the launcher, including update settings, 
 /// language, theme, and directory paths.
 /// </summary>
-public class LauncherConfig
+public class LauncherConfigDto
 {
     /// <summary>
     /// Gets or sets a value indicating whether automatic updates are enabled.
@@ -84,9 +86,9 @@ public class LauncherConfig
     public string VersionsDirectoryPath { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="LauncherConfig"/> class with default values.
+    /// Initializes a new instance of the <see cref="LauncherConfigDto"/> class with default values.
     /// </summary>
-    public LauncherConfig()
+    public LauncherConfigDto()
     {
         EnableAutomaticUpdates = true;
         UpdateInterval = 24; // Default to 24 hours
@@ -102,7 +104,7 @@ public class LauncherConfig
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="LauncherConfig"/> class with specified values.
+    /// Initializes a new instance of the <see cref="LauncherConfigDto"/> class with specified values.
     /// </summary>
     /// <param name="enableAutomaticUpdates">Indicates whether automatic updates are enabled.</param>
     /// <param name="updateInterval">The update interval in hours.</param>
@@ -115,7 +117,7 @@ public class LauncherConfig
     /// <param name="librariesDirectoryPath">The file system path to the libraries directory.</param>
     /// <param name="manifestsDirectoryPath">The file system path to the manifests directory.</param>
     /// <param name="versionsDirectoryPath">The file system path to the versions directory.</param>
-    public LauncherConfig(bool enableAutomaticUpdates, uint updateInterval, DateTime nextUpdateCheck, string assetsDirectoryPath, string cacheDirectoryPath, string iconsDirectoryPath, string minecraftDataDirectoryPath, string javaDirectoryPath, string librariesDirectoryPath, string manifestsDirectoryPath, string versionsDirectoryPath)
+    public LauncherConfigDto(bool enableAutomaticUpdates, uint updateInterval, DateTime nextUpdateCheck, string assetsDirectoryPath, string cacheDirectoryPath, string iconsDirectoryPath, string minecraftDataDirectoryPath, string javaDirectoryPath, string librariesDirectoryPath, string manifestsDirectoryPath, string versionsDirectoryPath)
     {
         EnableAutomaticUpdates = enableAutomaticUpdates;
         UpdateInterval = updateInterval;
@@ -134,13 +136,11 @@ public class LauncherConfig
     /// Gets the file system path to the vanilla manifest file.
     /// </summary>
     /// <returns>The path to the vanilla manifest file.</returns>
-    public string GetVanillaManifestPath()
-    {
-        return Path.Combine(ManifestsDirectoryPath, "vanillaManifest.json");
-    }
+    public string GetVanillaManifestPath() => Path.Combine(ManifestsDirectoryPath, "vanillaManifest.json");
     
-    public string GetFabricManifestPath()
-    {
-        return Path.Combine(ManifestsDirectoryPath, "fabricManifest.json");
-    }
+    /// <summary>
+    /// Gets the file system path to the Fabric manifest file.
+    /// </summary>
+    /// <returns>The path to the Fabric manifest file.</returns>
+    public string GetFabricManifestPath() => Path.Combine(ManifestsDirectoryPath, "fabricManifest.json");
 }

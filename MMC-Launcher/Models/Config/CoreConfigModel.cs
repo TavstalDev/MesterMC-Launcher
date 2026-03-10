@@ -1,18 +1,39 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using Tavstal.KonkordLauncher.Common.Models.Config;
+using Tavstal.MesterMC.Launcher.Models.Config.DTOs;
 
 namespace Tavstal.MesterMC.Launcher.Models.Config;
 
+/// <summary>
+/// Represents the core configuration model for the application, containing Java, performance, and window settings.
+/// </summary>
 public partial class CoreConfigModel : ObservableObject
 {
+    /// <summary>
+    /// The Java configuration settings.
+    /// </summary>
     [ObservableProperty] private JavaConfigModel _java;
     
+    /// <summary>
+    /// The performance configuration settings.
+    /// </summary>
     [ObservableProperty] private PerformanceConfigModel _performance;
     
+    /// <summary>
+    /// The window configuration settings.
+    /// </summary>
     [ObservableProperty] private WindowConfigModel _window;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CoreConfigModel"/> class with default values.
+    /// </summary>
     public CoreConfigModel() { }
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CoreConfigModel"/> class with the specified Java, performance, and window configurations.
+    /// </summary>
+    /// <param name="java">The Java configuration settings.</param>
+    /// <param name="performance">The performance configuration settings.</param>
+    /// <param name="window">The window configuration settings.</param>
     public CoreConfigModel(JavaConfigModel java, PerformanceConfigModel performance, WindowConfigModel window)
     {
         _java = java;
@@ -20,26 +41,30 @@ public partial class CoreConfigModel : ObservableObject
         _window = window;
     }
 
-    public CoreConfigModel(CoreConfig coreConfig)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CoreConfigModel"/> class using a data transfer object (DTO).
+    /// </summary>
+    /// <param name="coreConfigDto">The DTO containing core configuration data.</param>
+    public CoreConfigModel(CoreConfigDto coreConfigDto)
     {
         _java = new JavaConfigModel(
-            coreConfig.Java.MinMemory,
-            coreConfig.Java.MaxMemory,
-            coreConfig.Java.PermaGen,
-            coreConfig.Java.JavaPath,
-            coreConfig.Java.JvmArguments);
+            coreConfigDto.Java.MinMemory,
+            coreConfigDto.Java.MaxMemory,
+            coreConfigDto.Java.PermaGen,
+            coreConfigDto.Java.JavaPath,
+            coreConfigDto.Java.JvmArguments);
         _performance = new PerformanceConfigModel(
-            coreConfig.Misc.UseCustomGlfw,
-            coreConfig.Misc.CustomGlfwPath,
-            coreConfig.Misc.UseCustomOpenAl,
-            coreConfig.Misc.CustomOpenAlPath,
-            coreConfig.Misc.EnableFeralGameMode,
-            coreConfig.Misc.EnableMangoHud,
-            coreConfig.Misc.UseDedicatedGpu
+            coreConfigDto.Misc.UseCustomGlfw,
+            coreConfigDto.Misc.CustomGlfwPath,
+            coreConfigDto.Misc.UseCustomOpenAl,
+            coreConfigDto.Misc.CustomOpenAlPath,
+            coreConfigDto.Misc.EnableFeralGameMode,
+            coreConfigDto.Misc.EnableMangoHud,
+            coreConfigDto.Misc.UseDedicatedGpu
             );
         _window = new WindowConfigModel(
-            coreConfig.Minecraft.StartMaximized,
-            coreConfig.Minecraft.WindowWidth,
-            coreConfig.Minecraft.WindowHeight);
+            coreConfigDto.Minecraft.StartMaximized,
+            coreConfigDto.Minecraft.WindowWidth,
+            coreConfigDto.Minecraft.WindowHeight);
     }
 }

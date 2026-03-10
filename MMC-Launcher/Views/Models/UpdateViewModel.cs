@@ -6,7 +6,7 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReactiveUI;
-using Tavstal.KonkordLauncher.Common.Helpers;
+using Tavstal.MesterMC.Launcher.Helpers;
 
 namespace Tavstal.MesterMC.Launcher.Views.Models;
 

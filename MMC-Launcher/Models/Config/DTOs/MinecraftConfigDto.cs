@@ -11,13 +11,13 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace Tavstal.KonkordLauncher.Common.Models.Config;
+namespace Tavstal.MesterMC.Launcher.Models.Config.DTOs;
 
 /// <summary>
 /// Represents the configuration settings for Minecraft, including window properties
 /// and launcher behavior during game start and exit.
 /// </summary>
-public class MinecraftConfig
+public class MinecraftConfigDto
 {
     /// <summary>
     /// Gets or sets a value indicating whether the game should start maximized.
@@ -38,9 +38,9 @@ public class MinecraftConfig
     public uint WindowHeight { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MinecraftConfig"/> class with default values.
+    /// Initializes a new instance of the <see cref="MinecraftConfigDto"/> class with default values.
     /// </summary>
-    public MinecraftConfig()
+    public MinecraftConfigDto()
     {
         StartMaximized = false;
         WindowWidth = 1280;
@@ -48,12 +48,12 @@ public class MinecraftConfig
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MinecraftConfig"/> class with specified values.
+    /// Initializes a new instance of the <see cref="MinecraftConfigDto"/> class with specified values.
     /// </summary>
     /// <param name="startMaximized">Whether the game should start maximized.</param>
     /// <param name="windowWidth">The width of the game window in pixels.</param>
     /// <param name="windowHeight">The height of the game window in pixels.</param>
-    public MinecraftConfig(bool startMaximized, uint windowWidth, uint windowHeight)
+    public MinecraftConfigDto(bool startMaximized, uint windowWidth, uint windowHeight)
     {
         StartMaximized = startMaximized;
         WindowWidth = windowWidth;

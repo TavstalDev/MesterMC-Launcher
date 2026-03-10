@@ -8,6 +8,8 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,14 +17,14 @@ using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Tavstal.KonkordLauncher.Core.Helpers;
 
-namespace Tavstal.KonkordLauncher.Common.Models.Config;
+namespace Tavstal.MesterMC.Launcher.Models.Config.DTOs;
 
 /// <summary>
 /// Represents the core configuration for the launcher, including launcher settings, Java settings,
 /// Minecraft settings, and miscellaneous options.
 /// </summary>
 [RequiresUnreferencedCode("This class uses code that may be removed during trimming.")]
-public class CoreConfig
+public class CoreConfigDto
 {
     [JsonProperty("clientId"), JsonPropertyName("clientId")]
     public string ClientId { get; set; }
@@ -31,25 +33,25 @@ public class CoreConfig
     /// Gets or sets the configuration for the launcher.
     /// </summary>
     [JsonProperty("launcher"), JsonPropertyName("launcher")]
-    public LauncherConfig Launcher { get; set; }
+    public LauncherConfigDto Launcher { get; set; }
     
     /// <summary>
     /// Gets or sets the Java configuration for the launcher.
     /// </summary>
     [JsonProperty("java"), JsonPropertyName("java")]
-    public JavaConfig Java { get; set; }
+    public JavaConfigDto Java { get; set; }
     
     /// <summary>
     /// Gets or sets the Minecraft configuration for the launcher.
     /// </summary>
     [JsonProperty("minecraft"), JsonPropertyName("minecraft")]
-    public MinecraftConfig Minecraft { get; set; }
+    public MinecraftConfigDto Minecraft { get; set; }
     
     /// <summary>
     /// Gets or sets the miscellaneous configuration for the launcher.
     /// </summary>
     [JsonProperty("misc"), JsonPropertyName("misc")]
-    public MiscConfig Misc { get; set; }
+    public MiscConfigDto Misc { get; set; }
     
     [JsonProperty("cacheRefreshDate"), JsonPropertyName("cacheRefreshDate")]
     public DateTime CacheRefreshDate { get; set; }
@@ -67,9 +69,9 @@ public class CoreConfig
     public Dictionary<string, string> Users { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CoreConfig"/> class with default values.
+    /// Initializes a new instance of the <see cref="CoreConfigDto"/> class with default values.
     /// </summary>
-    public CoreConfig()
+    public CoreConfigDto()
     {
         using (var sha = SHA256.Create())
         {
@@ -78,10 +80,10 @@ public class CoreConfig
             ClientId = Convert.ToHexString(bytes);
         }
 
-        Launcher = new LauncherConfig();
-        Java = new JavaConfig();
-        Minecraft = new MinecraftConfig();
-        Misc = new MiscConfig();
+        Launcher = new LauncherConfigDto();
+        Java = new JavaConfigDto();
+        Minecraft = new MinecraftConfigDto();
+        Misc = new MiscConfigDto();
         CacheRefreshDate = DateTime.UtcNow;
         EnableEnvironmentVariables = false;
         EnvironmentVariables = new Dictionary<string, string>();
@@ -89,7 +91,7 @@ public class CoreConfig
         Users = new Dictionary<string, string>();
     }
     
-    public CoreConfig(string clientId, LauncherConfig launcher, JavaConfig java, MinecraftConfig minecraft, MiscConfig misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables, int lastUser, Dictionary<string, string> users)
+    public CoreConfigDto(string clientId, LauncherConfigDto launcher, JavaConfigDto java, MinecraftConfigDto minecraft, MiscConfigDto misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables, int lastUser, Dictionary<string, string> users)
     {
         ClientId = clientId;
         Launcher = launcher;

@@ -8,7 +8,7 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
-namespace Tavstal.KonkordLauncher.Common.Models.Java;
+namespace Tavstal.MesterMC.Launcher.Models.Config.Java;
 
 /// <summary>
 /// Represents a Java version with its major version, full version string, architecture, and installation path.

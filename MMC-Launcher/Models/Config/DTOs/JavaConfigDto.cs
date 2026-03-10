@@ -11,12 +11,12 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace Tavstal.KonkordLauncher.Common.Models.Config;
+namespace Tavstal.MesterMC.Launcher.Models.Config.DTOs;
 
 /// <summary>
 /// Represents the configuration for Java settings, including memory allocation, Java path, and JVM arguments.
 /// </summary>
-public class JavaConfig
+public class JavaConfigDto
 {
     /// <summary>
     /// Gets or sets the minimum memory allocation for the Java process, in megabytes.
@@ -55,9 +55,9 @@ public class JavaConfig
     public string JvmArguments { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="JavaConfig"/> class with default values.
+    /// Initializes a new instance of the <see cref="JavaConfigDto"/> class with default values.
     /// </summary>
-    public JavaConfig()
+    public JavaConfigDto()
     {
         MinMemory = 1024;
         MaxMemory = 4096;
@@ -68,7 +68,7 @@ public class JavaConfig
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="JavaConfig"/> class with specified values.
+    /// Initializes a new instance of the <see cref="JavaConfigDto"/> class with specified values.
     /// </summary>
     /// <param name="minMemory">The minimum memory allocation for the Java process, in megabytes.</param>
     /// <param name="maxMemory">The maximum memory allocation for the Java process, in megabytes.</param>
@@ -76,7 +76,7 @@ public class JavaConfig
     /// <param name="ignoreSystemJava">Should we ignore java installations outside the launcher's java directory?</param>
     /// <param name="defaultJavaPath">The file system path to the Java executable.</param>
     /// <param name="jvmArguments">The additional JVM arguments to be passed to the Java process.</param>
-    public JavaConfig(uint minMemory, uint maxMemory, uint permaGen, bool ignoreSystemJava, string defaultJavaPath, string jvmArguments)
+    public JavaConfigDto(uint minMemory, uint maxMemory, uint permaGen, bool ignoreSystemJava, string defaultJavaPath, string jvmArguments)
     {
         MinMemory = minMemory;
         MaxMemory = maxMemory;
