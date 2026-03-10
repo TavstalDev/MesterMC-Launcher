@@ -8,12 +8,16 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
 using NbtLib;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Endpoints;
 
-namespace Tavstal.KonkordLauncher.Common.Helpers;
+namespace Tavstal.MesterMC.Launcher.Helpers;
 
 /// <summary>
 /// Provides helper methods for validating various launcher components, such as data folders, settings, accounts, and manifests.

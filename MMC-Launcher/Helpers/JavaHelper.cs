@@ -8,18 +8,22 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Compression;
 using System.Text;
+using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
-using Tavstal.KonkordLauncher.Common.Models.Java;
-using Tavstal.KonkordLauncher.Common.Models.Json;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
+using Tavstal.MesterMC.Launcher.Models.Config.Java;
+using Tavstal.MesterMC.Launcher.Models.Json;
 
-namespace Tavstal.KonkordLauncher.Common.Helpers;
+namespace Tavstal.MesterMC.Launcher.Helpers;
 
 /// <summary>
 /// Provides helper methods for working with Java installations and versions.
@@ -79,11 +83,11 @@ public static class JavaHelper
                 if (!File.Exists(PathHelper.JavaMirrorsPath))
                 {
                     _mirrorConfig = new JavaMirrorConfig();
-                    await JsonHelper.WriteJsonFileAsync(PathHelper.JavaMirrorsPath, _mirrorConfig, CommonJsonContext.Default.JavaMirrorConfig);
+                    await JsonHelper.WriteJsonFileAsync(PathHelper.JavaMirrorsPath, _mirrorConfig, CustomJsonContext.Default.JavaMirrorConfig);
                 }
                 else
                 {
-                    _mirrorConfig = await JsonHelper.ReadJsonFileAsync<JavaMirrorConfig>(PathHelper.JavaMirrorsPath, CommonJsonContext.Default.JavaMirrorConfig) ??
+                    _mirrorConfig = await JsonHelper.ReadJsonFileAsync<JavaMirrorConfig>(PathHelper.JavaMirrorsPath, CustomJsonContext.Default.JavaMirrorConfig) ??
                                     new JavaMirrorConfig();
                 }
             }
@@ -155,39 +159,6 @@ public static class JavaHelper
         {
             _logger.Exc($"Failed to download Java '{majorVersion}'.");
             _logger.Exc(ex.ToString());
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Checks if Java is installed on the system by attempting to execute the "java --version" command.
-    /// </summary>
-    /// <returns>True if Java is installed, otherwise false.</returns>
-    public static bool IsJavaInstalled()
-    {
-        try
-        {
-            ProcessStartInfo psi = new ProcessStartInfo
-            {
-                FileName = "java",
-                Arguments = " --version",
-                RedirectStandardError = true,
-                UseShellExecute = false
-            };
-
-            using Process? pr = Process.Start(psi);
-            if (pr == null)
-            {
-                _logger.Error("Failed to start Java process. Is Java installed?");
-                return false;
-            }
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.Exc("Failed to validate Java:");
-            _logger.Error(ex.ToString());
             return false;
         }
     }

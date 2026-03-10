@@ -1,11 +1,15 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Tavstal.KonkordLauncher.Common.Models;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Endpoints;
+using Tavstal.MesterMC.Launcher.Models;
 
-namespace Tavstal.KonkordLauncher.Common.Helpers;
+namespace Tavstal.MesterMC.Launcher.Helpers;
 
 /// <summary>
 /// Provides helper methods for fetching news data from the server.
@@ -18,18 +22,18 @@ public static class NewsHelper
     /// Asynchronously fetches news data from the server.
     /// </summary>
     /// <remarks>
-    /// This method sends a GET request to the news endpoint and deserializes the response into a list of <see cref="NewsData"/> objects.
+    /// This method sends a GET request to the news endpoint and deserializes the response into a list of <see cref="NewsDto"/> objects.
     /// If an error occurs during the operation, it is logged, and the method returns null.
     /// </remarks>
     /// <returns>
-    /// A task that represents the asynchronous operation. The task result contains a list of <see cref="NewsData"/> objects
+    /// A task that represents the asynchronous operation. The task result contains a list of <see cref="NewsDto"/> objects
     /// or null if the operation fails.
     /// </returns>
     /// <exception cref="RequiresUnreferencedCodeAttribute">
     /// Indicates that this method uses code that may be removed during trimming.
     /// </exception>
     [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
-    public static async Task<List<NewsData>?> FetchNewsAsync()
+    public static async Task<List<NewsDto>?> FetchNewsAsync()
     {
         try
         {
@@ -42,7 +46,7 @@ public static class NewsHelper
                 return null;
 
             // Deserialize the JSON response into a list of NewsData objects
-            return JsonSerializer.Deserialize<List<NewsData>>(rawJson);
+            return JsonSerializer.Deserialize<List<NewsDto>>(rawJson);
         }
         catch (Exception ex)
         {
