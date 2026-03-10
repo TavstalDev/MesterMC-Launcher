@@ -6,10 +6,10 @@ This document describes the recommended packaging steps used in this project for
 
 ## Table of Contents
 - [Principles and rules](#principles-and-rules)
-- [1) Build / Publish commands](#1-build--publish-commands)
-- [2) Code signing (Windows only)](#2-code-signing-windows-only)
-- [3) Create archive and copy into installer input folder](#3-create-archive-and-copy-into-installer-input-folder)
-- [4) Build the installer](#4-build-the-installer)
+- [Build / Publish commands](#1-build--publish-commands)
+- [Code signing (Windows only)](#2-code-signing-windows-only)
+- [Create archive and copy into installer input folder](#3-create-archive-and-copy-into-installer-input-folder)
+- [Build the installer](#4-build-the-installer)
 
 ## Principles and rules
 - We build self-contained, single-file publishes for each runtime so users don't need a preinstalled .NET runtime.
