@@ -23,14 +23,21 @@ using Tavstal.MesterMC.Updater.Views.Models;
 
 namespace Tavstal.MesterMC.Updater.Views;
 
+/// <summary>
+/// Represents the main update window for the MMC-Updater application.
+/// Implements the <see cref="IProgressReporter"/> interface to report progress updates.
+/// </summary>
 public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressReporter
 {
     /// <summary>
     /// Logger instance for the StartupWindow class.
     /// </summary>
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(UpdateWindow));
-    private readonly string _tmpDir;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UpdateWindow"/> class.
+    /// Sets up the data context, event handlers, and temporary directory.
+    /// </summary>
     [RequiresUnreferencedCode("This constructor uses code that may be removed during trimming.")]
     public UpdateWindow()
     {
@@ -53,25 +60,25 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         });
         
         FitToDisplay();
-        
-        _tmpDir = Path.Combine(Path.GetTempPath(), "mmcupdater_" + Path.GetRandomFileName());
-        if (!Directory.Exists(_tmpDir))
-            Directory.CreateDirectory(_tmpDir);
     }
     
+    #region Window Events
+    /// <summary>
+    /// Handles the event when the window is opened.
+    /// Starts the update process asynchronously.
+    /// </summary>
+    /// <param name="e">Event arguments for the opened event.</param>
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
         Dispatcher.UIThread.Invoke(async () => await StartUpdateProcessAsync());
     }
     
-    protected override void OnClosed(EventArgs e)
-    {
-        if (Directory.Exists(_tmpDir))
-            FileSystemHelper.DeleteDirectory(_tmpDir);
-        base.OnClosed(e);
-    }
-    
+    /// <summary>
+    /// Handles the pointer pressed event to enable dragging the window.
+    /// </summary>
+    /// <param name="sender">The event sender.</param>
+    /// <param name="e">Pointer pressed event arguments.</param>
     private void DragStart_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         // Start moving the window when left mouse button is pressed
@@ -80,7 +87,13 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             BeginMoveDrag(e);
         }
     }
+    #endregion
     
+    #region Private Methods
+    /// <summary>
+    /// Starts the update process asynchronously.
+    /// This method handles downloading, extracting, and applying updates.
+    /// </summary>
     private async Task StartUpdateProcessAsync()
     {
         // TODO: Test on all platforms
@@ -160,12 +173,12 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 percent = 100; // Cap at 100%
             SetStatus("Letöltés...", percent);
         });
-        string targetFilePath = Path.Combine(_tmpDir, targetAssetName);
+        string targetFilePath = Path.Combine(App.TmpDir, targetAssetName);
         await HttpHelper.DownloadFileAsync(downloadUrl, targetFilePath, progress);
 
         // 2. Extract the downloaded file to the temporary directory
         SetStatus("Kicsomagolás...", targetAssetName);
-        string targetTempDir = Path.Combine(_tmpDir, "extracted");
+        string targetTempDir = Path.Combine(App.TmpDir, "extracted");
         if (targetAssetName.EndsWith(".tar.gz"))
         {
             await using Stream inStream = File.OpenRead(targetFilePath);
@@ -199,8 +212,8 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
 
         // 4. Delete the temporary directory
         SetStatus("Tisztítás...");
-        if (Directory.Exists(_tmpDir))
-            FileSystemHelper.DeleteDirectory(_tmpDir);
+        if (Directory.Exists(App.TmpDir))
+            FileSystemHelper.DeleteDirectory(App.TmpDir);
 
         // 5. Restart the application
         SetStatus("Újraindítás...");
@@ -224,14 +237,17 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         Close();
     }
     
+    /// <summary>
+    /// Adjusts the window size and position to fit the display.
+    /// </summary>
     private void FitToDisplay()
     {
         double screenWidth = (double)App.ScreenWidth;
         double screenHeight = (double)App.ScreenHeight;
         
         // Base design resolution
-        double baseWidth = 1150;
-        double baseHeight = 665;
+        const double baseWidth = 1150;
+        const double baseHeight = 665;
 
         // Calculate scale factor relative to screen
         double scaleX = screenWidth / baseWidth;
@@ -248,6 +264,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             (int)((screenHeight - Height) / 2)
         );
     }
+    #endregion
     
     #region IProgressReporter Implementation
     /// <summary>
@@ -258,7 +275,6 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     {
         if (DataContext == null)
             return;
-
         DataContext.Progress = progress;
     }
 
@@ -270,7 +286,6 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     {
         if (DataContext == null)
             return;
-
         DataContext.ProgressText = status;
     }
 
@@ -283,13 +298,11 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     {
         if (DataContext == null)
             return;
-        
         if (args == null || args.Length == 0)
         {
             DataContext.ProgressText = status;
             return;
         }
-
         DataContext.ProgressText = string.Format(status, args);
     }
     #endregion 

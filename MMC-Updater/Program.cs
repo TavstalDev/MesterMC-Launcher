@@ -7,14 +7,24 @@ using ReactiveUI.Avalonia;
 namespace Tavstal.MesterMC.Updater;
 
 // ReSharper disable once ClassNeverInstantiated.Global
+
+/// <summary>
+/// The entry point of the MMC-Updater application.
+/// </summary>
 [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 class Program
 {
+    /// <summary>
+    /// Gets the application host, which is used to configure and run the application.
+    /// </summary>
     public static IHost? AppHost { get; private set; }
     
-    // Initialization code. Don't use any Avalonia, third-party APIs or any
-    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    // yet and stuff might break.
+    /// <summary>
+    /// The main entry point of the application.
+    /// This method initializes the application host and starts the Avalonia application
+    /// with a classic desktop lifetime.
+    /// </summary>
+    /// <param name="args">Command-line arguments passed to the application.</param>
     [STAThread]
     public static void Main(string[] args)
     {
@@ -24,7 +34,11 @@ class Program
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
-    // Avalonia configuration, don't remove; also used by visual designer.
+    /// <summary>
+    /// Configures the Avalonia application.
+    /// This method is also used by the visual designer and should not be removed.
+    /// </summary>
+    /// <returns>An <see cref="AppBuilder"/> instance configured for the application.</returns>
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
