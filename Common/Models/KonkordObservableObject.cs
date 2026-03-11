@@ -14,19 +14,38 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Tavstal.KonkordLauncher.Common.Models;
 
+/// <summary>
+/// Represents an observable object that implements the IDisposable interface.
+/// Provides a mechanism for managing and disposing of resources, such as event subscriptions.
+/// </summary>
 public abstract class KonkordObservableObject : ObservableObject, IDisposable
 {
+    /// <summary>
+    /// Indicates whether the object has been disposed.
+    /// </summary>
     private bool _isDisposed;
 
-    // A CompositeDisposable to store all IDisposable resources (e.g., event subscriptions).
+    /// <summary>
+    /// A collection of IDisposable resources that will be disposed together.
+    /// </summary>
     protected CompositeDisposable Disposables { get; } = new();
-    
+
+    /// <summary>
+    /// Disposes the resources used by the object.
+    /// </summary>
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
-    
+
+    /// <summary>
+    /// Releases the unmanaged and optionally managed resources used by the object.
+    /// </summary>
+    /// <param name="disposing">
+    /// A boolean value indicating whether to release managed resources.
+    /// If true, managed resources are released; otherwise, only unmanaged resources are released.
+    /// </param>
     protected virtual void Dispose(bool disposing)
     {
         if (_isDisposed)
@@ -40,5 +59,4 @@ public abstract class KonkordObservableObject : ObservableObject, IDisposable
 
         _isDisposed = true;
     }
-
 }

@@ -14,14 +14,27 @@ using ReactiveUI.Avalonia;
 
 namespace Tavstal.KonkordLauncher.Common.Models;
 
+/// <summary>
+/// Represents a generic window that integrates with ReactiveUI and supports a strongly-typed ViewModel.
+/// Automatically disposes of the ViewModel if it implements IDisposable when the window is closing.
+/// </summary>
+/// <typeparam name="TViewModel">The type of the ViewModel associated with this window.</typeparam>
 public abstract class KonkordWindow<TViewModel> : ReactiveWindow<TViewModel> where TViewModel : class
 {
+    /// <summary>
+    /// Gets or sets the strongly-typed DataContext for the window.
+    /// Overrides the base DataContext property to enforce the type constraint.
+    /// </summary>
     public new TViewModel? DataContext
     {
         get => (TViewModel?)base.DataContext;
         set => base.DataContext = value;
     }
-    
+    /// <summary>
+    /// Called when the window is closing.
+    /// Disposes of the DataContext if it implements IDisposable, then calls the base implementation.
+    /// </summary>
+    /// <param name="e">The event arguments for the window closing event.</param>
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         (DataContext as IDisposable)?.Dispose();
