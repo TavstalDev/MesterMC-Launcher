@@ -2,6 +2,8 @@
 
 To install the MesterMC Launcher, follow the instructions below based on your operating system.
 
+> Please check [build instructions](./build-and-run.md) and [packaging instructions](./packaging.md) if you want to build the launcher from source.
+
 ## Steps
 
 1. Download the latest release of the MesterMC Launcher from the [releases page](https://github.com/TavstalDev/MesterMC-Launcher/releases)
