@@ -97,144 +97,157 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     private async Task StartUpdateProcessAsync()
     {
         // TODO: Test on all platforms
-        string targetAssetName = string.Empty;
-        bool isArm = OSHelper.IsArmBased();
-        switch (OSHelper.GetOperatingSystem())
+        // TODO: Add integrity check (e.g. checksum) for the downloaded file
+        // TODO: Check write permissions before starting the update process
+        // TODO: Add backup and restore mechanism in case something goes wrong during the update process
+        try
         {
-            case EOperatingSystem.Windows:
+            string targetAssetName = string.Empty;
+            bool isArm = OSHelper.IsArmBased();
+            switch (OSHelper.GetOperatingSystem())
             {
-                targetAssetName = isArm ? "MMCLauncher_{0}_windows_arm.zip" : "MMCLauncher_{0}_windows_x64.zip";
-                break;
+                case EOperatingSystem.Windows:
+                {
+                    targetAssetName = isArm ? "MMCLauncher_{0}_windows_arm.zip" : "MMCLauncher_{0}_windows_x64.zip";
+                    break;
+                }
+                case EOperatingSystem.Linux:
+                {
+                    targetAssetName = isArm ? "MMCLauncher_{0}_linux_arm.tar.gz" : "MMCLauncher_{0}_linux_x64.tar.gz";
+                    break;
+                }
+                case EOperatingSystem.MacOS:
+                {
+                    targetAssetName = isArm ? "MMCLauncher_{0}_mac_arm.tar.gz" : "MMCLauncher_{0}_mac_x64.tar.gz";
+                    break;
+                }
             }
-            case EOperatingSystem.Linux:
+
+            // 0. Send http request to GitHub API to get the latest release info
+            var response = await HttpHelper.GetStringAsync(MesterMcEndpoints.LatestRelease);
+            if (string.IsNullOrEmpty(response))
             {
-                targetAssetName = isArm ? "MMCLauncher_{0}_linux_arm.tar.gz" : "MMCLauncher_{0}_linux_x64.tar.gz";
-                break;
+                SetStatus("Hiba a frissítés lekérése közben.");
+                _logger.Error("Failed to fetch release info from GitHub API.");
+                return;
             }
-            case EOperatingSystem.MacOS:
+
+            JObject releaseObject = JObject.Parse(response);
+            if (!releaseObject.TryGetValue("assets", out var assetsToken))
             {
-                targetAssetName = isArm ? "MMCLauncher_{0}_mac_arm.tar.gz" : "MMCLauncher_{0}_mac_x64.tar.gz";
-                break;
+                SetStatus("Hiba a frissítés lekérése közben.");
+                _logger.Error("No assets found in the latest release.");
+                return;
             }
-        }
 
-        // 0. Send http request to GitHub API to get the latest release info
-        var response = await HttpHelper.GetStringAsync(MesterMcEndpoints.LatestRelease);
-        if (string.IsNullOrEmpty(response))
-        {
-            SetStatus("Hiba a frissítés lekérése közben.");
-            _logger.Error("Failed to fetch release info from GitHub API.");
-            return;
-        }
-
-        JObject releaseObject = JObject.Parse(response);
-        if (!releaseObject.TryGetValue("assets", out var assetsToken))
-        {
-            SetStatus("Hiba a frissítés lekérése közben.");
-            _logger.Error("No assets found in the latest release.");
-            return;
-        }
-
-        string? version = releaseObject.Value<string>("tag_name")?.TrimStart('v');
-        if (string.IsNullOrEmpty(version))
-        {
-            SetStatus("Hiba a frissítés lekérése közben.");
-            _logger.Error("Failed to determine the latest version from the release info.");
-            return;
-        }
-
-        // Insert version into the target asset name
-        targetAssetName = string.Format(targetAssetName, version);
-
-        JArray assetsArray = (JArray)assetsToken;
-        // Find the target asset
-        string? downloadUrl = null;
-        foreach (var asset in assetsArray)
-        {
-            if (asset["name"]?.ToString() == targetAssetName)
+            string? version = releaseObject.Value<string>("tag_name")?.TrimStart('v');
+            if (string.IsNullOrEmpty(version))
             {
-                downloadUrl = asset["browser_download_url"]?.ToString() ?? string.Empty;
-                break;
+                SetStatus("Hiba a frissítés lekérése közben.");
+                _logger.Error("Failed to determine the latest version from the release info.");
+                return;
             }
-        }
 
-        if (string.IsNullOrEmpty(downloadUrl))
-        {
-            SetStatus("Hibás letöltési link.");
-            _logger.Error($"No suitable asset found for the current OS and architecture. Asset name: {targetAssetName}");
-            return;
-        }
+            // Insert version into the target asset name
+            targetAssetName = string.Format(targetAssetName, version);
 
-        // 1. Download the asset
-        var progress = new Progress<double>(p =>
-        {
-            var percent = (int)(p * 100);
-            if (percent > 100)
-                percent = 100; // Cap at 100%
-            SetStatus("Letöltés...", percent);
-        });
-        string targetFilePath = Path.Combine(App.TmpDir, targetAssetName);
-        await HttpHelper.DownloadFileAsync(downloadUrl, targetFilePath, progress);
+            JArray assetsArray = (JArray)assetsToken;
+            // Find the target asset
+            string? downloadUrl = null;
+            foreach (var asset in assetsArray)
+            {
+                if (asset["name"]?.ToString() == targetAssetName)
+                {
+                    downloadUrl = asset["browser_download_url"]?.ToString() ?? string.Empty;
+                    break;
+                }
+            }
 
-        // 2. Extract the downloaded file to the temporary directory
-        SetStatus("Kicsomagolás...", targetAssetName);
-        string targetTempDir = Path.Combine(App.TmpDir, "extracted");
-        if (targetAssetName.EndsWith(".tar.gz"))
-        {
-            await using Stream inStream = File.OpenRead(targetFilePath);
-            await using Stream gzipStream = new GZipInputStream(inStream);
-            using TarArchive tarArchive = TarArchive.CreateInputTarArchive(gzipStream, Encoding.UTF8);
-            tarArchive.ExtractContents(targetTempDir);
-        }
-        else
-            ZipFile.ExtractToDirectory(targetFilePath, targetTempDir);
+            if (string.IsNullOrEmpty(downloadUrl))
+            {
+                SetStatus("Hibás letöltési link.");
+                _logger.Error(
+                    $"No suitable asset found for the current OS and architecture. Asset name: {targetAssetName}");
+                return;
+            }
 
-        // Remove Updater from the extracted files
-        foreach (var file in Directory.GetFiles(targetTempDir))
-        {
-            if (file.Contains("Updater"))
-                File.Delete(file);
-        }
+            // 1. Download the asset
+            var progress = new Progress<double>(p =>
+            {
+                var percent = (int)(p * 100);
+                if (percent > 100)
+                    percent = 100; // Cap at 100%
+                SetStatus("Letöltés...", percent);
+            });
+            string targetFilePath = Path.Combine(App.TmpDir, targetAssetName);
+            await HttpHelper.DownloadFileAsync(downloadUrl, targetFilePath, progress);
 
-        string tempBinDir = Path.Combine(targetTempDir, "bin");
-        if (Directory.Exists(tempBinDir))
-        {
-            foreach (var file in Directory.GetFiles(tempBinDir))
+            // 2. Extract the downloaded file to the temporary directory
+            SetStatus("Kicsomagolás...", targetAssetName);
+            string targetTempDir = Path.Combine(App.TmpDir, "extracted");
+            if (targetAssetName.EndsWith(".tar.gz"))
+            {
+                await using Stream inStream = File.OpenRead(targetFilePath);
+                await using Stream gzipStream = new GZipInputStream(inStream);
+                using TarArchive tarArchive = TarArchive.CreateInputTarArchive(gzipStream, Encoding.UTF8);
+                tarArchive.ExtractContents(targetTempDir);
+            }
+            else
+                ZipFile.ExtractToDirectory(targetFilePath, targetTempDir);
+
+            // Remove Updater from the extracted files
+            foreach (var file in Directory.GetFiles(targetTempDir))
             {
                 if (file.Contains("Updater"))
                     File.Delete(file);
             }
+
+            string tempBinDir = Path.Combine(targetTempDir, "bin");
+            if (Directory.Exists(tempBinDir))
+            {
+                foreach (var file in Directory.GetFiles(tempBinDir))
+                {
+                    if (file.Contains("Updater"))
+                        File.Delete(file);
+                }
+            }
+
+            // 3. Move the extracted files to the application directory
+            SetStatus("Alkalmazás...");
+            FileSystemHelper.MoveDirectory(targetTempDir, PathHelper.ApplicationDir, true);
+
+            // 4. Delete the temporary directory
+            SetStatus("Tisztítás...");
+            if (Directory.Exists(App.TmpDir))
+                FileSystemHelper.DeleteDirectory(App.TmpDir);
+
+            // 5. Restart the application
+            SetStatus("Újraindítás...");
+            string fileName = "MMC-Launcher";
+            if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
+                fileName += ".exe";
+            // Note: The updater expects to be in the same directory as the launcher executable.
+            string appPath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+            if (!File.Exists(appPath))
+            {
+                SetStatus("Nem sikerült újraindítani a launchert.");
+                _logger.Error("Failed to restart the launcher.");
+                return;
+            }
+
+            ProcessStartInfo processInfo = new ProcessStartInfo()
+            {
+                FileName = appPath,
+                UseShellExecute = true,
+            };
+            Process.Start(processInfo);
+            Close();
         }
-
-        // 3. Move the extracted files to the application directory
-        SetStatus("Alkalmazás...");
-        FileSystemHelper.MoveDirectory(targetTempDir, PathHelper.ApplicationDir, true);
-
-        // 4. Delete the temporary directory
-        SetStatus("Tisztítás...");
-        if (Directory.Exists(App.TmpDir))
-            FileSystemHelper.DeleteDirectory(App.TmpDir);
-
-        // 5. Restart the application
-        SetStatus("Újraindítás...");
-        string fileName = "MMC-Launcher";
-        if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
-            fileName += ".exe";
-        string appPath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
-        if (!File.Exists(appPath))
+        catch (Exception ex)
         {
-            SetStatus("Nem sikerült újraindítani a launchert.");
-            _logger.Error("Failed to restart the launcher.");
-            return;
+            SetStatus("Hiba történt a frissítés során.");
+            _logger.Error("Unexpected error during the update process: \n" + ex);
         }
-
-        ProcessStartInfo processInfo = new ProcessStartInfo()
-        {
-            FileName = appPath,
-            UseShellExecute = true,
-        };
-        Process.Start(processInfo);
-        Close();
     }
     
     /// <summary>
