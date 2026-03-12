@@ -188,6 +188,40 @@ public static class FileSystemHelper
     }
 
     /// <summary>
+    /// Verifies a file's hash using a digest string in the format "type:hash".
+    /// Supported digest types are "sha1" and "sha256" (case-insensitive).
+    /// </summary>
+    /// <param name="path">Filesystem path to the file to verify.</param>
+    /// <param name="digest">
+    /// The digest string in the form "type:hash", for example "sha1:abcdef..." or "sha256:0123...".
+    /// The method splits on the first ':' and treats the left part as the digest type and the right part as the hex hash.
+    /// </param>
+    /// <returns>
+    /// <c>true</c> when the digest format is valid and the file's computed hash matches the provided hash;
+    /// <c>false</c> when the digest format is invalid, the digest type is unsupported, or the hash comparison fails.
+    /// </returns>
+    public static bool CheckByDigest(string path, string digest)
+    {
+        string[] parts = digest.Split(':', 2);
+        if (parts.Length < 2)
+        {
+            _logger.Error($"Invalid digest format: '{digest}'. Expected format is 'type:hash'.");
+            return false;
+        }
+        
+        switch (parts[0].ToLower())
+        {
+            case "sha1":
+                return CheckSHA1(path, parts[1]);
+            case "sha256":
+                return CheckSHA256(path, parts[1]);
+            default:
+                _logger.Error($"Unsupported digest type '{parts[0]}' in digest string '{digest}'.");
+                return false;
+        }
+    }
+
+    /// <summary>
     /// Makes a file executable by modifying its permissions using the `chmod` command.
     /// </summary>
     /// <param name="path">The path of the file to make executable.</param>
@@ -287,6 +321,70 @@ public static class FileSystemHelper
         {
             _logger.Exc("Failed to fix command_history.txt file:");
             _logger.Error(e.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Tests whether the application can write to the given directory by creating a small test file.
+    /// Preserves the original behavior: creates the directory if needed, creates "test.txt", verifies its existence,
+    /// deletes it if created, and returns true on success; logs and returns false on any exception.
+    /// </summary>
+    /// <param name="targetDir">Directory to test write permissions for.</param>
+    /// <returns>True if a test file could be created and detected; otherwise false.</returns>
+    public static bool HasWritePermission(string targetDir)
+    {
+        try
+        {
+            Directory.CreateDirectory(targetDir);
+            
+            string testFile = Path.Combine(targetDir, "test.txt");
+            if (File.Exists(testFile))
+                File.Delete(testFile);
+            
+            File.WriteAllText(testFile, "test");
+            bool success = File.Exists(testFile);
+            if (success)
+                File.Delete(testFile);
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Unexpected error while testing write permissions at {targetDir}:");
+            _logger.Error(ex);
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Asynchronously tests whether the application has write permission to the given directory by attempting
+    /// to create a small test file ("test.txt") inside it.
+    /// </summary>
+    /// <param name="targetDir">The directory to test write permissions for. The directory will be created if it does not exist.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result is <c>true</c> if the test file could be created
+    /// and detected; otherwise <c>false</c>. Any exception is logged and results in <c>false</c>.
+    /// </returns>
+    public static async Task<bool> HasWritePermissionAsync(string targetDir)
+    {
+        try
+        {
+            Directory.CreateDirectory(targetDir);
+            
+            string testFile = Path.Combine(targetDir, "test.txt");
+            if (File.Exists(testFile))
+                File.Delete(testFile);
+            
+            await File.WriteAllTextAsync(testFile, "test");
+            bool success = File.Exists(testFile);
+            if (success)
+                File.Delete(testFile);
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Unexpected error while testing write permissions at {targetDir}:");
+            _logger.Error(ex);
+            return false;
         }
     }
 }
