@@ -83,9 +83,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     {
         // Start moving the window when left mouse button is pressed
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-        {
             BeginMoveDrag(e);
-        }
     }
     #endregion
     
@@ -97,11 +95,26 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     private async Task StartUpdateProcessAsync()
     {
         // TODO: Test on all platforms
-        // TODO: Add integrity check (e.g. checksum) for the downloaded file
-        // TODO: Check write permissions before starting the update process
-        // TODO: Add backup and restore mechanism in case something goes wrong during the update process
+        string backupPath = Path.Combine(App.TmpDir, "updateBackup.zip");
+        bool backupCreated = false;
+        bool success = false;
+        string? executablePath = null;
+        // The updater expects it to be in the same directory as the launcher executable
+        string applicationDir = Directory.GetCurrentDirectory();
+
         try
         {
+            if (!await FileSystemHelper.HasWritePermissionAsync(App.TmpDir) ||
+                !await FileSystemHelper.HasWritePermissionAsync(applicationDir))
+            {
+                SetStatus("Nincs írási jogosultság a szükséges könyvtárakban.");
+                _logger.Error("Insufficient write permissions for the temporary or application directory.");
+                return;
+            }
+
+            #region Get Latest Release
+
+            // Get the base asset name
             string targetAssetName = string.Empty;
             bool isArm = OSHelper.IsArmBased();
             switch (OSHelper.GetOperatingSystem())
@@ -123,7 +136,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 }
             }
 
-            // 0. Send http request to GitHub API to get the latest release info
+            // Send http request to GitHub API to get the latest release info
             var response = await HttpHelper.GetStringAsync(MesterMcEndpoints.LatestRelease);
             if (string.IsNullOrEmpty(response))
             {
@@ -132,6 +145,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 return;
             }
 
+            // Get the json response
             JObject releaseObject = JObject.Parse(response);
             if (!releaseObject.TryGetValue("assets", out var assetsToken))
             {
@@ -140,6 +154,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 return;
             }
 
+            // Get the version
             string? version = releaseObject.Value<string>("tag_name")?.TrimStart('v');
             if (string.IsNullOrEmpty(version))
             {
@@ -154,16 +169,18 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             JArray assetsArray = (JArray)assetsToken;
             // Find the target asset
             string? downloadUrl = null;
+            string? digest = null;
             foreach (var asset in assetsArray)
             {
                 if (asset["name"]?.ToString() == targetAssetName)
                 {
                     downloadUrl = asset["browser_download_url"]?.ToString() ?? string.Empty;
+                    digest = asset["digest"]?.ToString() ?? string.Empty;
                     break;
                 }
             }
 
-            if (string.IsNullOrEmpty(downloadUrl))
+            if (string.IsNullOrEmpty(downloadUrl) || string.IsNullOrEmpty(digest))
             {
                 SetStatus("Hibás letöltési link.");
                 _logger.Error(
@@ -171,6 +188,26 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 return;
             }
 
+            #endregion
+
+            #region Backup
+
+            // Create a backup of the current application directory
+            SetStatus("Biztonsági mentés készítése...");
+            try
+            {
+                ZipFile.CreateFromDirectory(applicationDir, backupPath);
+                backupCreated = true;
+            }
+            catch (Exception be)
+            {
+                SetStatus("Nem sikerült biztonsági mentést készíteni.");
+                _logger.Error("Failed to create backup of the current application directory: \n" + be);
+            }
+
+            #endregion
+
+            #region Downloading and Extracting
             // 1. Download the asset
             var progress = new Progress<double>(p =>
             {
@@ -181,8 +218,16 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             });
             string targetFilePath = Path.Combine(App.TmpDir, targetAssetName);
             await HttpHelper.DownloadFileAsync(downloadUrl, targetFilePath, progress);
+            
+            // 2. Check integrity
+            if (!FileSystemHelper.CheckByDigest(targetFilePath, digest))
+            {
+                SetStatus("Nem sikerült a fájl integritásának ellenőrzése.");
+                _logger.Error("File integrity check failed for the downloaded asset.");
+                return;
+            }
 
-            // 2. Extract the downloaded file to the temporary directory
+            // 3. Extract the downloaded file to the temporary directory
             SetStatus("Kicsomagolás...", targetAssetName);
             string targetTempDir = Path.Combine(App.TmpDir, "extracted");
             if (targetAssetName.EndsWith(".tar.gz"))
@@ -193,28 +238,23 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 tarArchive.ExtractContents(targetTempDir);
             }
             else
-                ZipFile.ExtractToDirectory(targetFilePath, targetTempDir);
+                ZipFile.ExtractToDirectory(targetFilePath, targetTempDir, true);
 
-            // Remove Updater from the extracted files
+            // 4. Remove Updater from the extracted files
             foreach (var file in Directory.GetFiles(targetTempDir))
-            {
                 if (file.Contains("Updater"))
                     File.Delete(file);
-            }
 
             string tempBinDir = Path.Combine(targetTempDir, "bin");
             if (Directory.Exists(tempBinDir))
-            {
                 foreach (var file in Directory.GetFiles(tempBinDir))
-                {
                     if (file.Contains("Updater"))
                         File.Delete(file);
-                }
-            }
+            #endregion
 
             // 3. Move the extracted files to the application directory
             SetStatus("Alkalmazás...");
-            FileSystemHelper.MoveDirectory(targetTempDir, PathHelper.ApplicationDir, true);
+            FileSystemHelper.MoveDirectory(targetTempDir, applicationDir, true);
 
             // 4. Delete the temporary directory
             SetStatus("Tisztítás...");
@@ -226,27 +266,47 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             string fileName = "MMC-Launcher";
             if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
                 fileName += ".exe";
-            // Note: The updater expects to be in the same directory as the launcher executable.
-            string appPath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
-            if (!File.Exists(appPath))
+
+            executablePath = Path.Combine(applicationDir, fileName);
+            if (!File.Exists(executablePath))
             {
                 SetStatus("Nem sikerült újraindítani a launchert.");
                 _logger.Error("Failed to restart the launcher.");
                 return;
             }
 
-            ProcessStartInfo processInfo = new ProcessStartInfo()
-            {
-                FileName = appPath,
-                UseShellExecute = true,
-            };
-            Process.Start(processInfo);
-            Close();
+            success = true;
         }
         catch (Exception ex)
         {
             SetStatus("Hiba történt a frissítés során.");
             _logger.Error("Unexpected error during the update process: \n" + ex);
+        }
+        finally
+        {
+            try
+            {
+                // Restore backup
+                if (!success && backupCreated)
+                    ZipFile.ExtractToDirectory(backupPath, applicationDir, true);
+                if (backupCreated)
+                    File.Delete(backupPath);
+                if (success && !string.IsNullOrEmpty(executablePath))
+                {
+                    ProcessStartInfo processInfo = new ProcessStartInfo()
+                    {
+                        FileName = executablePath,
+                        UseShellExecute = true,
+                    };
+                    Process.Start(processInfo);
+                    Close();
+                }
+            }
+            catch (Exception fe)
+            {
+                SetStatus("Nem várt hiba a frissítés véglesítése közben.");
+                _logger.Error("Unexpected error during update finalization: \n" + fe);
+            }
         }
     }
     
