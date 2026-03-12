@@ -84,8 +84,8 @@ public partial class App : Application
             {
                 try
                 {
-                    if (Directory.Exists(App.TmpDir))
-                        FileSystemHelper.DeleteDirectory(App.TmpDir);
+                    if (Directory.Exists(TmpDir))
+                        FileSystemHelper.DeleteDirectory(TmpDir);
                 }
                 catch
                 {

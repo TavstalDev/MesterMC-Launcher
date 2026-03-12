@@ -17,10 +17,20 @@ using Path = System.IO.Path;
 
 namespace Tavstal.MesterMC.Installer.Views;
 
+/// <summary>
+/// Main window of the installer application.
+/// Inherits from <see cref="KonkordWindow{TViewModel}"/> with <see cref="MainViewModel"/> as the view model type.
+/// This partial class contains the constructor, event handlers and a helper method for folder picking.
+/// </summary>
 public partial class MainWindow : KonkordWindow<MainViewModel>
 {
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(MainWindow));
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainWindow"/> class.
+    /// The attribute <see cref="RequiresUnreferencedCodeAttribute"/> is preserved because this constructor
+    /// may use code that could be trimmed/removed by the IL linker.
+    /// </summary>
     [RequiresUnreferencedCode("This constructor uses code that may be removed during trimming.")]
     public MainWindow()
     {
@@ -36,7 +46,7 @@ public partial class MainWindow : KonkordWindow<MainViewModel>
         {
             DataContext.CloseInteraction.RegisterHandler(action =>
             {
-                this.Close();
+                Close();
                 action.SetOutput(Unit.Default);
                 return Task.CompletedTask;
             }).DisposeWith(disposables);
@@ -71,16 +81,39 @@ public partial class MainWindow : KonkordWindow<MainViewModel>
         DataContext.StartMenuDirectory = OSHelper.GetProgramsDirectory();
     }
 
-    protected override void OnClosing(WindowClosingEventArgs e)
+    #region Events
+    /// <summary>
+    /// Event handler for changes to the game directory text field.
+    /// Validates the path and sets <see cref="MainViewModel.PathErrorMessage"/> accordingly.
+    /// </summary>
+    /// <param name="sender">Event sender (text box) or null.</param>
+    /// <param name="e">Text changed event arguments.</param>
+    private void GameDirPath_OnTextChanged(object? sender, TextChangedEventArgs e)
     {
-        base.OnClosing(e);
-        if (DataContext == null) 
-            return;
-        
-        if (Directory.Exists(DataContext.TmpDir))
-            Directory.Delete(DataContext.TmpDir, true);
+        if (DataContext == null) return;
+        DataContext.PathErrorMessage = PathHelper.IsValidPath(DataContext.GameDirectory) ? string.Empty : "A megadott játékkönyvtár nem érvényes.";
     }
 
+    /// <summary>
+    /// Event handler for changes to the start menu path text field.
+    /// Validates the path and sets <see cref="MainViewModel.PathErrorMessage"/> accordingly.
+    /// </summary>
+    /// <param name="sender">Event sender (text box) or null.</param>
+    /// <param name="e">Text changed event arguments.</param>
+    private void StartMenuPath_OnTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (DataContext == null) return;
+        DataContext.PathErrorMessage = PathHelper.IsValidPath(DataContext.GameDirectory) ? string.Empty : "A megadott start menü könyvtár nem érvényes.";
+    }
+    #endregion
+
+    /// <summary>
+    /// Opens a folder picker dialog and returns the selected folder's local path.
+    /// </summary>
+    /// <returns>
+    /// A task that resolves to the selected folder's local file system path, or <c>null</c> if none was selected or the platform
+    /// does not support folder picking.
+    /// </returns>
     private async Task<string?> OpenDirPickerAsync()
     {
         // Ensure the VisualRoot is a TopLevel object
@@ -120,19 +153,5 @@ public partial class MainWindow : KonkordWindow<MainViewModel>
     
         // Return the local path of the selected folder
         return selectedFolder.Path.LocalPath;
-    }
-    
-    private void GameDirPath_OnTextChanged(object? sender, TextChangedEventArgs e)
-    {
-        if (DataContext == null) return;
-
-        DataContext.PathErrorMessage = PathHelper.IsValidPath(DataContext.GameDirectory) ? string.Empty : "A megadott játékkönyvtár nem érvényes.";
-    }
-
-    private void StartMenuPath_OnTextChanged(object? sender, TextChangedEventArgs e)
-    {
-        if (DataContext == null) return;
-
-        DataContext.PathErrorMessage = PathHelper.IsValidPath(DataContext.GameDirectory) ? string.Empty : "A megadott start menü könyvtár nem érvényes.";
     }
 }

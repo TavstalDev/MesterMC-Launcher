@@ -4,16 +4,25 @@ using ReactiveUI.Avalonia;
 
 namespace Tavstal.MesterMC.Installer;
 
+/// <summary>
+/// Program entry point for the installer application.
+/// </summary>
 class Program
 {
-    // Initialization code. Don't use any Avalonia, third-party APIs or any
-    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    // yet and stuff might break.
+    /// <summary>
+    /// Application entry point.
+    /// </summary>
+    /// <param name="args">Command-line arguments forwarded to Avalonia's lifetime starter.</param>
     [STAThread]
     public static void Main(string[] args) => BuildAvaloniaApp()
         .StartWithClassicDesktopLifetime(args);
 
-    // Avalonia configuration, don't remove; also used by visual designer.
+    /// <summary>
+    /// Configures and returns the application's <see cref="AppBuilder"/>.
+    /// </summary>
+    /// <returns>
+    /// An <see cref="AppBuilder"/> configured with platform detection, fonts and logging.
+    /// </returns>
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()

@@ -20,10 +20,12 @@ using ShellLink;
 
 namespace Tavstal.MesterMC.Installer.Views;
 
+/// <summary>
+/// ViewModel for the installer main window.
+/// </summary>
 public partial class MainViewModel : ObservableObject
 {
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(MainViewModel));
-    public readonly string TmpDir;
     
     [ObservableProperty] private EInstallerWindow currentWindow;
     [ObservableProperty] private bool isLicenseAccepted;
@@ -40,20 +42,17 @@ public partial class MainViewModel : ObservableObject
     public bool HasPathErrorMessage => !string.IsNullOrEmpty(PathErrorMessage);
     public Interaction<Unit, Unit> CloseInteraction { get; } = new();
     public Interaction<Unit, string?> DirPickerInteraction { get; } = new();
-
-    public MainViewModel()
-    {
-        TmpDir = Path.Combine(Path.GetTempPath(), "mmcupdater_" + Path.GetRandomFileName());
-        if (!Directory.Exists(TmpDir))
-            Directory.CreateDirectory(TmpDir);
-    }
     
+    #region Relay Commands
+    /// <summary>
+    /// Opens the specified installer window (wizard step) after validating inputs required by that step.
+    /// </summary>
     [RelayCommand]
     private async Task OpenWindow(EInstallerWindow window)
     {
         switch (window)
         {
-            case EInstallerWindow.LocationSelect:
+            case EInstallerWindow.LOCATION_SELECT:
             {
                 if (!PathHelper.IsValidPath(GameDirectory))
                 {
@@ -62,7 +61,7 @@ public partial class MainViewModel : ObservableObject
                 }
                 break;
             }
-            case EInstallerWindow.Shortcuts:
+            case EInstallerWindow.SHORTCUTS:
             {
                 if (!PathHelper.IsValidPath(StartMenuDirectory))
                 {
@@ -71,7 +70,7 @@ public partial class MainViewModel : ObservableObject
                 }
                 break;
             }
-            case EInstallerWindow.Review:
+            case EInstallerWindow.REVIEW:
             {
                 StringBuilder reviewBuilder = new StringBuilder();
                 reviewBuilder.AppendLine("Telepítési helyszín:");
@@ -87,7 +86,7 @@ public partial class MainViewModel : ObservableObject
                 ReviewText = reviewBuilder.ToString();
                 break;
             }
-            case EInstallerWindow.Installing:
+            case EInstallerWindow.INSTALLING:
             {
                 // Start installation process
                 CurrentWindow = window;
@@ -99,10 +98,13 @@ public partial class MainViewModel : ObservableObject
         CurrentWindow = window;
     }
     
+    /// <summary>
+    /// Finalizes the installation step: optionally launches the installed game and/or opens the website, then closes the installer UI.
+    /// </summary>
     [RelayCommand]
     private async Task FinishInstallation()
     {
-        if (LaunchGame)
+        if (LaunchGame && !string.IsNullOrEmpty(GameDirectory))
         {
             try
             {
@@ -123,26 +125,14 @@ public partial class MainViewModel : ObservableObject
                         break;
                     }
                     case EOperatingSystem.Linux:
-                    {
-                        string appImagePath = Path.Combine(GameDirectory, "bin", "MMC-Launcher");
-                        string appImageDirectory = Path.Combine(GameDirectory, "bin"); 
-                        gameLaunchInfo = new ProcessStartInfo
-                        {
-                            FileName = "/bin/bash",
-                            Arguments = $"-c \"nohup {appImagePath} > /dev/null 2>&1 &\"",
-                            WorkingDirectory = appImageDirectory, 
-                            UseShellExecute = false
-                        };
-                        break;
-                    }
                     case EOperatingSystem.MacOS:
                     {
                         string appImagePath = Path.Combine(GameDirectory, "bin", "MMC-Launcher");
                         string appImageDirectory = Path.Combine(GameDirectory, "bin"); 
                         gameLaunchInfo = new ProcessStartInfo
                         {
-                            FileName = "/bin/bash",
-                            Arguments = $"-c \"nohup {appImagePath} > /dev/null 2>&1 &\"",
+                            FileName = appImagePath,
+                            Arguments = "",
                             WorkingDirectory = appImageDirectory, 
                             UseShellExecute = false
                         };
@@ -169,12 +159,15 @@ public partial class MainViewModel : ObservableObject
         await CloseInteraction.Handle(Unit.Default);
     }
     
+    /// <summary>
+    /// Requests the view to close by invoking the <see cref="CloseInteraction"/> interaction.
+    /// </summary>
     [RelayCommand]
-    private async Task CloseWindow()
-    {
-        await CloseInteraction.Handle(Unit.Default);
-    }
+    private async Task CloseWindow() => await CloseInteraction.Handle(Unit.Default);
     
+    /// <summary>
+    /// Opens a directory picker interaction and sets <see cref="GameDirectory"/> when a value is returned.
+    /// </summary>
     [RelayCommand]
     private async Task SelectGameDirectory()
     {
@@ -185,6 +178,9 @@ public partial class MainViewModel : ObservableObject
         GameDirectory = directoryResult;
     }
     
+    /// <summary>
+    /// Opens a directory picker interaction and sets <see cref="StartMenuDirectory"/> when a value is returned.
+    /// </summary>
     [RelayCommand]
     private async Task SelectStartMenuDirectory()
     {
@@ -194,9 +190,18 @@ public partial class MainViewModel : ObservableObject
         
         StartMenuDirectory = directoryResult;
     }
+    #endregion
 
+    // TODO: Review this method and its steps
     private async Task StartInstallProcessAsync()
     {
+        if (string.IsNullOrEmpty(GameDirectory) || string.IsNullOrEmpty(StartMenuDirectory))
+        {
+            _logger.Error("Game directory or start menu directory is null or empty.");
+            UpdateText("Hiba: A könyvtár útvonalak nem lehetnek üresek.");
+            return;
+        }
+        
         UpdateText("Előkészítés...");
         if (!Directory.Exists(GameDirectory))
             Directory.CreateDirectory(GameDirectory);
@@ -278,7 +283,7 @@ public partial class MainViewModel : ObservableObject
 
         UpdateText("Fájlok másolása...");
         UpdateProgress(20);
-        string targetFilePath = Path.Combine(TmpDir, targetAssetName);
+        string targetFilePath = Path.Combine(App.TmpDir, targetAssetName);
         var launcherStream = this.GetType().Assembly
             .GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.{targetAssetName}");
         if (launcherStream == null)
@@ -294,7 +299,7 @@ public partial class MainViewModel : ObservableObject
             await launcherStream.CopyToAsync(launcherStreamOutFile);
         }
 
-        string targetModsPath = Path.Combine(TmpDir, "content.zip");
+        string targetModsPath = Path.Combine(App.TmpDir, "content.zip");
         var targetModsPathStream = this.GetType().Assembly
             .GetManifestResourceStream($"Tavstal.MesterMC.Installer.Software.content.zip");
         if (targetModsPathStream == null)
@@ -312,7 +317,7 @@ public partial class MainViewModel : ObservableObject
         //  Extract the downloaded file to the temporary directory
         UpdateText("Kicsomagolás...");
         UpdateProgress(40);
-        string targetTempDir = Path.Combine(TmpDir, "extracted");
+        string targetTempDir = Path.Combine(App.TmpDir, "extracted");
         if (targetAssetName.EndsWith(".tar.gz"))
         {
             await using Stream inStream = File.OpenRead(targetFilePath);
@@ -529,12 +534,15 @@ public partial class MainViewModel : ObservableObject
         // Final: Delete the temporary directory
         UpdateText("Tisztítás...");
         UpdateProgress(100);
-        if (Directory.Exists(TmpDir))
-            FileSystemHelper.DeleteDirectory(TmpDir);
+        if (Directory.Exists(App.TmpDir))
+            FileSystemHelper.DeleteDirectory(App.TmpDir);
         
-        CurrentWindow = EInstallerWindow.Finished;
+        CurrentWindow = EInstallerWindow.FINISHED;
     }
 
+    /// <summary>
+    /// Updates the installer status text on the UI thread by assigning to <c>InstallText</c>.
+    /// </summary>
     private void UpdateText(string text)
     {
         Dispatcher.UIThread.Invoke(() =>
@@ -543,6 +551,9 @@ public partial class MainViewModel : ObservableObject
         });
     }
     
+    /// <summary>
+    /// Updates the installer progress value on the UI thread by assigning to <c>InstallProgress</c>.
+    /// </summary>
     private void UpdateProgress(double progress)
     {
         Dispatcher.UIThread.Invoke(() =>

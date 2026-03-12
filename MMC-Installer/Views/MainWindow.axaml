@@ -25,7 +25,7 @@
         <!--  Welcome, Window Content  -->
         <Grid RowDefinitions="*, Auto" IsVisible="{Binding CurrentWindow, 
                        Converter={StaticResource VisibilityConverter}, 
-                       ConverterParameter={x:Static models:EInstallerWindow.Welcome}}">
+                       ConverterParameter={x:Static models:EInstallerWindow.WELCOME}}">
 
             <Grid Grid.Row="0" ColumnDefinitions="183, *">
                 <!-- Banner -->
@@ -89,7 +89,7 @@
                         Width="80"
                         Classes="DefaultBtn"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.License}"
+                        CommandParameter="{x:Static models:EInstallerWindow.LICENSE}"
                         Content="Tovább"
                         Foreground="Black" />
 
@@ -105,7 +105,7 @@
         <!--  License Window Content  -->
         <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
                        Converter={StaticResource VisibilityConverter}, 
-                       ConverterParameter={x:Static models:EInstallerWindow.License}}">
+                       ConverterParameter={x:Static models:EInstallerWindow.LICENSE}}">
             <!-- Header -->
             <Border
                 Grid.Row="0"
@@ -325,7 +325,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                         Content="Vissza"
                         Foreground="Black"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.Welcome}"/>
+                        CommandParameter="{x:Static models:EInstallerWindow.WELCOME}"/>
 
                     <Button
                         Width="80"
@@ -334,7 +334,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                         Foreground="Black"
                         IsEnabled="{Binding IsLicenseAccepted}"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.LocationSelect}"/>
+                        CommandParameter="{x:Static models:EInstallerWindow.LOCATION_SELECT}"/>
 
                     <Button
                         Width="80"
@@ -348,7 +348,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
         <!--  Install Directory Window Content  -->
         <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
                        Converter={StaticResource VisibilityConverter}, 
-                       ConverterParameter={x:Static models:EInstallerWindow.LocationSelect}}">
+                       ConverterParameter={x:Static models:EInstallerWindow.LOCATION_SELECT}}">
             <!-- Header -->
             <Border
                 Grid.Row="0"
@@ -447,7 +447,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                         Content="Vissza"
                         Foreground="Black"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.License}"/>
+                        CommandParameter="{x:Static models:EInstallerWindow.LICENSE}"/>
 
                     <Button
                         Width="80"
@@ -455,7 +455,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                         Content="Tovább"
                         Foreground="Black"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.Shortcuts}"
+                        CommandParameter="{x:Static models:EInstallerWindow.SHORTCUTS}"
                         IsEnabled="{Binding !HasPathErrorMessage}"/>
 
                     <Button
@@ -470,7 +470,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
         <!--  Shortcuts Window Content  -->
         <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
                        Converter={StaticResource VisibilityConverter}, 
-                       ConverterParameter={x:Static models:EInstallerWindow.Shortcuts}}">
+                       ConverterParameter={x:Static models:EInstallerWindow.SHORTCUTS}}">
             <!-- Header -->
             <Border
                 Grid.Row="0"
@@ -577,7 +577,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                         Content="Vissza"
                         Foreground="Black"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.LocationSelect}"/>
+                        CommandParameter="{x:Static models:EInstallerWindow.LOCATION_SELECT}"/>
 
                     <Button
                         Width="80"
@@ -585,7 +585,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                         Content="Tovább"
                         Foreground="Black"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.Review}"
+                        CommandParameter="{x:Static models:EInstallerWindow.REVIEW}"
                         IsEnabled="{Binding !HasPathErrorMessage}"/>
 
                     <Button
@@ -600,7 +600,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
         <!--  Ready To Install Window Content  -->
         <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
                        Converter={StaticResource VisibilityConverter}, 
-                       ConverterParameter={x:Static models:EInstallerWindow.Review}}">
+                       ConverterParameter={x:Static models:EInstallerWindow.REVIEW}}">
             <!-- Header -->
             <Border
                 Grid.Row="0"
@@ -678,7 +678,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                         Content="Vissza"
                         Foreground="Black"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.Shortcuts}"/>
+                        CommandParameter="{x:Static models:EInstallerWindow.SHORTCUTS}"/>
 
                     <Button
                         Width="80"
@@ -686,7 +686,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                         Content="Telepítés"
                         Foreground="Black"
                         Command="{Binding OpenWindowCommand}"
-                        CommandParameter="{x:Static models:EInstallerWindow.Installing}"/>
+                        CommandParameter="{x:Static models:EInstallerWindow.INSTALLING}"/>
 
                     <Button
                         Width="80"
@@ -700,7 +700,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
         <!--  Install Window Content  -->
         <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
                        Converter={StaticResource VisibilityConverter}, 
-                       ConverterParameter={x:Static models:EInstallerWindow.Installing}}">
+                       ConverterParameter={x:Static models:EInstallerWindow.INSTALLING}}">
             <!-- Header -->
             <Border
                 Grid.Row="0"
@@ -780,7 +780,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
         <!--  Finish Window Content  -->
         <Grid RowDefinitions="*, Auto" IsVisible="{Binding CurrentWindow, 
                        Converter={StaticResource VisibilityConverter}, 
-                       ConverterParameter={x:Static models:EInstallerWindow.Finished}}">
+                       ConverterParameter={x:Static models:EInstallerWindow.FINISHED}}">
             <Grid Grid.Row="0" ColumnDefinitions="183, *">
                 <!-- Banner -->
                 <Border
