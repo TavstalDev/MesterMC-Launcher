@@ -8,12 +8,12 @@ public static class MesterMcEndpoints
     /// <summary>
     /// The URL for retrieving the latest release
     /// </summary>
-    public const string LatestRelease = "https://api.github.com/repos/TavstalDev/MMC-Launcher/releases/latest";
+    public const string LatestRelease = "https://api.github.com/repos/TavstalDev/MesterMC-Launcher/releases/latest";
 
     /// <summary>
     /// The URL for retrieving all releases
     /// </summary>
-    public const string AllReleases = "https://api.github.com/repos/TavstalDev/MMC-Launcher/releases";
+    public const string AllReleases = "https://api.github.com/repos/TavstalDev/MesterMC-Launcher/releases";
 
 #if DEBUG
     public const string AuthEndpoint = "https://localhost:36767/login/launcher";
@@ -28,7 +28,7 @@ public static class MesterMcEndpoints
     
     public const string TfaEndpoint = "https://api.mestermc.hu/login/launcher/2fa";
 
-public const string YggdrasilEndpoint = "https://api.mestermc.hu/yggdrasil";
+    public const string YggdrasilEndpoint = "https://api.mestermc.hu/yggdrasil";
     
     public const string ApiBaseEndpoint = "https://api.mestermc.hu/";
 #endif
