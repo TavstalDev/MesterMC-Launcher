@@ -21,7 +21,6 @@ public static class ModService
     [
         new("animatica-0.6.1+1.21.5.jar", "6091b255b7c4fe7d02aa1e20373a8a5d08b23af3bfcd81c75d7dce6678a804e9", "https://cdn.modrinth.com/data/PRN43VSY/versions/CVlwSVpU/animatica-0.6.1%2B1.21.5.jar"),
         new("appleskin-fabric-mc1.21.6-3.0.6.jar", "b82abe586851ba6dbb9bcd4d9270fbddcd519e855ea7bffe933ed45ab5158e21", "https://cdn.modrinth.com/data/EsAfCjCV/versions/YAjCkZ29/appleskin-fabric-mc1.21.6-3.0.6.jar"),
-        new("bettermounthud-1.2.6.jar", "98a625d51db9ee1d2548bef0fc28540e991034654da14ceb2b541da4fc695402", "https://cdn.modrinth.com/data/kqJFAPU9/versions/rXZxHSEZ/bettermounthud-1.2.6.jar"),
         new("BetterGrassify-1.8.2+fabric.1.21.10.jar", "94c30e62a1bd2fd5710cac4b9348f484ec8e6127705910ca6b45b46ae061b15d", "https://cdn.modrinth.com/data/m5T5xmUy/versions/2C7y66BK/BetterGrassify-1.8.2%2Bfabric.1.21.10.jar"),
         new("chatanimation-1.0.7.jar", "524b8bfdcdb567e109ddd80ebd9e6c66e0cf6455cb869a9b440023dbdaa80963", "https://cdn.modrinth.com/data/DnNYdJsx/versions/UFrXjD4k/chatanimation-1.0.7.jar"),
         new("cloth-config-19.0.147-fabric.jar", "d8a6dca9d0dad1fe44622a3c6a0348641934e3943c8d425a26f112bce6debfa2", "https://cdn.modrinth.com/data/9s6osm5g/versions/cz0b1j8R/cloth-config-19.0.147-fabric.jar"),
@@ -30,7 +29,6 @@ public static class ModService
         new("cwb-fabric-3.0.0+mc1.21.5.jar", "0ffe5494c49758a5c3ba407aa25cb33962f7d1b00d1068cfbadf5104a219766a", "https://cdn.modrinth.com/data/ETlrkaYF/versions/wXhtL4fb/cwb-fabric-3.0.0%2Bmc1.21.5.jar"),
         new("debugify-1.21.8+1.0.jar", "5277a32bb4c21fbe0752bea28e90e6c365da82c6d6a0a7b26732f2a0ebd3a775", "https://cdn.modrinth.com/data/QwxR6Gcd/versions/WLSwJeXa/debugify-1.21.8%2B1.0.jar"),
         new("dynamic-fps-3.9.6+minecraft-1.21.6-fabric.jar", "bc1173b967b23368138ee8539ab12c7865339a7696486bfad61dd7062d33c4a2", "https://cdn.modrinth.com/data/LQ3K71Q1/versions/PqIDU2GY/dynamic-fps-3.9.6%2Bminecraft-1.21.6-fabric.jar"),
-        new("e4mc_minecraft-fabric-5.4.1.jar", "42d722bceb020190509d1c228d3bd9714cf9090903ba80ad2fd525fe830e70bf", "https://cdn.modrinth.com/data/qANg5Jrr/versions/baNcxaPZ/e4mc_minecraft-fabric-5.4.1.jar"),
         new("entity_model_features_1.21.6-fabric-3.0.1.jar", "3603c541021cebc538fe449632acd704bf01e2e6e86385f22ef896a0c0e92ed8", "https://cdn.modrinth.com/data/4I1XuqiY/versions/PHCCbdMs/entity_model_features_1.21.6-fabric-3.0.1.jar"),
         new("entity_texture_features_1.21.6-fabric-7.0.2.jar", "deb60880ede708e3bbd3c20bfd668ce6bdcc070422248311b433dd3dc91e67d8", "https://cdn.modrinth.com/data/BVzZfTc1/versions/ZGrSwKTR/entity_texture_features_1.21.6-fabric-7.0.2.jar"),
         new("entityculling-fabric-1.9.3-mc1.21.8.jar", "bf64ca808bb8b06b7120c2efb2fea2fc783072ec40290ca7b146c1b2545e4a25", "https://cdn.modrinth.com/data/NNAgCjsB/versions/U81jswDa/entityculling-fabric-1.9.3-mc1.21.8.jar"),
@@ -42,22 +40,18 @@ public static class ModService
         new("ForgeConfigAPIPort-v21.8.1-1.21.8-Fabric.jar", "272fddcf3cc81d557211ec5cd3b94608ae2f4e695987fb69c9911bdbbb6ff0fc", "https://cdn.modrinth.com/data/ohNO6lps/versions/daREdLQt/ForgeConfigAPIPort-v21.8.1-1.21.8-Fabric.jar"),
         new("ImmediatelyFast-Fabric-1.12.2+1.21.8.jar", "e6934e2e0028801eac5c6809853917e6fc350306fc49c7a56bfc38fb5813ba6d", "https://cdn.modrinth.com/data/5ZwdcRci/versions/OrO3H19n/ImmediatelyFast-Fabric-1.12.2%2B1.21.8.jar"),
         new("iris-fabric-1.9.6+mc1.21.8.jar", "804f0cdf2d6a06baf5cd5b50c1c9cc1ec187bd3d394da4fee15c70d2b8dcccd0", "https://cdn.modrinth.com/data/YL57xq9U/versions/Rhzf61g1/iris-fabric-1.9.6%2Bmc1.21.8.jar"),
-        new("language-reload-1.7.4+1.21.6.jar", "1126d67e96acdb66f0684f37da869c98dcbcacdea686782370c650e24cf7e39d", "https://cdn.modrinth.com/data/uLbm7CG6/versions/W8KDnevt/language-reload-1.7.4%2B1.21.6.jar"),
         new("lithium-fabric-0.18.1+mc1.21.8.jar", "04f370c2f6e819dcd86a3c5684e38fd1e9c4988c7c2493ffb2bc07eb4504b94c", "https://cdn.modrinth.com/data/gvQqBUqZ/versions/qxIL7Kb8/lithium-fabric-0.18.1%2Bmc1.21.8.jar"),
         new("mixintrace-1.1.1+1.17.jar", "26ca21a27706cfa4561868f31c4fd07c542e8cc759419f5884ddff1f3a126a99", "https://cdn.modrinth.com/data/sGmHWmeL/versions/1.1.1%2B1.17/mixintrace-1.1.1%2B1.17.jar"),
         new("modmenu-15.0.0.jar", "5a6459c2760e35a0086c813fafe3fe61a964a5fddd94a331b2284a502ba1792f", "https://cdn.modrinth.com/data/mOgUt4GM/versions/am1Siv7F/modmenu-15.0.0.jar"),
         new("modelfix-1.21.5-1.12-fabric.jar", "a04945f556e3a2edbbf0306ca6f2c1e36826d2f15948d8db73b00735cdc6f33c", "https://cdn.modrinth.com/data/QdG47OkI/versions/WcDxGReS/modelfix-1.21.5-1.12-fabric.jar"),
         new("moreculling-fabric-1.21.8-1.4.0-beta.2.jar", "deffc4b9c50b9ec8439a61eb3ab3128a279dbffd1dcd0ad31b893d92183ef600", "https://cdn.modrinth.com/data/51shyZVL/versions/ivOsScf8/moreculling-fabric-1.21.8-1.4.0-beta.2.jar"),
-        new("NoChatReports-FABRIC-1.21.8-v2.15.0.jar", "f21bf1c79fadb1277c756abc7cf07c0edd7ce954706cf7ddf9fcc1b0ee176c90", "https://cdn.modrinth.com/data/qQyHxfxd/versions/pmpg6ocz/NoChatReports-FABRIC-1.21.8-v2.15.0.jar"),
         new("optiboxes-1.7+1.21.8-fabric.jar", "00d9c5dd6b76313f76686f332818e2c2281255cb70da0e3273860d79384bbef0", "https://cdn.modrinth.com/data/DWuwk8aA/versions/VHppll0O/optiboxes-1.7%2B1.21.8-fabric.jar"),
         new("optigui-2.3.0-beta.8+1.21.6.jar", "7e95944434be0c11347b110ab399609a567e33a5751905b08f8bebd65bc66db7", "https://cdn.modrinth.com/data/JuksLGBQ/versions/ft3Pi0Dc/optigui-2.3.0-beta.8%2B1.21.6.jar"),
-        new("paginatedadvancements-2.7.0+1.21.8.jar", "c82248aad622352c2eb0d8b7e2fd4505213f8039d0fac2984e1a57caf876c21c", "https://cdn.modrinth.com/data/pJogNFap/versions/yErEOfqA/paginatedadvancements-2.7.0%2B1.21.8.jar"),
         new("PickUpNotifier-v21.8.1-1.21.8-Fabric.jar", "72fe4e8008ea4217e488ac6f721c8ce7ca09917952bd5f423c32a62367d2fad3", "https://cdn.modrinth.com/data/ZX66K16c/versions/CQxBBsyi/PickUpNotifier-v21.8.1-1.21.8-Fabric.jar"),
         new("puzzle-fabric-2.1.1+1.21.6.jar", "601ead8a8b27319787d9094a5a690d7a79e2297da100cabeab692da8fe19ccfe", "https://cdn.modrinth.com/data/3IuO68q1/versions/EfTbdnT6/puzzle-fabric-2.1.1%2B1.21.6.jar"),
         new("PuzzlesLib-v21.8.9-1.21.8-Fabric.jar", "f9ab44080a0756876e42e777bbe111dee2e5b87c75eea9425a7b7b0f91dbda61", "https://cdn.modrinth.com/data/QAGBst4M/versions/tXTEdgyF/PuzzlesLib-v21.8.9-1.21.8-Fabric.jar"),
         new("reeses-sodium-options-fabric-1.8.4+mc1.21.6.jar", "bc140a2af0a3cf7dcb691be5d88263d9db87468d643a666ad6f881ddcb23482a", "https://cdn.modrinth.com/data/Bh37bMuy/versions/AgGRyydH/reeses-sodium-options-fabric-1.8.4%2Bmc1.21.6.jar"),
         new("rrls-5.1.10+mc1.21.8-fabric.jar", "92f6e26d6aba4b9a74097f90cdf758a7994f0dd39896b3993e070ef292fea07b", "https://cdn.modrinth.com/data/ZP7xHXtw/versions/hkfSWmNV/rrls-5.1.10%2Bmc1.21.8-fabric.jar"),
-        new("voicechat-fabric-1.21.8-2.6.6.jar", "fefbf1bc1ab9618e93baedd46ab05799d89537484e553c0bfde357dc72e8d321", "https://cdn.modrinth.com/data/9eGKb6K1/versions/2Z1g1v36/voicechat-fabric-1.21.8-2.6.6.jar" ),
         new("sodium-fabric-0.7.3+mc1.21.8.jar", "388323a88c22a56357ff3f6b782b446ceb47006122b6bd62a9ec81b22bef2d70", "https://cdn.modrinth.com/data/AANobbMI/versions/7pwil2dy/sodium-fabric-0.7.3%2Bmc1.21.8.jar"),
         new("sodium-extra-fabric-0.7.0+mc1.21.8.jar", "853923fba108a00ef4320814d81e93db6c55d3aeb5220fe4039d3cb3f001dbe4", "https://cdn.modrinth.com/data/PtjYWJkn/versions/Of25zuEG/sodium-extra-fabric-0.7.0%2Bmc1.21.8.jar"),
         new("UniLib-1.2.0+1.21.8-fabric.jar", "efb1289469874ad43d7a2273590960dffd1e134f588e3f21291c7f8443acbcc4", "https://cdn.modrinth.com/data/nT86WUER/versions/BEkYsae8/UniLib-1.2.0%2B1.21.8-fabric.jar"),
@@ -66,7 +60,6 @@ public static class ModService
         new("Zoomify-2.14.6+1.21.6.jar", "f730fc2f5e2b0a5f285f9ed01a307f2c5cecb13e5527fcb6971b4b398c85549a", "https://cdn.modrinth.com/data/w7ThoJFB/versions/qMqviL3t/Zoomify-2.14.6%2B1.21.6.jar"),
         // TODO: Replace the download url with the actual release
         new("CustomSkinLoader_Fabric-14.27-SNAPSHOT-01.jar", "f6761073b3332fd2e12b5fd3f6d6db6974d03af08ae83fc59e00684fb237f1db", "https://github.com/TavstalDev/MCCustomSkinLoader/releases/download/14.27-SNAPSHOT-01/CustomSkinLoader_Fabric-14.27-SNAPSHOT-01.jar"),
-        new("splashscreen-1.1.1.jar", "4db8d45dfd719bc2ac8f9d997b6f5245fa7fbdec744491ffa8218b5e16a3e06f", "https://cdn.modrinth.com/data/cxe0fRnA/versions/gWPlubql/splashscreen-1.1.1.jar"),
         
         
         // Disabled mods
