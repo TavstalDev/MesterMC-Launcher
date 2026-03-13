@@ -387,4 +387,25 @@ public static class FileSystemHelper
             return false;
         }
     }
+
+    /// <summary>
+    /// Checks whether the drive containing <paramref name="targetDir"/> has at least <paramref name="bytes"/>
+    /// bytes of available free space.
+    /// </summary>
+    /// <param name="targetDir">The directory to check the drive of. The method will determine the root drive from this path.</param>
+    /// <param name="bytes">The minimum number of free bytes required.</param>
+    public static bool HasEnoughFreeSpace(string targetDir, long bytes)
+    {
+        try
+        {
+            var driveInfo = new DriveInfo(Path.GetPathRoot(targetDir) ?? targetDir);
+            return driveInfo.AvailableFreeSpace >= bytes;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Unexpected error while checking free space at {targetDir}:");
+            _logger.Error(ex);
+            return false;
+        }
+    }
 }
