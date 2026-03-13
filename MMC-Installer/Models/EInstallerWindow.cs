@@ -38,5 +38,10 @@ public enum EInstallerWindow
     /// <summary>
     /// Completion page shown when installation finishes (success or failure summary).
     /// </summary>
-    FINISHED = 6
+    FINISHED = 6,
+    
+    /// <summary>
+    /// Error page used to display fatal or non-recoverable installation errors.
+    /// </summary>
+    ERROR = 7
 }

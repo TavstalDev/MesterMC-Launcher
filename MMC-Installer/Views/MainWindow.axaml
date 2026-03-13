@@ -848,5 +848,80 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                 </StackPanel>
             </Border>
         </Grid>
+        
+        <!--  Error Window Content  -->
+        <Grid RowDefinitions="*, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EInstallerWindow.ERROR}}">
+            <Grid Grid.Row="0" ColumnDefinitions="183, *">
+                <!-- Banner -->
+                <Border
+                    Grid.Column="0"
+                    Background="#F0F0F0"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="0,0,0,0">
+                    <Image
+                        Margin="0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Source="avares://MMC-Installer/Assets/images/banner.png" />
+                </Border>
+
+                <!-- Content -->
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="25"
+                    VerticalAlignment="Top">
+
+                    <TextBlock
+                        Margin="0,0,0,25"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="Black"
+                        Text="A MesterMC Telepítése Sikertelen"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,10"
+                        Foreground="Black"
+                        Text="A telepítő varázsló sikertelenül telepítette a MesterMC alkalmazást a számítógépére. Hiba üzenet:"
+                        TextWrapping="Wrap" />
+                    
+                    <TextBlock>
+                        Margin="0,0,0,10"
+                        Foreground="Red"
+                        Text="{Binding ErrorMessage}"
+                        TextWrapping="Wrap" />
+                    </TextBlock>
+
+                    <TextBlock
+                        Margin="0,0,0,5"
+                        Foreground="Black"
+                        Text="Kilépéshez kattints a 'Befejez' gombra."
+                        TextWrapping="Wrap" />
+
+                </StackPanel>
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="1"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Befejez"
+                        Foreground="Black"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Window>
