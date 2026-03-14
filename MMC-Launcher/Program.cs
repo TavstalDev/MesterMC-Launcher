@@ -5,14 +5,19 @@ using ReactiveUI.Avalonia;
 
 namespace Tavstal.MesterMC.Launcher;
 
-// ReSharper disable once ClassNeverInstantiated.Global
+/// <summary>
+/// Application entry point for the Avalonia-based MMC Launcher.
+/// </summary>
 class Program
 {
+    /// <summary>
+    /// The application host created from <see cref="Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder(string[])"/>.
+    /// </summary>
     public static IHost? AppHost { get; private set; }
     
-    // Initialization code. Don't use any Avalonia, third-party APIs or any
-    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    // yet and stuff might break.
+    /// <summary>
+    /// The program's main entry point.
+    /// </summary>
     [STAThread]
     public static void Main(string[] args)
     {
@@ -22,7 +27,9 @@ class Program
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
-    // Avalonia configuration, don't remove; also used by visual designer.
+    /// <summary>
+    /// Configures and returns an <see cref="Avalonia.AppBuilder"/> for the application.
+    /// </summary>
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()

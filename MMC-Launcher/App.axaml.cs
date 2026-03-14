@@ -23,6 +23,16 @@ using Tavstal.MesterMC.Launcher.Views;
 namespace Tavstal.MesterMC.Launcher;
 
 // ReSharper disable once PartialTypeWithSinglePart
+
+/// <summary>
+/// Main Avalonia application class for the MesterMC launcher.
+/// </summary>
+/// <remarks>
+/// This partial <see cref="Application"/> contains startup logic, version information,
+/// screen size helpers, game instance creation and Discord Rich Presence helpers.
+/// It is marked with <see cref="RequiresUnreferencedCodeAttribute"/> because some of the
+/// reflection-based version and metadata lookups may be affected by trimming.
+/// </remarks>
 [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class App : Application
 {
@@ -31,11 +41,31 @@ public partial class App : Application
     private static DiscordRpcClient? _rpcClient;
     
     #region Screen Size
+    /// <summary>
+    /// The screen size used by the launcher for resolution calculations.
+    /// </summary>
     private static PixelSize _screenSize = new(1920, 1080);
+    
+    /// <summary>
+    /// Returns the current screen size used by the launcher.
+    /// </summary>
     public static PixelSize ScreenSize => _screenSize;
     
+    /// <summary>
+    /// Convenience accessor for the screen width.
+    /// </summary>
     public static decimal ScreenWidth => _screenSize.Width;
+    
+    /// <summary>
+    /// Convenience accessor for the screen height.
+    /// </summary>
     public static decimal ScreenHeight => _screenSize.Height;
+    
+    /// <summary>
+    /// Sets the screen size used by the launcher. This affects resolution calculations
+    /// for newly created game instances.
+    /// </summary>
+    /// <param name="screenSize">New screen size to use.</param>
     public static void SetScreenSize(PixelSize screenSize)
     {
         _screenSize = screenSize;
@@ -43,7 +73,14 @@ public partial class App : Application
     #endregion
 
     #region Versioning
+    /// <summary>
+    /// Backing storage for the computed application version string.
+    /// </summary>
     private static string _version = string.Empty;
+    
+    /// <summary>
+    /// Returns the application's version as a string.
+    /// </summary>
     public static string Version
     {
         get
@@ -65,6 +102,10 @@ public partial class App : Application
             return _version;
         }
     }
+    
+    /// <summary>
+    /// Returns the branch identifier used for the build (dev in DEBUG, stable otherwise).
+    /// </summary>
     public static string Branch
     {
         get
@@ -76,7 +117,14 @@ public partial class App : Application
 #endif
         }   
     }
+    /// <summary>
+    /// Backing storage for the build date string.
+    /// </summary>
     private static string _buidDate = string.Empty;
+    
+    /// <summary>
+    /// Returns the build date for the running assembly.
+    /// </summary>
     public static string BuildDate
     {
         get
@@ -98,14 +146,25 @@ public partial class App : Application
             return _buidDate;
         }
     }
+    
+    /// <summary>
+    /// Nullable flag indicating whether the launcher is up to date. Null when unknown.
+    /// </summary>
     public static bool? IsUpToDate { get; set; }
     #endregion
     
+    /// <summary>
+    /// Loads Avalonia XAML for the application.
+    /// </summary>
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
     }
 
+    /// <summary>
+    /// Called when Avalonia framework initialization completes. This method sets the main window
+    /// and attempts to initialize Discord Rich Presence.
+    /// </summary>
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -135,7 +194,14 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
     
-    //#region Game Instance
+    #region Game Instance
+    /// <summary>
+    /// Creates a configured <see cref="MinecraftInstance"/> (Fabric) using the launcher settings.
+    /// </summary>
+    /// <param name="progressReporter">
+    /// Optional progress reporter used by the instance while setting up or launching the game.
+    /// </param>
+    /// <returns>A configured <see cref="MinecraftInstance"/> ready for setup/launch.</returns>
     public static MinecraftInstance createMinecraftInstance(IProgressReporter? progressReporter)
     {
         CoreConfigDto launcherSettings = LauncherHelper.GetLauncherSettings();
@@ -236,6 +302,10 @@ public partial class App : Application
         return _instance;
     }
     
+    /// <summary>
+    /// Callback invoked by the game instance to suggest a default Java path based on version metadata.
+    /// </summary>
+    /// <param name="meta">The Java version metadata provided by the game or mod loader.</param>
     private static void SetupDefaultJavaPath(VersionMeta? meta)
     {
         var settings = LauncherHelper.GetLauncherSettings();
@@ -266,6 +336,10 @@ public partial class App : Application
         UpdateJavaPath(defaultJavaPath);
     }
     
+    /// <summary>
+    /// Updates the stored Java path in both the running instance and the launcher settings file.
+    /// </summary>
+    /// <param name="javaPath">Path to the Java executable or home to use for launching Minecraft.</param>
     private static void UpdateJavaPath(string javaPath)
     {
         _instance?.UpdateJavaPath(javaPath);
@@ -273,9 +347,9 @@ public partial class App : Application
         settings.Java.JavaPath = javaPath;
         JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, settings, CustomJsonContext.Default.CoreConfigDto);
     }
-    //#endregion
+    #endregion
     
-    //#region Discord RPC
+    #region Discord RPC
     /// <summary>
     /// Updates the Discord Rich Presence (RPC) with the specified details.
     /// </summary>
@@ -334,5 +408,5 @@ public partial class App : Application
             _logger.Error(ex);
         }
     }
-    //#endregion
+    #endregion
 }
