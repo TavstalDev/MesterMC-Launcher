@@ -53,18 +53,33 @@ public class CoreConfigDto
     [JsonProperty("misc"), JsonPropertyName("misc")]
     public MiscConfigDto Misc { get; set; }
     
+    /// <summary>
+    /// The UTC date and time when cached data was last refreshed.
+    /// </summary>
     [JsonProperty("cacheRefreshDate"), JsonPropertyName("cacheRefreshDate")]
     public DateTime CacheRefreshDate { get; set; }
     
+    /// <summary>
+    /// When true, environment variables from <see cref="EnvironmentVariables"/> are applied/used by the launcher.
+    /// </summary>
     [JsonProperty("enableEnvironmentVariables"), JsonPropertyName("enableEnvironmentVariables")]
     public bool EnableEnvironmentVariables { get; set; }
     
+    /// <summary>
+    /// A set of environment variables (name => value) that the launcher may apply when launching processes.
+    /// </summary>
     [JsonProperty("environmentVariables"), JsonPropertyName("environmentVariables")]
     public Dictionary<string, string> EnvironmentVariables { get; set; }
     
+    /// <summary>
+    /// Index or identifier of the last user who played/used the launcher.
+    /// </summary>
     [JsonProperty("lastPlayed"), JsonPropertyName("lastPlayed")]
     public int LastUser { get; set; }
     
+    /// <summary>
+    /// Mapping of user identifiers to a display name or identifier used by the launcher.
+    /// </summary>
     [JsonProperty("users"), JsonPropertyName("users")]
     public Dictionary<string, string> Users { get; set; }
 
@@ -91,6 +106,19 @@ public class CoreConfigDto
         Users = new Dictionary<string, string>();
     }
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CoreConfigDto"/> class using the provided values.
+    /// </summary>
+    /// <param name="clientId">A unique client identifier (typically a hex string). May be null or empty if not provided.</param>
+    /// <param name="launcher">The launcher configuration DTO to assign to the <see cref="Launcher"/> property.</param>
+    /// <param name="java">The Java configuration DTO to assign to the <see cref="Java"/> property.</param>
+    /// <param name="minecraft">The Minecraft configuration DTO to assign to the <see cref="Minecraft"/> property.</param>
+    /// <param name="misc">The miscellaneous configuration DTO to assign to the <see cref="Misc"/> property.</param>
+    /// <param name="cacheRefreshDate">The date and time when cached data was last refreshed (UTC).</param>
+    /// <param name="enableEnvironmentVariables">Flag indicating whether environment variables are enabled.</param>
+    /// <param name="environmentVariables">A dictionary of environment variables; may be null (no variables).</param>
+    /// <param name="lastUser">Index or identifier of the last user who played; -1 typically indicates none.</param>
+    /// <param name="users">A dictionary mapping user indices/ids to a display name or identifier; may be null or empty.</param>
     public CoreConfigDto(string clientId, LauncherConfigDto launcher, JavaConfigDto java, MinecraftConfigDto minecraft, MiscConfigDto misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables, int lastUser, Dictionary<string, string> users)
     {
         ClientId = clientId;

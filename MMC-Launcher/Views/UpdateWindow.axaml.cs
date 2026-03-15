@@ -28,6 +28,11 @@ using Tavstal.MesterMC.Launcher.Views.Models;
 
 namespace Tavstal.MesterMC.Launcher.Views;
 
+/// <summary>
+/// Window shown during application startup that performs validation, updates, Java checks,
+/// instance preparation and launches the main window when finished.
+/// Implements IProgressReporter to update UI-bound progress and status.
+/// </summary>
 [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressReporter
 {
@@ -41,6 +46,10 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// </summary>
     private readonly int _stepDelay = 100;
     
+    /// <summary>
+    /// Initializes a new instance of <see cref="UpdateWindow"/>, sets DataContext and visuals,
+    /// registers close interaction and chooses a seasonal screen image.
+    /// </summary>
     [RequiresUnreferencedCode("This constructor uses code that may be removed during trimming.")]
     public UpdateWindow()
     {
@@ -65,32 +74,26 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         FitToDisplay();
         
         DateTime now = DateTime.UtcNow;
-        switch (now.Month)
+        DataContext.ScreenImage = now.Month switch
         {
-            case 1:
-            case 2:
-            case 12:
-            {
-                DataContext.ScreenImage = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/screens/screen-update-2-winter.png"));
-                break;
-            }
-            case 3:
-            case 4:
-            case 5:
-            {
-                DataContext.ScreenImage = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/screens/screen-update-2-spring.png"));
-                break;
-            }
-            case 9:
-            case 10:
-            case 11:
-            {
-                DataContext.ScreenImage = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/screens/screen-update-2-fall.png"));
-                break;
-            }
-        }
+            1 or 2 or 12 => ImageHelper.LoadFromResource(
+                new Uri("avares://MMC-Launcher/Assets/screens/screen-update-2-winter.png")),
+            3 or 4 or 5 => ImageHelper.LoadFromResource(
+                new Uri("avares://MMC-Launcher/Assets/screens/screen-update-2-spring.png")),
+            9 or 10 or 11 => ImageHelper.LoadFromResource(
+                new Uri("avares://MMC-Launcher/Assets/screens/screen-update-2-fall.png")),
+            _ => DataContext.ScreenImage
+        };
     }
     
+    #region Events
+    /// <summary>
+    /// Called when the window is loaded. Runs the startup sequence asynchronously on the UI thread.
+    /// Sequence includes validation, Java checks, update checks, instance preparation, mod download,
+    /// cache/news refresh and finally launching the main window.
+    /// </summary>
+    /// <param name="e">Routed event args.</param>
+    // TODO: Review code
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
@@ -257,15 +260,23 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         });
     }
     
+    /// <summary>
+    /// Starts moving the window when the left mouse button is pressed on the draggable area.
+    /// </summary>
     private void DragStart_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         // Start moving the window when left mouse button is pressed
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-        {
             BeginMoveDrag(e);
-        }
     }
+    #endregion
     
+    /// <summary>
+    /// Attempts to start the updater executable located in the current working directory.
+    /// Chooses ".exe" extension for Windows.
+    /// </summary>
+    /// <returns>A completed task when the start attempt finishes.</returns>
+    // TODO: Review code
     private async Task<bool> CheckUpdateAsync(bool justCheck = false)
     {
         try
@@ -332,6 +343,10 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         }
     }
     
+    /// <summary>
+    /// Scales and centers the window based on the application's reported screen size.
+    /// </summary>
+    // TODO: Review code
     private Task UpdateLauncher()
     {
         try
@@ -368,6 +383,9 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Scales and centers the window based on the application's reported screen size.
+    /// </summary>
     private void FitToDisplay()
     {
         double screenWidth = (double)App.ScreenWidth;

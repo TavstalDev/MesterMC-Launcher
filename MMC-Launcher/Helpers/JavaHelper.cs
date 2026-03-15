@@ -39,6 +39,9 @@ public static class JavaHelper
     private static List<JavaVersion> _cachedJavaVersions = [];
     private static DateTime _cacheExpiration = DateTime.MinValue;
 
+    /// <summary>
+    /// Default directories to probe for Java installations on Windows systems.
+    /// </summary>
     private static readonly List<string> WindowsDirectories =
     [
         @"C:\Program Files\Java",
@@ -47,6 +50,9 @@ public static class JavaHelper
         @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Java"
     ];
 
+    /// <summary>
+    /// Default directories to probe for Java installations on Linux systems.
+    /// </summary>
     private static readonly List<string> LinuxDirectories =
     [
         "/usr/lib/jvm",
@@ -55,6 +61,9 @@ public static class JavaHelper
         "/usr/local/java"
     ];
 
+    /// <summary>
+    /// Default directories to probe for Java installations on macOS systems.
+    /// </summary>
     private static readonly List<string> MacDirectories =
     [
         "/Library/Java/JavaVirtualMachines",

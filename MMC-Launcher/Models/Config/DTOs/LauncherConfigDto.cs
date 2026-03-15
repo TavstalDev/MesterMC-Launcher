@@ -58,6 +58,9 @@ public class LauncherConfigDto
     [JsonProperty("iconsDirectoryPath"), JsonPropertyName("iconsDirectoryPath")]
     public string IconsDirectoryPath { get; set; }
     
+    /// <summary>
+    /// Gets or sets the file system path to the Minecraft data/instances directory used by the launcher.
+    /// </summary>
     [JsonProperty("minecraftDirectoryPath"), JsonPropertyName("minecraftDirectoryPath")]
     public string MinecraftDataDirectoryPath { get; set; }
     
@@ -96,7 +99,7 @@ public class LauncherConfigDto
         AssetsDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "assets");
         CacheDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "cache");
         IconsDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "icons");
-        MinecraftDataDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "minecraftData");
+        MinecraftDataDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "game");
         JavaDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "java");
         LibrariesDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "libraries");
         ManifestsDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "manifests");
