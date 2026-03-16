@@ -67,4 +67,9 @@
         <SubType>Code</SubType>
       </Compile>
     </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Assets\manifests\fabric.json" />
+      <EmbeddedResource Include="Assets\manifests\vanilla.json" />
+    </ItemGroup>
 </Project>
