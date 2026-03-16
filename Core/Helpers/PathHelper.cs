@@ -65,7 +65,7 @@ public static class PathHelper
     /// <summary>
     /// Gets the path to the launcher logs directory.
     /// </summary>
-    public static readonly string LauncherLogsDir = Path.Combine(ApplicationDir, "logs");
+    public static readonly string LauncherLogsDir = Path.Combine(ApplicationDir, "launcherLogs");
     
     /// <summary>
     /// Specifies the format for log file names, where `{0}` is replaced with the log name.
