@@ -114,7 +114,7 @@ public static class JsonHelper
     /// </summary>
     /// <typeparam name="T">The type of the object to deserialize.</typeparam>
     /// <param name="path">The file path to read the JSON content from.</param>
-    /// <param name="typeInfo"></param>
+    /// <param name="typeInfo">A <see cref="JsonTypeInfo{T}"/> describing the target type for the source-generated serializer.</param>
     /// <returns>The deserialized object, or default if an error occurs.</returns>
     public static async Task<T?> ReadJsonFileAsync<T>(string path, JsonTypeInfo<T> typeInfo)
     {
@@ -127,6 +127,28 @@ public static class JsonHelper
         catch (Exception ex)
         {
             _logger.Exc($"Error in ReadJsonFileAsync<T> {path}:");
+            _logger.Error(ex.ToString());
+            return default;
+        }
+    }
+    
+    /// <summary>
+    /// Asynchronously reads and deserializes an object of type <typeparamref name="T"/> from the provided <see cref="Stream"/>.
+    /// </summary>
+    /// <typeparam name="T">The target type to deserialize.</typeparam>
+    /// <param name="stream">The input stream containing JSON data. The method reads from the stream's current position.</param>
+    /// <param name="typeInfo">A <see cref="JsonTypeInfo{T}"/> describing the target type for the source-generated serializer.</param>
+    /// <returns>The deserialized object, or default if an error occurs.</returns>
+    public static async Task<T?> ReadJsonStreamAsync<T>(Stream stream, JsonTypeInfo<T> typeInfo)
+    {
+        try
+        {
+            var local = await JsonSerializer.DeserializeAsync(stream, typeInfo);
+            return local;
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc($"Error in ReadJsonStreamAsync<T>:");
             _logger.Error(ex.ToString());
             return default;
         }
