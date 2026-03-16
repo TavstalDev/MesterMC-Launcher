@@ -10,6 +10,7 @@
 
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Text;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Models;
 
@@ -218,6 +219,72 @@ public static class FileSystemHelper
             default:
                 _logger.Error($"Unsupported digest type '{parts[0]}' in digest string '{digest}'.");
                 return false;
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously computes the SHA-1 hash of the file at the given path and returns it as a lowercase hex string.
+    /// </summary>
+    /// <param name="path">Path to the file to hash.</param>
+    public static async Task<string?> GetFileHashAsync(string path)
+    {
+        try
+        {
+            await using FileStream stream = File.OpenRead(path);
+            return await GetFileHashAsync(stream);
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc("Failed to compute file hash:");
+            _logger.Error(ex.ToString());
+            return null;
+        }
+    }
+    
+    /// <summary>
+    /// Computes the SHA-1 hash of the provided stream and returns it as a lowercase hexadecimal string.
+    /// </summary>
+    /// <param name="stream">
+    /// The input stream to hash. The method reads from the current stream position to the end.
+    /// The caller is responsible for the stream's lifetime (this method does not dispose the provided stream).
+    /// </param>
+    public static async Task<string?> GetFileHashAsync(Stream stream)
+    {
+        try
+        {
+            using var sha = SHA1.Create();
+            byte[] hashBytes = await sha.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            return fileHash;
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc("Failed to compute file hash:");
+            _logger.Error(ex.ToString());
+            return null;
+        }
+    }
+    
+    /// <summary>
+    /// Computes the SHA-1 hash of the provided string using UTF-8 encoding and returns it as a lowercase hexadecimal string.
+    /// </summary>
+    /// <param name="content">The input string to hash (encoded as UTF-8).</param>
+    public static string? GetContentHash(string content)
+    {
+        try
+        {
+            using var sha = SHA1.Create();
+            byte[] contentBytes = Encoding.UTF8.GetBytes(content);
+            using var stream = new MemoryStream(contentBytes);
+            byte[] hashBytes = sha.ComputeHash(stream);
+            string contentHash = Convert.ToHexStringLower(hashBytes);
+            return contentHash;
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc("Failed to compute content hash:");
+            _logger.Error(ex.ToString());
+            return null;
         }
     }
 
