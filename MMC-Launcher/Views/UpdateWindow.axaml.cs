@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Reflection;
@@ -88,16 +87,35 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     
     #region Events
     /// <summary>
-    /// Called when the window is loaded. Runs the startup sequence asynchronously on the UI thread.
-    /// Sequence includes validation, Java checks, update checks, instance preparation, mod download,
-    /// cache/news refresh and finally launching the main window.
+    /// Called when the window is loaded. Runs the startup sequence asynchronously.
     /// </summary>
     /// <param name="e">Routed event args.</param>
-    // TODO: Review code
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
-        Dispatcher.UIThread.InvokeAsync(async () =>
+        Dispatcher.UIThread.InvokeAsync(async () => await OnLoadedAsync());
+    }
+    
+    /// <summary>
+    /// Starts moving the window when the left mouse button is pressed on the draggable area.
+    /// </summary>
+    private void DragStart_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Start moving the window when left mouse button is pressed
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            BeginMoveDrag(e);
+    }
+    #endregion
+
+    /// <summary>
+    /// Performs the full startup sequence executed when the update window is loaded.
+    /// The method updates UI text via SetStatus / SetProgress and logs failures. It returns early on
+    /// recoverable validation failures to avoid launching the main window in an invalid state.
+    /// </summary>
+    /// <returns>A task that completes when the startup sequence finishes.</returns>
+    private async Task OnLoadedAsync()
+    {
+        try
         {
             var settings = await LauncherHelper.GetLauncherSettingsAsync();
 
@@ -126,52 +144,17 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             SetStatus("A Java ellenőrzése...");
             App.UpdateRPC("Fájlok ellenőrzése...");
             await Task.Delay(_stepDelay);
-            var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, false, settings.Java.IgnoreSystemJava);
-            bool wasJavaUpdated = false;
-            int[] javaVersionsToDownload = [21];
-            foreach (int javaVersion in javaVersionsToDownload)
+            var result = await ValidationHelper.ValidateJavaAsync(21, this);
+            if (!result.Item1)
             {
-                var jdkResult = javaInstallations.FirstOrDefault(x => x.Major == javaVersion);
-                if (jdkResult != null)
-                {
-                    _logger.Info("Java installation found for version " + javaVersion + " at " + jdkResult.Path);
-                    continue;
-                }
-
-                Progress<double> progress = new Progress<double>();
-                progress.ProgressChanged += (_, prog) =>
-                {
-                    SetStatus("Java " + javaVersion + " letöltése... " + prog.ToString("0.00") + "%");
-                    SetProgress(prog);
-                };
-                await JavaHelper.DownloadJavaVersionAsync(javaVersion, settings.Launcher.JavaDirectoryPath, progress);
-                wasJavaUpdated = true;
+                SetStatus("A java verzió ellenőrzése sikertelen.");
+                return;
             }
 
-            if (wasJavaUpdated)
+            if (!string.IsNullOrEmpty(result.Item2))
             {
-                if (OSHelper.GetOperatingSystem() != EOperatingSystem.Windows)
-                {
-                    string[] directories = Directory.GetDirectories(settings.Launcher.JavaDirectoryPath);
-                    foreach (string directory in directories)
-                    {
-                        string javaExecutablePath = Path.Combine(directory, "bin", "java");
-                        if (!File.Exists(javaExecutablePath))
-                            continue;
-                        if (!await FileSystemHelper.MakeExecutableAsync(javaExecutablePath))
-                        {
-                            SetStatus("Nem sikerült végrehajthatóvá tenni a Java fájlt.");
-                            _logger.Error("Failed to make Java executable: " + javaExecutablePath);
-                        }
-                    }
-                }
-
-                javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, true, settings.Java.IgnoreSystemJava);
-            }
-
-            if (string.IsNullOrEmpty(settings.Java.JavaPath) && javaInstallations.Count > 0)
-            {
-                settings.Java.JavaPath = javaInstallations[0].Path;
+                SetStatus("Konfiguráció frissítése...");
+                settings.Java.JavaPath = result.Item2;
                 await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CustomJsonContext.Default.CoreConfigDto);
             }
 
@@ -219,9 +202,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             // 7. Create servers.dat if not exists
             SetStatus("A servers.dat ellenőrzése...");
             if (!await ValidationHelper.ValidateServersAsync())
-            {
                 _logger.Error("Failed to validate servers.dat");
-            }
             
             // 8. Update cache refresh date & fetch news
             string newsPath = Path.Combine(settings.Launcher.CacheDirectoryPath, "news.json");
@@ -245,38 +226,26 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 _logger.Error("Failed to start main window: Application lifetime is not IClassicDesktopStyleApplicationLifetime");
                 return;
             }
-
-            var oldWindow = desktop.MainWindow;
-            var newWindow = new LauncherWindow
+            
+            desktop.MainWindow =  new LauncherWindow
             {
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
             };
-            desktop.MainWindow = newWindow;
-            newWindow.Show();
-            if (oldWindow != null)
-                oldWindow.Close();
-            else
-                Close();
-        });
+            desktop.MainWindow.Show();
+            Close();
+        }
+        catch (Exception ex)
+        {
+            SetStatus("Váratlan hiba.");
+            _logger.Error("Unexpected error during startup sequence: \n" + ex.Message);
+        }
     }
-    
-    /// <summary>
-    /// Starts moving the window when the left mouse button is pressed on the draggable area.
-    /// </summary>
-    private void DragStart_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // Start moving the window when left mouse button is pressed
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
-    }
-    #endregion
     
     /// <summary>
     /// Attempts to start the updater executable located in the current working directory.
     /// Chooses ".exe" extension for Windows.
     /// </summary>
     /// <returns>A completed task when the start attempt finishes.</returns>
-    // TODO: Review code
     private async Task<bool> CheckUpdateAsync(bool justCheck = false)
     {
         try
@@ -346,7 +315,6 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// <summary>
     /// Scales and centers the window based on the application's reported screen size.
     /// </summary>
-    // TODO: Review code
     private Task UpdateLauncher()
     {
         try
@@ -354,24 +322,25 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             string fileName = "Updater";
             if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
                 fileName += ".exe";
+
+            string applicationDir = Directory.GetCurrentDirectory();
+            string updaterExecutable = Path.Combine(applicationDir, fileName);
             
-            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), fileName)))
+            if (!File.Exists(updaterExecutable))
             {
                 SetStatus("A frissítő fájl nem található.");
                 _logger.Error("Updater file not found: " + fileName);
                 return Task.CompletedTask;
             }
             
-            ProcessStartInfo processInfo = new ProcessStartInfo()
+            ProcessStartInfo processInfo = new ProcessStartInfo
             {
-                FileName = Path.Combine(Directory.GetCurrentDirectory(), fileName),
+                FileName = updaterExecutable,
                 UseShellExecute = true,
             };
             var process = Process.Start(processInfo);
             if (process == null)
-            {
                 SetStatus("Nem sikerült elindítani a frissítőt.");
-            }
         }
         catch (Exception ex)
         {

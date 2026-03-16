@@ -101,16 +101,20 @@ public static class MinecraftFileService
     /// <summary>
     /// Downloads the version metadata and client JAR file for a specific Minecraft version.
     /// </summary>
-    /// <param name="versionData">The details of the version to be downloaded.</param>
     /// <param name="minecraftVersion">The Minecraft version metadata.</param>
     /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
     /// <returns>The deserialized version metadata or null if the operation fails.</returns>
-    public static async Task<VersionMeta?> DownloadVersionAsync(VersionDetails versionData,
-        MinecraftVersion minecraftVersion, IProgressReporter? progressReporter = null)
+    public static async Task<(VersionMeta?, string, string)?> DownloadVersionAsync(MinecraftVersion minecraftVersion, PathDetails pathDetails, IProgressReporter? progressReporter = null)
     {
         // JSON
+        string parentDir = Path.Combine(pathDetails.AssetsDir, "objects");
+        Directory.CreateDirectory(parentDir);
+        string subDir = Path.Combine(parentDir, minecraftVersion.Sha1[..2]);
+        Directory.CreateDirectory(subDir);
+        string jsonPath = Path.Combine(subDir,
+            minecraftVersion.Sha1);
         var versionResult = await DownloadAndSaveFileAsync(
-            versionData.VersionJsonPath,
+            jsonPath,
             minecraftVersion.Url,
             minecraftVersion.Sha1,
             progressReporter,
@@ -119,8 +123,12 @@ public static class MinecraftFileService
         if (versionResult == null) return null;
 
         // JAR
+        subDir = Path.Combine(parentDir, versionResult.Downloads.Client.Sha1[..2]);
+        Directory.CreateDirectory(subDir);
+        string jarPath = Path.Combine(subDir,
+            versionResult.Downloads.Client.Sha1 + ".jar");
         await DownloadAndSaveBinaryFileAsync(
-            versionData.VersionJarPath,
+            jarPath,
             versionResult.Downloads.Client.Url,
             versionResult.Downloads.Client.Sha1,
             "version_jar",
@@ -134,7 +142,7 @@ public static class MinecraftFileService
                 MajorVersion = 8
             };
 
-        return versionResult;
+        return (versionResult, jsonPath, jarPath);
     }
     
     /// <summary>
@@ -359,16 +367,15 @@ public static class MinecraftFileService
     /// Downloads and modifies the logging configuration for a specific Minecraft version.
     /// </summary>
     /// <param name="versionMeta">The metadata of the Minecraft version.</param>
-    /// <param name="versionDirectory">The directory where the version files are stored.</param>
     /// <param name="gameDir">The directory where the game files are stored.</param>
     /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
     /// <returns>A launch argument for the logging configuration or null if the operation fails.</returns>
-    public static async Task<LaunchArg?> DownloadLoggingAsync(VersionMeta versionMeta, string versionDirectory,
+    public static async Task<LaunchArg?> DownloadLoggingAsync(VersionMeta versionMeta,
         string gameDir, IProgressReporter? progressReporter = null)
     {
         if (versionMeta.LoggingMeta is not { Client: not null }) return null;
         
-        string logFilePath = Path.Combine(versionDirectory, versionMeta.LoggingMeta.Client.File.Id);
+        string logFilePath = Path.Combine(gameDir, "logging.xml");
 
         string? logContent = await DownloadAndSaveFileAsync(
             logFilePath,
@@ -393,16 +400,20 @@ public static class MinecraftFileService
     /// Downloads and saves the client mappings for a specific Minecraft version.
     /// </summary>
     /// <param name="versionMeta">The metadata of the Minecraft version.</param>
-    /// <param name="versionData">The details of the version to be downloaded.</param>
+    /// <param name="assetsDir">The directory containing assets.</param>
     /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public static async Task DownloadMappingsAsync(VersionMeta versionMeta, VersionDetails versionData,
+    public static async Task DownloadMappingsAsync(VersionMeta versionMeta, string assetsDir,
         IProgressReporter? progressReporter = null)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (versionMeta.Downloads.ClientMappings == null) return;
-
-        string clientMappinsPath = Path.Combine(versionData.VersionDirectory, "client.txt");
+        
+        string parentDir = Path.Combine(assetsDir, "objects");
+        Directory.CreateDirectory(parentDir);
+        parentDir = Path.Combine(parentDir,versionMeta.Downloads.ClientMappings.Sha1[..2]);
+        Directory.CreateDirectory(parentDir);
+        string clientMappinsPath = Path.Combine(parentDir, versionMeta.Downloads.ClientMappings.Sha1);
 
         await DownloadAndSaveFileAsync(
             clientMappinsPath,

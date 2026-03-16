@@ -56,7 +56,7 @@ public class GameDetails
     /// <summary>
     /// Gets or sets the custom game directory, if specified.
     /// </summary>
-    public string? CustomGameDirectory { get; set; }
+    public string CustomGameDirectory { get; set; }
     
     public bool EnableGamemode { get; set; }
     
@@ -87,7 +87,7 @@ public class GameDetails
     /// <param name="enableMangoHud"></param>
     /// <param name="environmentVariables">The environment variables to be used when launching the game.</param>
     /// <param name="serverAddressToJoin">The server address to join automatically when launching the game, if specified.</param>
-    public GameDetails(string javaPath, uint minMemory, uint maxMemory, string jvmArgs, string minecraftVersion, EMinecraftKind kind, string? customVersion, string? customGameDirectory, bool enableGamemode, bool enableMangoHud, Dictionary<string, string> environmentVariables, string? serverAddressToJoin)
+    public GameDetails(string javaPath, uint minMemory, uint maxMemory, string jvmArgs, string minecraftVersion, EMinecraftKind kind, string? customVersion, string customGameDirectory, bool enableGamemode, bool enableMangoHud, Dictionary<string, string> environmentVariables, string? serverAddressToJoin)
     {
         JavaPath = javaPath;
         MinMemory = minMemory;

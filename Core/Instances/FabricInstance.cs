@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Endpoints;
@@ -31,27 +30,16 @@ public class FabricInstance(
     /// <returns>A task that represents the asynchronous operation. The task result contains the modded data if successful, or null if an error occurs.</returns>
     protected override async Task<ModdedData?> InstallModdedAsync(string tempDir)
     {
-        _progressReporter?.SetStatus("A fabric manifest ellenőrzése...");
-        _logger.Debug("Checking Fabric manifest at path: " + PathDetails.CustomManifestPath);
-        if (!File.Exists(PathDetails.CustomManifestPath))
-        {
-            _logger.Error("Fabric manifest file not found at path: " + PathDetails.CustomManifestPath);
-            return null;
-        }
-
-        _logger.Debug("Retrieving version details for Fabric installation...");
-        VersionDetails fabricVersion = GameHelper.GetVersionDetails(PathDetails.VersionsDir, MinecraftVersion.Id, EMinecraftKind.FABRIC, GameDetails.CustomVersion, GameDetails.CustomGameDirectory);
-
-        // Create versionDir in the versions folder
-        if (!Directory.Exists(fabricVersion.VersionDirectory))
-            Directory.CreateDirectory(fabricVersion.VersionDirectory);
-        
         // Download version json
         FabricVersionMeta? fabricVersionMeta;
         List<LibraryMeta> localLibraries = new List<LibraryMeta>();
+        string fabricJsonHash = FileSystemHelper.GetContentHash($"{GameDetails.MinecraftVersion}-fabric-{GameDetails.CustomVersion}_json");
+        string parentDir =  Path.Combine(PathDetails.AssetsDir, "objects", fabricJsonHash[..2]);
+        Directory.CreateDirectory(parentDir);
+        VersionData.CustomVersionJsonPath = Path.Combine(parentDir, fabricJsonHash);
 
-        _logger.Debug("Checking for Fabric version JSON at path: " + fabricVersion.VersionJsonPath);
-        if (!File.Exists(fabricVersion.VersionJsonPath))
+        _logger.Debug("Checking for Fabric version JSON at path: " + VersionData.CustomVersionJsonPath);
+        if (!File.Exists(VersionData.CustomVersionJsonPath))
         {
             Progress<double> progress = new Progress<double>();
             progress.ProgressChanged += (_, e) =>
@@ -60,21 +48,21 @@ public class FabricInstance(
                 _progressReporter?.SetStatus("A {0} verzió json fájl letöltése...", "fabric", e.ToString("0.00"));
             };
 
-            string fabricVersionJsonUrl = string.Format(FabricEndpoints.LoaderJsonUrl, fabricVersion.MinecraftVersion,
-                fabricVersion.CustomVersion);
+            string fabricVersionJsonUrl = string.Format(FabricEndpoints.LoaderJsonUrl, GameDetails.MinecraftVersion,
+               GameDetails.CustomVersion);
 
             var resultJson = await HttpHelper.GetStringAsync(fabricVersionJsonUrl, progress);
             if (resultJson == null)
                 return null;
                 
-            await File.WriteAllTextAsync(fabricVersion.VersionJsonPath, resultJson);
+            await File.WriteAllTextAsync(VersionData.CustomVersionJsonPath, resultJson);
 
             // Add the libraries
             _progressReporter?.SetStatus("A fabric verzió json fájl feldolgozása...");
             fabricVersionMeta = JsonConvert.DeserializeObject<FabricVersionMeta>(resultJson);
             if (fabricVersionMeta == null)
             {
-                File.Delete(fabricVersion.VersionJsonPath); // Delete it because this if part won't be executed again if it exists
+                File.Delete(VersionData.CustomVersionJsonPath); // Delete it because this if part won't be executed again if it exists
                 _logger.Error("Fabric version meta is null after deserialization. Invalid JSON format.");
                 return null;
             }
@@ -82,7 +70,7 @@ public class FabricInstance(
         else
         {
             _progressReporter?.SetStatus("A fabric verzió json fájl feldolgozása...");
-            fabricVersionMeta = JsonConvert.DeserializeObject<FabricVersionMeta>(await File.ReadAllTextAsync(fabricVersion.VersionJsonPath));
+            fabricVersionMeta = JsonConvert.DeserializeObject<FabricVersionMeta>(await File.ReadAllTextAsync(VersionData.CustomVersionJsonPath));
             if (fabricVersionMeta == null)
             {
                 _logger.Error("Fabric version meta is null after deserialization. Invalid JSON format.");
@@ -90,15 +78,13 @@ public class FabricInstance(
             }
 
             foreach (var lib in fabricVersionMeta.Libraries)
-            {
                 localLibraries.Add(new LibraryMeta(lib.Name, new LibraryDownloads(new Artifact(lib.GetPath(), lib.Sha1, lib.Size, lib.GetURL()), null), []));
-            }
         }
 
 
         // Download Loader
-        string loaderDirPath = Path.Combine(PathDetails.LibrariesDir, "net", "fabricmc", "fabric-loader", fabricVersion.CustomVersion);
-        string loaderJarPath = Path.Combine(loaderDirPath, $"fabric-loader-{fabricVersion.CustomVersion}.jar");
+        string loaderDirPath = Path.Combine(PathDetails.LibrariesDir, "net", "fabricmc", "fabric-loader", VersionData.CustomVersion);
+        string loaderJarPath = Path.Combine(loaderDirPath, $"fabric-loader-{VersionData.CustomVersion}.jar");
         if (!Directory.Exists(loaderDirPath))
             Directory.CreateDirectory(loaderDirPath);
 
@@ -111,13 +97,10 @@ public class FabricInstance(
                 _progressReporter?.SetStatus("A {0} loader letöltése...", "fabric", e.ToString("0.00"));
             };
             _logger.Debug("Downloading fabric loader jar...");
-            await HttpHelper.DownloadFileAsync(string.Format(FabricEndpoints.LoaderJarUrl, fabricVersion.CustomVersion), loaderJarPath, progress);
+            await HttpHelper.DownloadFileAsync(string.Format(FabricEndpoints.LoaderJarUrl, VersionData.CustomVersion), loaderJarPath, progress);
         }
-        
-        if (!File.Exists(fabricVersion.VersionJarPath))
-            File.Copy(fabricVersion.VanillaJarPath, fabricVersion.VersionJarPath);
 
-        ModdedData moddedData = new ModdedData(fabricVersionMeta.MainClass, fabricVersion, localLibraries);
+        ModdedData moddedData = new ModdedData(fabricVersionMeta.MainClass, VersionData, localLibraries);
 
         foreach (var arg in fabricVersionMeta.Arguments.GetGameArgs())
         {

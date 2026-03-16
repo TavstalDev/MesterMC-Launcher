@@ -81,9 +81,13 @@ public class MinecraftInstance
             return;
         }
         MinecraftVersion = minecraftVersion;
-
-        VersionData = GameHelper.GetVersionDetails(PathDetails.VersionsDir, GameDetails.MinecraftVersion,
-            EMinecraftKind.VANILLA, null, GameDetails.CustomGameDirectory);
+        VersionData = new VersionDetails
+        {
+            CustomVersion = GameDetails.CustomVersion,
+            MinecraftVersion = GameDetails.MinecraftVersion,
+            GameDir = GameDetails.CustomGameDirectory,
+            NativesDir = Path.Combine(GameDetails.CustomGameDirectory, "natives")
+        }; 
     }
 
     public void UpdateUserDetails(ClientDetails clientDetails)
@@ -110,7 +114,6 @@ public class MinecraftInstance
         _logger.Debug("Setting up directories...");
         string tempDir = Path.Combine(Path.GetTempPath(), "mmclauncher_" + Path.GetRandomFileName());
         Directory.CreateDirectory(tempDir);
-        Directory.CreateDirectory(VersionData.VersionDirectory);
 
         try
         {
@@ -237,8 +240,12 @@ public class MinecraftInstance
     /// </summary>
     private async Task DownloadCoreFilesAsync()
     {
-        var localVersionMeta = await MinecraftFileService.DownloadVersionAsync(VersionData, MinecraftVersion, _progressReporter);
-        MinecraftVersionMeta = localVersionMeta ?? throw new InvalidOperationException("Failed to download the version meta data. Please check your internet connection and try again.");
+        var res = await MinecraftFileService.DownloadVersionAsync(MinecraftVersion, PathDetails, _progressReporter);
+        if (res == null)
+            throw new InvalidOperationException("Failed to download the version meta data. Please check your internet connection and try again.");
+        MinecraftVersionMeta = res.Value.Item1;
+        VersionData.VersionJarPath = res.Value.Item3;
+        VersionData.VersionJsonPath = res.Value.Item2;
 
         // Change the required Java version if necessary
         if (GameDetails.Kind == EMinecraftKind.FORGE)
@@ -251,9 +258,9 @@ public class MinecraftInstance
         }
         
         if (GameDetails.JavaPath == "LAUNCH_ME_FIRST" || string.IsNullOrEmpty(GameDetails.JavaPath))
-            OnSetupDefaultJava.Invoke(MinecraftVersionMeta);
+            OnSetupDefaultJava?.Invoke(MinecraftVersionMeta);
         
-        await MinecraftFileService.DownloadMappingsAsync(MinecraftVersionMeta, VersionData, _progressReporter);
+        await MinecraftFileService.DownloadMappingsAsync(MinecraftVersionMeta, PathDetails.AssetsDir, _progressReporter);
         await MinecraftFileService.DownloadAssetsAsync(MinecraftVersionMeta, PathDetails.AssetsDir, VersionData.GameDir, _progressReporter);
     }
 
@@ -307,10 +314,10 @@ public class MinecraftInstance
         }
         
         _logger.Debug("Downloading logging...");
-        var loggingArg = await MinecraftFileService.DownloadLoggingAsync(MinecraftVersionMeta, versionDetails.VersionDirectory, versionDetails.GameDir, _progressReporter);
+        var loggingArg = await MinecraftFileService.DownloadLoggingAsync(MinecraftVersionMeta, versionDetails.GameDir, _progressReporter);
         if (loggingArg != null)
             _jvmArgumentsBeforeClassPath.Add(loggingArg);
-
+        
         if (GameDetails == null || VersionData == null  || PathDetails == null)
         {
             _logger.Error("GameDetails, VersionData, or PathDetails is null. Cannot download dependencies.");

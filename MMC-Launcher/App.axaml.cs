@@ -282,9 +282,6 @@ public partial class App : Application
             launcherSettings.Launcher.AssetsDirectoryPath, 
             launcherSettings.Launcher.CacheDirectoryPath, 
             launcherSettings.Launcher.LibrariesDirectoryPath,
-            launcherSettings.Launcher.VersionsDirectoryPath, 
-            launcherSettings.Launcher.GetVanillaManifestPath(), 
-            launcherSettings.Launcher.GetFabricManifestPath(), 
             nativeLibraries);
         LauncherDetails launcherDetails = new LauncherDetails("MesterMC", Version);
         ClientDetails clientDetails = new ClientDetails("0", "teszt", GameHelper.GetOfflinePlayerUUID("teszt"), true); // Default details, it will be updated later in the process

@@ -10,12 +10,13 @@
 
 using System;
 using System.IO;
-using System.Net.Http;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using NbtLib;
+using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
-using Tavstal.KonkordLauncher.Core.Models.Endpoints;
 
 namespace Tavstal.MesterMC.Launcher.Helpers;
 
@@ -56,9 +57,6 @@ public static class ValidationHelper
             if (!Directory.Exists(settings.Launcher.JavaDirectoryPath))
                 Directory.CreateDirectory(settings.Launcher.JavaDirectoryPath);
 
-            if (!Directory.Exists(settings.Launcher.VersionsDirectoryPath))
-                Directory.CreateDirectory(settings.Launcher.VersionsDirectoryPath);
-
             if (!Directory.Exists(settings.Launcher.CacheDirectoryPath))
                 Directory.CreateDirectory(settings.Launcher.CacheDirectoryPath);
 
@@ -71,10 +69,7 @@ public static class ValidationHelper
             string indexes = Path.Combine(settings.Launcher.AssetsDirectoryPath, "indexes");
             if (!Directory.Exists(indexes))
                 Directory.CreateDirectory(indexes);
-
-            if (!Directory.Exists(settings.Launcher.ManifestsDirectoryPath))
-                Directory.CreateDirectory(settings.Launcher.ManifestsDirectoryPath);
-
+            
             return true;
         }
         catch (Exception ex)
@@ -96,36 +91,28 @@ public static class ValidationHelper
     {
         try
         {
-            using var httpClient = new HttpClient();
-            var settings = await LauncherHelper.GetLauncherSettingsAsync();
-            bool refreshManifests = DateTimeOffset.UtcNow > settings.CacheRefreshDate;
+            var assembly = Assembly.GetExecutingAssembly();
             
             // Vanilla
-            if (!File.Exists(settings.Launcher.GetVanillaManifestPath()) || refreshManifests)
+            var manifestSream = assembly.GetManifestResourceStream($"Tavstal.MesterMC.Launcher.Assets.manifests.vanilla.json");
+            if (manifestSream == null)
             {
-                Progress<double> progress = new Progress<double>();
-                progress.ProgressChanged += (_, e) =>
-                {
-                    progressReporter?.SetStatus("A minecraft manifest letöltése... {0}%", e.ToString("0.00"));
-                };
-                await HttpHelper.DownloadFileAsync(MicrosoftEndpoints.MinecraftManifestUrl, settings.Launcher.GetVanillaManifestPath(), progress);
+                _logger.Error("Failed to load manifest resource");
+                return false;
             }
             progressReporter?.SetStatus("A minecraft manifest ellenőrzése...");
-            if (await ManifestHelper.GetMinecraftManifestAsync(settings.Launcher.GetVanillaManifestPath()) == null)
+            if (await ManifestHelper.GetMinecraftManifestAsync(manifestSream) == null)
                 _logger.Error("Failed to load Minecraft manifest");
             
             // Fabric
-            if (!File.Exists(settings.Launcher.GetFabricManifestPath()) || refreshManifests)
+            manifestSream = assembly.GetManifestResourceStream($"Tavstal.MesterMC.Launcher.Assets.manifests.fabric.json");
+            if (manifestSream == null)
             {
-                Progress<double> progress = new Progress<double>();
-                progress.ProgressChanged += (_, e) =>
-                {
-                    progressReporter?.SetStatus("A {0} fabric manifest letöltése... {1}%", "fabric", e.ToString("0.00"));
-                };
-                await HttpHelper.DownloadFileAsync(FabricEndpoints.VersionManifestUrl, settings.Launcher.GetFabricManifestPath(), progress);
+                _logger.Error("Failed to load manifest resource");
+                return false;
             }
             progressReporter?.SetStatus("A fabric manifest ellenőrzése...");
-            if (await ManifestHelper.GetFabricManifestAsync(settings.Launcher.GetFabricManifestPath()) == null)
+            if (await ManifestHelper.GetFabricManifestAsync(manifestSream) == null)
                 _logger.Error("Failed to load Fabric manifest");
 
             return true;
@@ -135,6 +122,88 @@ public static class ValidationHelper
             _logger.Error("Failed to validate manifests:");
             _logger.Error(ex.ToString());
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Validate a single Java major version by delegating to the array overload.
+    /// </summary>
+    /// <param name="javaVersion">The Java major version to validate (e.g. 8, 11, 17, 21).</param>
+    /// <param name="progressReporter">Optional progress reporter to receive status and progress updates.</param>
+    /// <returns>
+    /// A task that resolves to a tuple:
+    /// Item1: <c>true</c> if validation (and any required downloads) succeeded, otherwise <c>false</c>.
+    /// Item2: A suggested Java path (string) to persist into settings when the current configured Java path is empty; otherwise <c>null</c>.
+    /// </returns>
+    public static async Task<(bool, string?)> ValidateJavaAsync(int javaVersion, IProgressReporter? progressReporter = null) => await ValidateJavaAsync([javaVersion], progressReporter);
+
+    /// <summary>
+    /// Validates that at least one installation exists for each requested Java major version. If a required version is missing,
+    /// downloads it into the configured Java directory. On POSIX systems sets the executable bit for the java binary.
+    /// </summary>
+    /// <param name="javaVersionsToValidate">Array of Java major versions to validate (e.g. { 17, 21 }).</param>
+    /// <param name="progressReporter">Optional progress reporter used to surface status and progress updates to the caller/UI.</param>
+    /// <returns>
+    /// A task that resolves to a tuple:
+    /// Item1: <c>true</c> when validation completed (even if some non-fatal steps failed); <c>false</c> when an unexpected exception occurred.
+    /// Item2: When the current configured settings do not contain a Java path and one or more installations were found, returns the first discovered installation path to be saved into settings; otherwise <c>null</c>.
+    /// </returns>
+    public static async Task<(bool, string?)> ValidateJavaAsync(int[] javaVersionsToValidate, IProgressReporter? progressReporter = null)
+    {
+        try
+        {
+            var settings = await LauncherHelper.GetLauncherSettingsAsync();
+            var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, false, settings.Java.IgnoreSystemJava);
+            bool wasJavaUpdated = false;
+            foreach (int javaVersion in javaVersionsToValidate)
+            {
+                var jdkResult = javaInstallations.FirstOrDefault(x => x.Major == javaVersion);
+                if (jdkResult != null)
+                {
+                    _logger.Info("Java installation found for version " + javaVersion + " at " + jdkResult.Path);
+                    continue;
+                }
+
+                Progress<double> progress = new Progress<double>();
+                progress.ProgressChanged += (_, prog) =>
+                {
+                    progressReporter?.SetStatus("Java " + javaVersion + " letöltése... " + prog.ToString("0.00") + "%");
+                    progressReporter?.SetProgress(prog);
+                };
+                await JavaHelper.DownloadJavaVersionAsync(javaVersion, settings.Launcher.JavaDirectoryPath, progress);
+                wasJavaUpdated = true;
+            }
+
+            if (wasJavaUpdated)
+            {
+                if (OSHelper.GetOperatingSystem() != EOperatingSystem.Windows)
+                {
+                    string[] directories = Directory.GetDirectories(settings.Launcher.JavaDirectoryPath);
+                    foreach (string directory in directories)
+                    {
+                        string javaExecutablePath = Path.Combine(directory, "bin", "java");
+                        if (!File.Exists(javaExecutablePath))
+                            continue;
+                        if (!await FileSystemHelper.MakeExecutableAsync(javaExecutablePath))
+                        {
+                            progressReporter?.SetStatus("Nem sikerült végrehajthatóvá tenni a Java fájlt.");
+                            _logger.Error("Failed to make Java executable: " + javaExecutablePath);
+                        }
+                    }
+                }
+
+                javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, true, settings.Java.IgnoreSystemJava);
+            }
+
+            if (string.IsNullOrEmpty(settings.Java.JavaPath) && javaInstallations.Count > 0)
+                return (true, javaInstallations[0].Path);
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Failed to validate Java:");
+            _logger.Error(ex.ToString());
+            return (false, null);
         }
     }
 

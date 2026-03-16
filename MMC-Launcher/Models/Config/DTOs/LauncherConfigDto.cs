@@ -75,18 +75,6 @@ public class LauncherConfigDto
     /// </summary>
     [JsonProperty("librariesDirectoryPath"), JsonPropertyName("librariesDirectoryPath")]
     public string LibrariesDirectoryPath { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the file system path to the manifests directory.
-    /// </summary>
-    [JsonProperty("manifestsDirectoryPath"), JsonPropertyName("manifestsDirectoryPath")]
-    public string ManifestsDirectoryPath { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the file system path to the versions directory.
-    /// </summary>
-    [JsonProperty("versionsDirectoryPath"), JsonPropertyName("versionsDirectoryPath")]
-    public string VersionsDirectoryPath { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LauncherConfigDto"/> class with default values.
@@ -102,8 +90,6 @@ public class LauncherConfigDto
         MinecraftDataDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "game");
         JavaDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "java");
         LibrariesDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "libraries");
-        ManifestsDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "manifests");
-        VersionsDirectoryPath = Path.Combine(PathHelper.ApplicationDir, "versions");
     }
 
     /// <summary>
@@ -118,9 +104,7 @@ public class LauncherConfigDto
     /// <param name="minecraftDataDirectoryPath">The file system path to the instances directory.</param>
     /// <param name="javaDirectoryPath">The file system path to the Java directory.</param>
     /// <param name="librariesDirectoryPath">The file system path to the libraries directory.</param>
-    /// <param name="manifestsDirectoryPath">The file system path to the manifests directory.</param>
-    /// <param name="versionsDirectoryPath">The file system path to the versions directory.</param>
-    public LauncherConfigDto(bool enableAutomaticUpdates, uint updateInterval, DateTime nextUpdateCheck, string assetsDirectoryPath, string cacheDirectoryPath, string iconsDirectoryPath, string minecraftDataDirectoryPath, string javaDirectoryPath, string librariesDirectoryPath, string manifestsDirectoryPath, string versionsDirectoryPath)
+    public LauncherConfigDto(bool enableAutomaticUpdates, uint updateInterval, DateTime nextUpdateCheck, string assetsDirectoryPath, string cacheDirectoryPath, string iconsDirectoryPath, string minecraftDataDirectoryPath, string javaDirectoryPath, string librariesDirectoryPath)
     {
         EnableAutomaticUpdates = enableAutomaticUpdates;
         UpdateInterval = updateInterval;
@@ -131,19 +115,5 @@ public class LauncherConfigDto
         MinecraftDataDirectoryPath = minecraftDataDirectoryPath;
         JavaDirectoryPath = javaDirectoryPath;
         LibrariesDirectoryPath = librariesDirectoryPath;
-        ManifestsDirectoryPath = manifestsDirectoryPath;
-        VersionsDirectoryPath = versionsDirectoryPath;
     }
-    
-    /// <summary>
-    /// Gets the file system path to the vanilla manifest file.
-    /// </summary>
-    /// <returns>The path to the vanilla manifest file.</returns>
-    public string GetVanillaManifestPath() => Path.Combine(ManifestsDirectoryPath, "vanillaManifest.json");
-    
-    /// <summary>
-    /// Gets the file system path to the Fabric manifest file.
-    /// </summary>
-    /// <returns>The path to the Fabric manifest file.</returns>
-    public string GetFabricManifestPath() => Path.Combine(ManifestsDirectoryPath, "fabricManifest.json");
 }

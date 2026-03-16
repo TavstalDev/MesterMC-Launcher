@@ -35,14 +35,14 @@ public static class ManifestHelper
     /// <summary>
     /// Asynchronously loads the Minecraft version manifest from the specified path.
     /// </summary>
-    /// <param name="manifestPath">The file path to the Minecraft manifest.</param>
+    /// <param name="stream">The stream containing the Minecraft manifest JSON data.</param>
     /// <returns>The loaded <see cref="VersionManifest"/> or null if loading fails.</returns>
-    public static async Task<VersionManifest?> GetMinecraftManifestAsync(string manifestPath)
+    public static async Task<VersionManifest?> GetMinecraftManifestAsync(Stream stream)
     {
         if (_minecraftManifest != null)
             return _minecraftManifest;
 
-        _minecraftManifest = await JsonHelper.ReadJsonFileAsync<VersionManifest>(manifestPath, CoreJsonContext.Default.VersionManifest);
+        _minecraftManifest =  await JsonHelper.ReadJsonStreamAsync<VersionManifest>(stream, CoreJsonContext.Default.VersionManifest);
         return _minecraftManifest;
     }
     
@@ -60,23 +60,22 @@ public static class ManifestHelper
     /// <summary>
     /// Asynchronously loads the Fabric mod loader manifests from the specified path.
     /// </summary>
-    /// <param name="manifestPath">The file path to the Fabric manifest.</param>
+    /// <param name="stream">The stream containing the Fabric manifest JSON data.</param>
     /// <returns>A list of <see cref="IModManifest"/> or null if loading fails.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the loader section is missing in the JSON.</exception>
-    public static async Task<List<IModManifest>?> GetFabricManifestAsync(string manifestPath)
+    public static async Task<List<IModManifest>?> GetFabricManifestAsync(Stream stream)
     {
         if (_fabricManifest != null)
             return _fabricManifest;
 
-        var rawManifest = await File.ReadAllTextAsync(manifestPath);
+        using var reader = new StreamReader(stream);
+        string rawManifest = await reader.ReadToEndAsync();
         JsonObject? jObject = JsonNode.Parse(rawManifest)?.AsObject();
         if (jObject == null)
             throw new Exception("Unable to deserialize the manifest file");
         var mappings = jObject["loader"]?.AsArray();
         if (mappings == null)
-        {
             throw new InvalidOperationException("Fabric manifest loader not found in the JSON.");
-        }
         _fabricManifest = [];
         foreach (var mapping in mappings)
         {
