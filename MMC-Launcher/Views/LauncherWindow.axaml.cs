@@ -101,7 +101,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
     {
         if (DataContext == null)
             return;
-        
+
         try
         {
             var settings = await LauncherHelper.GetLauncherSettingsAsync();
@@ -113,9 +113,9 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                 else
                     DataContext.Username = settings.Users.Keys.ElementAt(0);
             }
-            
+
             var items = await LauncherHelper.GetNewsAsync(settings.Launcher.CacheDirectoryPath);
-            
+
             if (items.Count == 0)
             {
                 AddFallbackNews();
@@ -140,7 +140,8 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                 catch (Exception ex)
                 {
                     _logger.Error("Failed to load news image.\n" + ex);
-                    image = ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/posts/post_image_01.jpg"));
+                    image = ImageHelper.LoadFromResource(
+                        new Uri("avares://MMC-Launcher/Assets/posts/post_image_01.jpg"));
                 }
 
                 if (!oldNewsRemoved)
@@ -148,6 +149,7 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
                     DataContext.NewsItems.Clear();
                     oldNewsRemoved = true;
                 }
+
                 DataContext.NewsItems.Add(new NewsModel(item.Title, item.Content, image));
             }
         }
@@ -156,11 +158,13 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             _logger.Error("Failed to load news items.\n" + ex);
             AddFallbackNews();
         }
-
-        if (DataContext.NewsItems.Count > 0)
+        finally
         {
-            DataContext.SelectedNewsItem = DataContext.NewsItems[0];
-            DataContext.SelectedNewsIndex = 0;
+            if (DataContext.NewsItems.Count > 0)
+            {
+                DataContext.SelectedNewsItem = DataContext.NewsItems[0];
+                DataContext.SelectedNewsIndex = 0;
+            }
         }
     }
     
