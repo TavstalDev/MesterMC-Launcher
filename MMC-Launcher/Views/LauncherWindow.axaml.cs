@@ -21,11 +21,18 @@ using Tavstal.MesterMC.Launcher.Views.Models;
 
 namespace Tavstal.MesterMC.Launcher.Views;
 
+/// <summary>
+/// Main window for the launcher application.
+/// </summary>
 [RequiresUnreferencedCode("This class uses code that may be removed during trimming.")]
 public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
 {
     private CoreLogger _logger = CoreLogger.WithModuleType(typeof(LauncherWindow));
     
+    /// <summary>
+    /// Creates a new instance of <see cref="LauncherWindow"/>, initializes UI components,
+    /// sets a temporary "loading" news item, registers reactive handlers and starts async init.
+    /// </summary>
     [RequiresUnreferencedCode("This constructor uses code that may be removed during trimming.")]
     public LauncherWindow()
     {
@@ -83,6 +90,13 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         Dispatcher.UIThread.InvokeAsync(async () => await InitializeAsync());
     }
     
+    /// <summary>
+    /// Asynchronously initializes launcher UI state:
+    /// <br/>- loads launcher settings and restores last-used username (if present),
+    /// <br/>- fetches news items and their images,
+    /// <br/>- falls back to a single error news item on failure or when no items are available,
+    /// <br/>- sets the selected news item/index when available.
+    /// </summary>
     private async Task InitializeAsync()
     {
         if (DataContext == null)
@@ -150,6 +164,9 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         }
     }
     
+    /// <summary>
+    /// Adds a single fallback news item to the view model to indicate an error/loading failure.
+    /// </summary>
     private void AddFallbackNews()
     {
         if (DataContext == null)
@@ -159,32 +176,48 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         DataContext.NewsItems.Add(new NewsModel(
             "Hiba",
             "Váratlan hiba történt a hírek betöltése során.",
-            ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/posts/post_image_01.jpg"))
+            ImageHelper.LoadFromResource(new Uri("avares://MMC-Launcher/Assets/posts/post_image_02.png"))
         ));
     }
 
-
+    #region Events
+    /// <summary>
+    /// Called when the window is opened. Adjusts window sizing/position to fit the display.
+    /// </summary>
+    /// <param name="e">Event data for the opened event.</param>
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
         FitToDisplay();
     }
 
+    /// <summary>
+    /// Called when the window is closed. Performs cleanup such as clearing RPC state.
+    /// </summary>
+    /// <param name="e">Event data for the closed event.</param>
     protected override void OnClosed(EventArgs e)
     {
         base.OnClosed(e);
         App.ClearRPC();
     }
 
+    /// <summary>
+    /// Pointer pressed handler for initiating window drag.
+    /// </summary>
+    /// <param name="sender">Event source (usually a visual element).</param>
+    /// <param name="e">Pointer event args containing button and position info.</param>
     private void DragStart_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         // Start moving the window when left mouse button is pressed
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-        {
             BeginMoveDrag(e);
-        }
     }
     
+    /// <summary>
+    /// Moves the caret to the end of the editable text when the username ComboBox receives focus.
+    /// </summary>
+    /// <param name="sender">The event source; expected to be a <see cref="ComboBox"/> containing a <see cref="TextBox"/>.</param>
+    /// <param name="e">Focus event arguments.</param>
     private void Username_GotFocus(object? sender, GotFocusEventArgs e)
     {
         if (sender is ComboBox comboBox)
@@ -200,7 +233,11 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
             }
         }
     }
+    #endregion
     
+    /// <summary>
+    /// Adjusts the window size to fit the current display and centers it.
+    /// </summary>
     private void FitToDisplay()
     {
         double screenWidth = (double)App.ScreenWidth;
@@ -226,6 +263,9 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         );
     }
     
+    /// <summary>
+    /// Opens a platform folder picker and returns the selected folder's local path.
+    /// </summary>
     private async Task<string?> OpenFolderPickerAsync()
     {
         // Ensure the VisualRoot is a TopLevel object

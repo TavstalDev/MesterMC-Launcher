@@ -25,6 +25,10 @@ using CoreConfigModel = Tavstal.MesterMC.Launcher.Models.Config.CoreConfigModel;
 
 namespace Tavstal.MesterMC.Launcher.Views.Models;
 
+/// <summary>
+/// View model for the launcher main window.
+/// Handles user login, news management, configuration persistence and starting the game process.
+/// </summary>
 [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
 public partial class LauncherViewModel : ObservableObject
 {
@@ -50,17 +54,22 @@ public partial class LauncherViewModel : ObservableObject
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] [NotifyPropertyChangedFor(nameof(isError))] [NotifyPropertyChangedFor(nameof(isTFA))] [NotifyPropertyChangedFor(nameof(shouldShowFeedback))] private ELoginStatus loginStatus;
     public ObservableCollection<string> SavedUsernames { get; set; } = new();
     #endregion
+    
     public bool isLoggingIn => LoginStatus != ELoginStatus.NONE;
     public bool shouldShowFeedback => LoginStatus != ELoginStatus.NONE && LoginStatus != ELoginStatus.TFA;
     public bool isTFA => LoginStatus == ELoginStatus.TFA;
     public bool isError => LoginStatus == ELoginStatus.ERROR;
     public string NewsPageDisplay => $"{SelectedNewsIndex + 1} / {NewsItems.Count}";
+    
     #region Interactions
     public Interaction<Unit, Unit> CloseWindowInteraction { get; } = new();
     public Interaction<Unit, Unit> HideWindowInteraction { get; } = new();
     public Interaction<Unit, string?> OpenFolderPicker { get; } = new();
     #endregion
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="LauncherViewModel"/>.
+    /// </summary>
     public LauncherViewModel()
     {
         _coreConfig = new CoreConfigModel(LauncherHelper.GetLauncherSettings());
@@ -79,6 +88,11 @@ public partial class LauncherViewModel : ObservableObject
     }
 
     #region Relay Commands
+    /// <summary>
+    /// Attempt to log in with the provided Username and Password.
+    /// Performs client-side validation, handles offline mode, and triggers PlayAsync on success.
+    /// Sets <see cref="LoginStatus"/> and <see cref="ErrorMessage"/> appropriately.
+    /// </summary>
     [RelayCommand]
     public async Task Login()
     {
@@ -149,6 +163,10 @@ public partial class LauncherViewModel : ObservableObject
         await PlayAsync(result.Value.Item1, playerName, result.Value.Item3);
     }
     
+    /// <summary>
+    /// Submit a two-factor authentication code.
+    /// On success continues to start the game via PlayAsync.
+    /// </summary>
     [RelayCommand]
     public async Task SubmitTFA()
     {
@@ -170,6 +188,9 @@ public partial class LauncherViewModel : ObservableObject
         await PlayAsync(accessToken, Username!, uuid); // Username is guaranteed to be non-null here
     }
 
+    /// <summary>
+    /// Navigate back from TFA or settings UI state to the login state.
+    /// </summary>
     [RelayCommand]
     public async Task Back()
     {
@@ -179,28 +200,35 @@ public partial class LauncherViewModel : ObservableObject
         await Task.CompletedTask;
     }
     
+    /// <summary>
+    /// Request the view to close the window via interaction.
+    /// </summary>
     [RelayCommand]
     public async Task CloseWindow()
     {
         await CloseWindowInteraction.Handle(Unit.Default);
     }
     
+    /// <summary>
+    /// Select the previous news item (wraps to the last).
+    /// Updates SelectedNewsItem after changing SelectedNewsIndex.
+    /// </summary>
     [RelayCommand]
     public async Task PreviousNews()
     {
         if (SelectedNewsIndex > 0)
-        {
             SelectedNewsIndex--;
-        }
         else
-        {
             SelectedNewsIndex = NewsItems.Count - 1;
-        }
 
         SelectedNewsItem = NewsItems[SelectedNewsIndex];
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Select the next news item (wraps to the first).
+    /// Updates SelectedNewsItem after changing SelectedNewsIndex.
+    /// </summary>
     [RelayCommand]
     public async Task NextNews()
     {
@@ -213,6 +241,9 @@ public partial class LauncherViewModel : ObservableObject
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Remove a saved username from the local list and persist the change to disk.
+    /// </summary>
     [RelayCommand]
     public async Task RemoveUser(string user)
     {
@@ -227,6 +258,9 @@ public partial class LauncherViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Open the settings UI.
+    /// </summary>
     [RelayCommand]
     public async Task OpenSettings()
     {
@@ -237,6 +271,9 @@ public partial class LauncherViewModel : ObservableObject
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Switch the visible settings category in the UI.
+    /// </summary>
     [RelayCommand]
     public async Task HandleSettingsCategory(ESettingsCategory category)
     {
@@ -247,6 +284,9 @@ public partial class LauncherViewModel : ObservableObject
         await Task.CompletedTask;
     }
     
+    /// <summary>
+    /// Trigger a folder picker interaction and set the selected Java path in core config.
+    /// </summary>
     [RelayCommand]
     public async Task ConfigDirSelectAsync()
     {
@@ -258,6 +298,14 @@ public partial class LauncherViewModel : ObservableObject
     }
     #endregion
     
+    /// <summary>
+    /// Creates a Minecraft instance, updates user data and starts the process.
+    /// Persists the last used user and saved users list.
+    /// Attaches process event handlers to monitor startup and exit.
+    /// </summary>
+    /// <param name="accessToken">Authentication access token (or "0" for offline).</param>
+    /// <param name="playerName">Player name to use.</param>
+    /// <param name="uuid">Optional UUID; if null an offline UUID is generated.</param>
     private async Task PlayAsync(string accessToken, string playerName, string? uuid = null)
     {
         MinecraftInstance? instance = App.createMinecraftInstance(null);
@@ -291,6 +339,10 @@ public partial class LauncherViewModel : ObservableObject
         }
     }
     
+    /// <summary>
+    /// Handle output from the game process to detect when Minecraft has started.
+    /// When detected, hides the launcher window and unsubscribes from further output.
+    /// </summary>
     private void HandleGameOutput(object? sender, DataReceivedEventArgs e)
     {
         if (gameProcess == null || e.Data == null)
@@ -312,7 +364,10 @@ public partial class LauncherViewModel : ObservableObject
     }
     
     #region Config Management
-    
+    /// <summary>
+    /// Subscribe to PropertyChanged events of core config child models (Java/Window/Performance).
+    /// Used to persist changes.
+    /// </summary>
     private void SubscribeToCoreConfigChildren(CoreConfigModel config)
     {
         config.Java.PropertyChanged += OnChildConfigPropertyChanged;
@@ -320,6 +375,9 @@ public partial class LauncherViewModel : ObservableObject
         config.Performance.PropertyChanged += OnChildConfigPropertyChanged;
     }
     
+    /// <summary>
+    /// Unsubscribe from previously subscribed child property change events.
+    /// </summary>
     private void UnsubscribeFromCoreConfigChildren(CoreConfigModel config)
     {
         config.Java.PropertyChanged -= OnChildConfigPropertyChanged;
@@ -327,6 +385,10 @@ public partial class LauncherViewModel : ObservableObject
         config.Performance.PropertyChanged -= OnChildConfigPropertyChanged;
     }
     
+    /// <summary>
+    /// Called when the CoreConfig property is replaced.
+    /// Re-subscribes to child change notifications and, if initialized, saves to disk.
+    /// </summary>
     partial void OnCoreConfigChanged(CoreConfigModel? oldValue, CoreConfigModel newValue)
     {
         if (oldValue != null)
@@ -339,6 +401,9 @@ public partial class LauncherViewModel : ObservableObject
         SaveCoreConfigToFile(newValue);
     }
     
+    /// <summary>
+    /// Handler for child property changes that triggers persistence when initialized.
+    /// </summary>
     private void OnChildConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (!_isInitialized)
@@ -347,6 +412,10 @@ public partial class LauncherViewModel : ObservableObject
         SaveCoreConfigToFile(CoreConfig);
     }
     
+    /// <summary>
+    /// Serialize the relevant parts of the core config and write them to the launcher config file.
+    /// Preserves launcher-level non-observable properties by reading the existing settings first.
+    /// </summary>
     private void SaveCoreConfigToFile(CoreConfigModel newValue)
     {
         var oldSettings = LauncherHelper.GetLauncherSettings(); // Fetch to preserve non-observable properties
@@ -374,9 +443,9 @@ public partial class LauncherViewModel : ObservableObject
             Misc = new MiscConfigDto
             {
                 UseCustomGlfw = newValue.Performance.UseCustomGlfw,
-                CustomGlfwPath = newValue.Performance.CustomGlfwPath,
+                CustomGlfwPath = newValue.Performance.CustomGlfwPath!,
                 UseCustomOpenAl = newValue.Performance.UseCustomOpenAl,
-                CustomOpenAlPath = newValue.Performance.CustomOpenAlPath,
+                CustomOpenAlPath = newValue.Performance.CustomOpenAlPath!,
                 UseDedicatedGpu = newValue.Performance.UseDedicatedGpu,
                 EnableMangoHud = newValue.Performance.EnableMangoHud,
                 EnableFeralGameMode = newValue.Performance.EnableFeralGameMode,

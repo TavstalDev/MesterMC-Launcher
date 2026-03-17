@@ -70,6 +70,13 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             }).DisposeWith(disposables);
         });
         
+        var screen = Screens.Primary;
+        if (screen != null)
+        {
+            var screenSize = screen.Bounds.Size;
+            App.SetScreenSize(screenSize);
+        }
+
         FitToDisplay();
         
         DateTime now = DateTime.UtcNow;
