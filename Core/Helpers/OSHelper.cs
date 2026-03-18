@@ -10,6 +10,7 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using DeviceId;
 using Hardware.Info;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Models;
@@ -22,6 +23,7 @@ namespace Tavstal.KonkordLauncher.Core.Helpers;
 public static class OSHelper
 {
     private static CoreLogger _logger = CoreLogger.WithModuleType(typeof(OSHelper));
+    private static string _deviceId = string.Empty;
     
     /// <summary>
     /// Determines the operating system type.
@@ -307,43 +309,30 @@ public static class OSHelper
     }
 
     /// <summary>
-    /// Collects hardware information about the system, including operating system, CPU, RAM, disk size, and GPU.
+    /// Returns a stable, platform-specific hardware identifier for the current machine.
+    /// The identifier is generated on first call using <see cref="DeviceIdBuilder"/> and cached in the private <c>_deviceId</c> field.
     /// </summary>
     /// <returns>
-    /// An object containing the following hardware details:
-    /// - <c>os</c>: The operating system as a string.
-    /// - <c>cpu</c>: The CPU identifier retrieved from the environment variable.
-    /// - <c>ram</c>: The total physical memory in gigabytes.
-    /// - <c>disksize</c>: The total disk size in gigabytes.
-    /// - <c>gpu</c>: The description of the first detected GPU, or "unknown" if no GPU is found.
+    /// A non-null string that represents the generated hardware identifier. The value is cached and subsequent calls return the cached value.
     /// </returns>
-    public static object CollectHardwareInfo()
+    public static string GetHardwareId()
     {
-        var hardwareInfo = new HardwareInfo();
-        hardwareInfo.RefreshVideoControllerList();
-        hardwareInfo.RefreshMemoryList();
-        hardwareInfo.RefreshMemoryStatus();
-        hardwareInfo.RefreshDriveList();
-        
-        ulong totalDiskSize = 0;
-        foreach (var drive in hardwareInfo.DriveList)
-        {
-            totalDiskSize += drive.Size;
-        }
-        
-        string gpu = "unknown";
-        foreach (var videoController in hardwareInfo.VideoControllerList)
-        {
-            gpu = videoController.Description;
-            break;
-        }
-        
-        return new {
-            os = GetOperatingSystem().ToString(),
-            cpu = Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER"),
-            ram = hardwareInfo.MemoryStatus.TotalPhysical / (1024 * 1024 * 1024),
-            disksize = totalDiskSize / (1024L*1024*1024),
-            gpu
-        };
+        if (!string.IsNullOrEmpty(_deviceId))
+            return _deviceId;
+        string deviceId = new DeviceIdBuilder()
+            .AddOsVersion()
+            .OnWindows(windows => windows
+                .AddProcessorId()
+                .AddMotherboardSerialNumber()
+                .AddSystemDriveSerialNumber())
+            .OnLinux(linux => linux
+                .AddMotherboardSerialNumber()
+                .AddSystemDriveSerialNumber())
+            .OnMac(mac => mac
+                .AddSystemDriveVolumeUUID()
+                .AddPlatformSerialNumber())
+            .ToString();
+        _deviceId = deviceId;
+        return deviceId;
     }
 }

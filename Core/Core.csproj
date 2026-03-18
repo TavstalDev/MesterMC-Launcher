@@ -21,6 +21,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DeviceId" Version="6.11.0" />
+    <PackageReference Include="DeviceId.Linux" Version="6.11.0" />
+    <PackageReference Include="DeviceId.Mac" Version="6.11.0" />
+    <PackageReference Include="DeviceId.Windows" Version="6.11.0" />
+    <PackageReference Include="DeviceId.Windows.Wmi" Version="6.11.0" />
     <PackageReference Include="Hardware.Info" Version="101.0.1.1" />
     <PackageReference Include="NbtLib" Version="1.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
