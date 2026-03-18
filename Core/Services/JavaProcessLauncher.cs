@@ -18,14 +18,40 @@ using Tavstal.KonkordLauncher.Core.Models;
 namespace Tavstal.KonkordLauncher.Core.Services;
 
 /// <summary>
-/// Provides functionality to launch Java processes with specified arguments.
+/// Provides functionality to launch Java processes with configured JVM arguments and to pass
+/// encrypted game arguments via the process's standard input.
 /// </summary>
 public static class JavaProcessLauncher
 {
     // Logger instance for the JavaProcessLauncher module
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(JavaProcessLauncher));
     
-    public static Process? StartJava(string javaPath, string jvmArguments, string gameArguments, string? logFilePath = null, bool enableGameMode = false, bool enableMangoHUd = false, Dictionary<string, string>? environmentVariables = null)
+    /// <summary>
+    /// Starts a Java process with the provided JVM arguments and sends the game arguments to the process's stdin.
+    /// </summary>
+    /// <param name="javaPath">
+    /// Path to the Java executable. If <c>null</c> or empty, the plain command name "java" is used (resolved by the OS).
+    /// </param>
+    /// <param name="jvmArguments">The JVM argument string to use as the process arguments.</param>
+    /// <param name="gameArguments">
+    /// The game argument string. The first token (split by space) is written as the first stdin line (main class / jar),
+    /// the remaining tokens are joined and encrypted and written as the second stdin line.
+    /// </param>
+    /// <param name="enableGameMode">
+    /// If true and running on Linux, the launcher will run the process via <c>gamemoderun</c>.
+    /// </param>
+    /// <param name="enableMangoHUd">
+    /// If true and running on Linux, the launcher will run the process via <c>mangohud</c>. When both
+    /// <paramref name="enableGameMode"/> and <paramref name="enableMangoHUd"/> are true, <c>gamemoderun</c>
+    /// is used as the outer command and <c>mangohud</c> is injected into the JVM argument string.
+    /// </param>
+    /// <param name="environmentVariables">
+    /// Optional environment variables to add to the child process. Keys and values are copied into the process environment.
+    /// </param>
+    /// <returns>
+    /// The started <see cref="Process"/> instance, or <c>null</c> if the process could not be started.
+    /// </returns>
+    public static Process? StartJava(string javaPath, string jvmArguments, string gameArguments, bool enableGameMode = false, bool enableMangoHUd = false, Dictionary<string, string>? environmentVariables = null)
     {
         string finalJavaPath = string.IsNullOrEmpty(javaPath) ? "java" : javaPath;
     
@@ -68,9 +94,6 @@ public static class JavaProcessLauncher
                 psi.EnvironmentVariables[kvp.Key] = kvp.Value;
         }
         
-        if (!string.IsNullOrEmpty(logFilePath) && File.Exists(logFilePath))
-            File.Delete(logFilePath);
-        
         // Log the process start details
         _logger.Debug("Starting Java process with arguments:");
         _logger.Debug("FileName: " + psi.FileName);
@@ -98,6 +121,11 @@ public static class JavaProcessLauncher
         return process;
     }
     
+    /// <summary>
+    /// Encrypts the provided plaintext using AES-CBC and returns a Base64 representation of IV + ciphertext.
+    /// </summary>
+    /// <param name="plainText">Plaintext to encrypt (UTF-8 encoded).</param>
+    /// <returns>Base64 string containing the IV followed by the ciphertext.</returns>
     private static string Encrypt(string plainText)
     {
         // same key derivation as Java
