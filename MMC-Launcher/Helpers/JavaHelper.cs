@@ -21,7 +21,6 @@ using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.MesterMC.Launcher.Models.Config.Java;
-using Tavstal.MesterMC.Launcher.Models.Json;
 
 namespace Tavstal.MesterMC.Launcher.Helpers;
 
@@ -34,8 +33,7 @@ public static class JavaHelper
     /// Logger instance for the JavaHelper module.
     /// </summary>
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(JavaHelper));
-
-    private static JavaMirrorConfig? _mirrorConfig;
+    
     private static List<JavaVersion> _cachedJavaVersions = [];
     private static DateTime _cacheExpiration = DateTime.MinValue;
 
@@ -70,6 +68,103 @@ public static class JavaHelper
         "/System/Library/Java/JavaVirtualMachines"
     ];
 
+    private static readonly Dictionary<string, JavaMirrorJdks> JavaSdks = new()
+    {
+        { 
+            "windows", new JavaMirrorJdks(
+            // Java 7
+            new JavaMirrorArchitecture(
+                // x86_64
+                "",
+                // arm
+                ""
+            ),
+            // Java 8
+            new JavaMirrorArchitecture(
+                // x86_64
+                "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_windows_hotspot_8u462b08.zip",
+                // arm
+                ""
+            ),
+            // Java 17
+            new JavaMirrorArchitecture(
+                // x86_64
+                "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.9_9.zip",
+                // arm
+                ""
+            ),
+            // Java 21
+            new JavaMirrorArchitecture(
+                // x86_64
+                "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_x64_windows_hotspot_21.0.8_9.zip",
+                // arm
+                "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_aarch64_windows_hotspot_21.0.8_9.zip"
+            ))
+        },
+        {
+            "linux", new JavaMirrorJdks(
+                // Java 7
+                new JavaMirrorArchitecture(
+                    // x86_64
+                    "",
+                    // arm
+                    ""
+                ),
+                // Java 8
+                new JavaMirrorArchitecture(
+                    // x86_64
+                    "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u462b08.tar.gz",
+                    // arm
+                    "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_aarch64_linux_hotspot_8u462b08.tar.gz"
+                ),
+                // Java 17
+                new JavaMirrorArchitecture(
+                    // x86_64
+                    "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_x64_linux_hotspot_17.0.9_9.tar.gz",
+                    // arm
+                    "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.9_9.tar.gz"
+                ),
+                // Java 21
+                new JavaMirrorArchitecture(
+                    // x86_64
+                    "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_x64_linux_hotspot_21.0.8_9.tar.gz",
+                    // arm
+                    "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.8_9.tar.gz"
+                ))
+        },
+        {
+           "macos", new JavaMirrorJdks(
+               // Java 7
+               new JavaMirrorArchitecture(
+                   // x86_64
+                   "",
+                   // arm
+                   ""
+               ),
+               // Java 8
+               new JavaMirrorArchitecture(
+                   // x86_64
+                   "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u462b08.tar.gz",
+                   // arm
+                   ""
+               ),
+               // Java 17
+               new JavaMirrorArchitecture(
+                   // x86_64
+                   "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_x64_mac_hotspot_17.0.9_9.tar.gz",
+                   // arm
+                   "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_aarch64_mac_hotspot_17.0.9_9.tar.gz"
+               ),
+               // Java 21
+               new JavaMirrorArchitecture(
+                   // x86_64
+                   "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_x64_mac_hotspot_21.0.8_9.tar.gz",
+                   // arm
+                   "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.8_9.tar.gz"
+               )) 
+        }
+    };
+
     /// <summary>
     /// Downloads a specific Java version and extracts it to the target directory.
     /// </summary>
@@ -87,27 +182,13 @@ public static class JavaHelper
     {
         try
         {
-            if (_mirrorConfig == null)
-            {
-                if (!File.Exists(PathHelper.JavaMirrorsPath))
-                {
-                    _mirrorConfig = new JavaMirrorConfig();
-                    await JsonHelper.WriteJsonFileAsync(PathHelper.JavaMirrorsPath, _mirrorConfig, CustomJsonContext.Default.JavaMirrorConfig);
-                }
-                else
-                {
-                    _mirrorConfig = await JsonHelper.ReadJsonFileAsync<JavaMirrorConfig>(PathHelper.JavaMirrorsPath, CustomJsonContext.Default.JavaMirrorConfig) ??
-                                    new JavaMirrorConfig();
-                }
-            }
-
             EOperatingSystem operatingSystem = OSHelper.GetOperatingSystem();
             bool isArmBased = OSHelper.IsArmBased();
             var osMirror = operatingSystem switch
             {
-                EOperatingSystem.Windows => _mirrorConfig.Windows,
-                EOperatingSystem.Linux => _mirrorConfig.Linux,
-                EOperatingSystem.MacOS => _mirrorConfig.Mac,
+                EOperatingSystem.Windows => JavaSdks["windows"],
+                EOperatingSystem.Linux => JavaSdks["linux"],
+                EOperatingSystem.MacOS => JavaSdks["macos"],
                 _ => null
             };
             if (osMirror == null)
@@ -147,7 +228,7 @@ public static class JavaHelper
                     return false;
                 }
                 
-                if (extension == "tar.gz")
+                if (extension.Equals("tar.gz"))
                 {
                     await using Stream inStream = File.OpenRead(zipFilePath);
                     await using Stream gzipStream = new GZipInputStream(inStream);
