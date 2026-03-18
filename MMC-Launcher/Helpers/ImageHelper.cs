@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 
 namespace Tavstal.MesterMC.Launcher.Helpers;
@@ -50,17 +51,7 @@ public static class ImageHelper
     /// <returns>A <see cref="Bitmap"/> object if the image is successfully downloaded and loaded; otherwise, null.</returns>
     public static async Task<Bitmap?> LoadFromWeb(Uri url, CoreLogger? logger = null)
     {
-#if  DEBUG
-        // In debug mode, we allow any SSL certificate to be accepted to avoid issues with self-signed certificates during development.
-        var handler = new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-        };
-        using var httpClient = new HttpClient(handler);
-#else
-        using var httpClient = new HttpClient();
-#endif
+        using var httpClient = HttpHelper.GetHttpClient();
         try
         {
             var response = await httpClient.GetAsync(url);
