@@ -33,7 +33,7 @@ public class FabricInstance(
         // Download version json
         FabricVersionMeta? fabricVersionMeta;
         List<LibraryMeta> localLibraries = new List<LibraryMeta>();
-        string fabricJsonHash = FileSystemHelper.GetContentHash($"{GameDetails.MinecraftVersion}-fabric-{GameDetails.CustomVersion}_json");
+        string fabricJsonHash = FileSystemHelper.GetContentHash($"{GameDetails.MinecraftVersion}-fabric-{GameDetails.CustomVersion}_json")!;
         string parentDir =  Path.Combine(PathDetails.AssetsDir, "objects", fabricJsonHash[..2]);
         Directory.CreateDirectory(parentDir);
         VersionData.CustomVersionJsonPath = Path.Combine(parentDir, fabricJsonHash);

@@ -28,15 +28,13 @@ public class MinecraftInstance
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(MinecraftInstance));
     private readonly LauncherDetails _launcherDetails;
     private readonly ClientDetails _client;
-    private FileSystemWatcher? _watcher;
-    private readonly Lock _watcherLock = new();
-    private bool _isSanitizingLogFile;
+    private readonly bool _isInitialized;
     private string _classPathFilePath = string.Empty;
 
-    protected GameDetails? GameDetails { get; }
-    protected PathDetails? PathDetails { get; }
+    protected GameDetails GameDetails { get; }
+    protected PathDetails PathDetails { get; }
     protected Resolution? Resolution { get; }
-    public VersionDetails? VersionData { get; }
+    protected VersionDetails VersionData { get; }
     public VersionManifest? VersionManifest { get; }
     public MinecraftVersion? MinecraftVersion { get; }
     protected IProgressReporter? _progressReporter { get; }
@@ -65,31 +63,30 @@ public class MinecraftInstance
         Resolution = resolution;
         _launcherDetails = launcherDetails;
         _client = clientDetails;
+        VersionData = new VersionDetails
+        {
+            CustomVersion = GameDetails.CustomVersion!,
+            MinecraftVersion = GameDetails.MinecraftVersion,
+            GameDir = GameDetails.CustomGameDirectory,
+            NativesDir = Path.Combine(GameDetails.CustomGameDirectory, "natives")
+        };
 
         var versionManifest = ManifestHelper.GetMinecraftManifest();
         if (versionManifest == null)
-        {
-            _logger.Error("Failed to read the local vanilla manifest. Please ensure that the file exists and is valid.");
-            return;
-        }
+            throw new Exception("Minecraft version manifest not found.");
         VersionManifest = versionManifest;
 
         var minecraftVersion = VersionManifest.Versions.FirstOrDefault(x => x.Id == GameDetails.MinecraftVersion);
         if (minecraftVersion == null)
-        {
-            _logger.Error($"Minecraft version '{GameDetails.MinecraftVersion}' not found in the local vanilla manifest.");
-            return;
-        }
+            throw new Exception($"Minecraft version {GameDetails.MinecraftVersion} not found in manifest.");
         MinecraftVersion = minecraftVersion;
-        VersionData = new VersionDetails
-        {
-            CustomVersion = GameDetails.CustomVersion,
-            MinecraftVersion = GameDetails.MinecraftVersion,
-            GameDir = GameDetails.CustomGameDirectory,
-            NativesDir = Path.Combine(GameDetails.CustomGameDirectory, "natives")
-        }; 
+        _isInitialized = true;
     }
 
+    /// <summary>
+    /// Update stored client details for this instance.
+    /// </summary>
+    /// <param name="clientDetails">New client details to apply; the method copies properties from this object into the internal <c>_client</c> instance.</param>
     public void UpdateUserDetails(ClientDetails clientDetails)
     {
         _client.DisplayName = clientDetails.DisplayName;
@@ -106,6 +103,12 @@ public class MinecraftInstance
     /// <returns>A <see cref="Process"/> object representing the launched game, or null if the process fails.</returns>
     public async Task<Process?> Start(bool downloadOnly = false)
     {
+        if (!_isInitialized)
+        {
+            _logger.Error("Starting minecraft instance before a successful initialization.");
+            return null;
+        }
+        
         _logger.Debug("Starting minecraft instance...");
         _jvmArguments.Clear();
         _gameArguments.Clear();
@@ -142,13 +145,13 @@ public class MinecraftInstance
             await DownloadDependenciesAsync(versionDetails, libraries);
             endTime = DateTime.Now;
             _logger.Info($"Dependencies downloaded in {(endTime - startTime).TotalMilliseconds}ms.");
-            
+
             _classPath.Add(moddedData != null ? moddedData.VersionData.VersionJarPath : VersionData.VersionJarPath);
 
             _logger.Debug("Building arguments...");
             var args = BuildArguments(versionDetails.GameDir, mainClass, versionDetails.NativesDir, customVersion);
             _progressReporter?.Hide();
-            
+
             // Copy custom natives if specified
             _logger.Debug("Copying custom native files if specified...");
             startTime = DateTime.Now;
@@ -159,44 +162,17 @@ public class MinecraftInstance
                 string destPath = Path.Combine(versionDetails.NativesDir, Path.GetFileName(nativePath));
                 File.Copy(nativePath, destPath, true);
             }
+
             endTime = DateTime.Now;
             _logger.Info($"Custom native files copied in {(endTime - startTime).TotalMilliseconds}ms.");
-            
+
             _logger.Debug("The process is ready to launch.");
             if (downloadOnly)
             {
                 _logger.Debug("Download only flag is set. Exiting before launch.");
-                return null;    
+                return null;
             }
-            
-            // Below 1.7 there is no dedicated logs directory
-            // so this fixes this issue
-            _logger.Debug("Fixing logs for Minecraft versions below 1.7...");
-            Version minecraftVersion = new Version(GameDetails.MinecraftVersion);
-            Version seven = new Version(1, 7);
-            string? logsFilePath = null;
-            if (minecraftVersion < seven)
-            {
-                string logsDir = Path.Combine(versionDetails.GameDir, "logs");
-                if (!Directory.Exists(logsDir))
-                    Directory.CreateDirectory(logsDir);
-                string latestLogFile = Path.Combine(logsDir, "latest.log");
-                if (File.Exists(latestLogFile))
-                {
-                    DateTime lastEditDate = File.GetLastWriteTime(latestLogFile);
-                    File.Move(latestLogFile, Path.Combine(logsDir, $"{lastEditDate:yyyy-MM-dd_HH-mm-ss}.log"), true);
-                }
-                logsFilePath = latestLogFile;
-                
-                // Make a file watcher to remove sensitive data from logs
-                _watcher = new FileSystemWatcher(logsDir, "latest.log")
-                {
-                    NotifyFilter = NotifyFilters.LastWrite,
-                    EnableRaisingEvents = true
-                };
-                _watcher.Changed += HandleFileWatcherChanged;
-            }
-            
+
             // Check mods
             _logger.Debug("Verifying mods...");
             startTime = DateTime.Now;
@@ -204,29 +180,24 @@ public class MinecraftInstance
             await ModService.VerifyCustomSkinLoaderConfigAsync(versionDetails.GameDir);
             endTime = DateTime.Now;
             _logger.Info($"Mods verified in {(endTime - startTime).TotalMilliseconds}ms.");
-            
+
             // Make commands_history readonly
             _logger.Debug("Attempting to fix command history file leak...");
             FileSystemHelper.FixCommandHistoryFile(GameDetails.CustomGameDirectory);
-            
+
             // Launch the Minecraft game process with the constructed arguments
             _logger.Debug("Starting java virtual machine...");
-            var process = JavaProcessLauncher.StartJava(GameDetails.JavaPath, args.Item1, args.Item2, logsFilePath, GameDetails.EnableGamemode, GameDetails.EnableMangoHud, GameDetails.EnvironmentVariables);
-            
-            // Make sure to dispose the file watcher when the game process exits
-            if (process != null)
-                process.Exited += (_, _) =>
-                {
-                    if (_watcher == null)
-                        return;
-
-                    _watcher.Changed -= HandleFileWatcherChanged;
-                    _watcher?.Dispose();
-                };
+            var process = JavaProcessLauncher.StartJava(GameDetails.JavaPath, args.Item1!, args.Item2!,
+                GameDetails.EnableGamemode, GameDetails.EnableMangoHud, GameDetails.EnvironmentVariables);
 
             _logger.Debug("Deleting temporary directory...");
             FileSystemHelper.DeleteDirectory(tempDir);
             return process;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"An error occurred while starting the Minecraft instance: {ex}");
+            return null;
         }
         finally
         {
@@ -240,12 +211,30 @@ public class MinecraftInstance
     /// </summary>
     private async Task DownloadCoreFilesAsync()
     {
+        if (!_isInitialized)
+        {
+            _logger.Error("Attempted to download core files before successful initialization.");
+            return;
+        }
+
+        if (MinecraftVersion == null)
+        {
+            _logger.Error("MinecraftVersion is null. Cannot download core files.");
+            return;
+        }
+        
         var res = await MinecraftFileService.DownloadVersionAsync(MinecraftVersion, PathDetails, _progressReporter);
         if (res == null)
             throw new InvalidOperationException("Failed to download the version meta data. Please check your internet connection and try again.");
         MinecraftVersionMeta = res.Value.Item1;
         VersionData.VersionJarPath = res.Value.Item3;
         VersionData.VersionJsonPath = res.Value.Item2;
+        
+        if (MinecraftVersionMeta == null)
+        {
+            _logger.Error("MinecraftVersionMeta is null. Cannot download core files.");
+            return;
+        }
 
         // Change the required Java version if necessary
         if (GameDetails.Kind == EMinecraftKind.FORGE)
@@ -271,10 +260,11 @@ public class MinecraftInstance
     /// <returns>A tuple containing version details, the main class, and the custom version string.</returns>
     private (VersionDetails, string, string?) GetLaunchParameters(ModdedData? moddedData)
     {
+        if (MinecraftVersionMeta == null)
+            throw new InvalidOperationException("MinecraftVersionMeta is null. Cannot download launch parameters.");
+        
         if (moddedData != null)
-        {
             return (moddedData.VersionData, moddedData.MainClass ?? MinecraftVersionMeta.MainClass, moddedData.VersionData.CustomVersion);
-        }
         return (VersionData, MinecraftVersionMeta.MainClass, null);
     }
 
@@ -293,9 +283,7 @@ public class MinecraftInstance
         
         var libraries = new List<LibraryMeta>(MinecraftVersionMeta.Libraries);
         if (moddedData?.Libraries.Count > 0)
-        {
             libraries.InsertRange(0, moddedData.Libraries);
-        }
         return libraries;
     }
 
@@ -317,12 +305,6 @@ public class MinecraftInstance
         var loggingArg = await MinecraftFileService.DownloadLoggingAsync(MinecraftVersionMeta, versionDetails.GameDir, _progressReporter);
         if (loggingArg != null)
             _jvmArgumentsBeforeClassPath.Add(loggingArg);
-        
-        if (GameDetails == null || VersionData == null  || PathDetails == null)
-        {
-            _logger.Error("GameDetails, VersionData, or PathDetails is null. Cannot download dependencies.");
-            return;
-        }
 
         _logger.Debug("Downloading libraries...");
         var classPath = await MinecraftFileService.DownloadLibrariesAsync(GameDetails.Kind, VersionData, libraries, _classPath, PathDetails.CacheDir, PathDetails.LibrariesDir, _progressReporter);
@@ -350,7 +332,18 @@ public class MinecraftInstance
         return Task.FromResult<ModdedData?>(null);
     }
 
-
+    /// <summary>
+    /// Builds the JVM and game argument strings required to launch Minecraft and writes a classpath file to the game directory.
+    /// </summary>
+    /// <param name="gameDir">The game directory where the classpath file will be written.</param>
+    /// <param name="mainClass">The fully-qualified main class name to launch (used when building game arguments).</param>
+    /// <param name="nativesDir">The directory containing native libraries; used to replace placeholders in arguments.</param>
+    /// <param name="modVersion">Optional mod loader version (e.g. forge/fabric) used when resolving placeholders.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// - Item1: the JVM argument string (may be null if placeholder replacement failed),
+    /// - Item2: the game argument string (may be null if placeholder replacement failed).
+    /// </returns>
     private (string?, string?) BuildArguments(string gameDir, string mainClass, string nativesDir, string? modVersion = null)
     {
         string classpath;
@@ -379,7 +372,7 @@ public class MinecraftInstance
     /// <returns>A collection of JVM arguments.</returns>
     private IEnumerable<string> BuildJvmArguments(string gameDir)
     {
-        if (GameDetails == null || MinecraftVersionMeta == null)
+        if (MinecraftVersionMeta == null)
         {
             _logger.Error("GameDetails or MinecraftVersionMeta is null. Cannot build JVM arguments.");
             return [];
@@ -454,7 +447,7 @@ public class MinecraftInstance
         if (Resolution is { Y: > 0 })
             gameArgs.Add($"--height {Resolution.Y}");
 
-        if (GameDetails != null && !string.IsNullOrEmpty(GameDetails.ServerAddressToJoin))
+        if (!string.IsNullOrEmpty(GameDetails.ServerAddressToJoin))
             gameArgs.Add($"--quickPlayMultiplayer {GameDetails.ServerAddressToJoin}");
 
         return gameArgs;
@@ -467,18 +460,6 @@ public class MinecraftInstance
     /// <returns>The version name as a string.</returns>
     private string GetVersionName(string? modVersion)
     {
-        if (GameDetails == null)
-        {
-            _logger.Error("GameDetails is null. Cannot get version name.");
-            return string.Empty;
-        }
-
-        if (VersionData == null)
-        {
-            _logger.Error("VersionData is null. Cannot get version name.");
-            return string.Empty;
-        }
-        
         return GameDetails.Kind switch
         {
             EMinecraftKind.VANILLA => VersionData.MinecraftVersion,
@@ -500,12 +481,12 @@ public class MinecraftInstance
     /// <returns>The argument string with placeholders replaced.</returns>
     private string? ReplacePlaceholders(string argumentString, string gameDir, string nativesDir, string? modVersion)
     {
-        if (PathDetails == null)
+        if (!_isInitialized)
         {
-            _logger.Error("PathDetails is null. Cannot replace placeholders.");
+            _logger.Error("Attempted to replace placeholders before successful initialization.");
             return null;
         }
-
+        
         if (MinecraftVersionMeta == null)
         {
             _logger.Error("MinecraftVersionMeta is null. Cannot replace placeholders.");
@@ -563,68 +544,8 @@ public class MinecraftInstance
     /// <param name="javaPath">The new Java path to be used by the game.</param>
     public void UpdateJavaPath(string javaPath)
     {
-        if (GameDetails == null)
-        {
-            _logger.Error("GameDetails is null. Cannot update Java path.");
-            return;
-        }
-        
         GameDetails.JavaPath = javaPath;
         _logger.Debug($"Java path updated to: {javaPath}");
-    }
-
-    /// <summary>
-    /// Handles changes to the log file being watched by the file system watcher.
-    /// Replaces sensitive information such as the access token and UUID in the log file with masked values.
-    /// </summary>
-    /// <param name="sender">The source of the event.</param>
-    /// <param name="e">The event data containing information about the file change.</param>
-    private void HandleFileWatcherChanged(object sender, FileSystemEventArgs e)
-    {
-        // Impossible but the IDE complains
-        if (_watcher == null || VersionData == null)
-            return;
-        
-        lock (_watcherLock)
-        {
-            if (_isSanitizingLogFile)
-                return;
-            _isSanitizingLogFile = true;
-        }
-        
-        try
-        {
-            _watcher.EnableRaisingEvents = false;
-            
-            string logsDir = Path.Combine(VersionData.GameDir, "logs");
-            string latestLogFile = Path.Combine(logsDir, "latest.log");
-            if (!File.Exists(latestLogFile))
-            {
-                _logger.Error("Latest log file not found for sanitization.");
-                return;
-            }
-            
-            string[] lines = File.ReadAllLines(latestLogFile);
-            for (int i = 0; i < lines.Length; i++)
-            {
-                if (!string.IsNullOrEmpty(_client.AccessToken) && lines[i].Contains(_client.AccessToken))
-                    lines[i] = lines[i].Replace(_client.AccessToken, "****");
-                
-                if (lines[i].Contains(_client.UUID))
-                    lines[i] = lines[i].Replace(_client.UUID, "****");
-            }
-            File.WriteAllLines(latestLogFile, lines);
-        }
-        catch (IOException)
-        {
-            // File is being used by another process, ignore
-        }
-        finally
-        {
-            lock (_watcherLock)
-                _isSanitizingLogFile = false;
-            _watcher.EnableRaisingEvents = true;
-        }
     }
     #endregion
 }
