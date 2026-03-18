@@ -38,21 +38,13 @@ public static class OSHelper
             case PlatformID.Win32Windows:
             case PlatformID.Win32S:
             case PlatformID.WinCE:
-            {
                 return EOperatingSystem.Windows;
-            }
             case PlatformID.Unix:
-            {
                 return EOperatingSystem.Linux;
-            }
             case PlatformID.MacOSX:
-            {
                 return EOperatingSystem.MacOS;
-            }
             default:
-            {
                 return EOperatingSystem.Unknown;
-            }
         }
     }
     
@@ -89,10 +81,7 @@ public static class OSHelper
     /// <returns>
     /// A boolean value indicating whether the operating system is 64-bit.
     /// </returns>
-    public static bool Is64BitOperatingSystem()
-    {
-        return Environment.Is64BitOperatingSystem;
-    }
+    public static bool Is64BitOperatingSystem() => Environment.Is64BitOperatingSystem;
     
     /// <summary>
     /// Retrieves the type and description of the dedicated GPU available on the system.

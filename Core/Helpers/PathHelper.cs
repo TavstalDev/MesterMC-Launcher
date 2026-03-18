@@ -58,11 +58,6 @@ public static class PathHelper
     public static readonly string LauncherConfigPath = Path.Combine(ApplicationDir, "config.json");
     
     /// <summary>
-    /// Gets the path to the Java mirrors configuration file.
-    /// </summary>
-    public static readonly string JavaMirrorsPath = Path.Combine(ApplicationDir, "java-mirrors.json");
-    
-    /// <summary>
     /// Gets the path to the launcher logs directory.
     /// </summary>
     public static readonly string LauncherLogsDir = Path.Combine(ApplicationDir, "launcherLogs");

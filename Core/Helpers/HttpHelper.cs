@@ -53,10 +53,7 @@ public static class HttpHelper
             var handler = new HttpClientHandler
             {
                 // This callback bypasses the SSL check
-                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => 
-                {
-                    return true; 
-                }
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             };
             client = new HttpClient(handler);
             #else
