@@ -37,7 +37,7 @@ public static class DatabaseHelper
         IpInfo? ipInfo = null;
         try
         {
-            var client = new HttpClient();
+            using var client = new HttpClient();
             string info = await client.GetStringAsync("https://ipinfo.io/" + ip);
             ipInfo = JsonConvert.DeserializeObject<IpInfo>(info);
             if (ipInfo != null)
