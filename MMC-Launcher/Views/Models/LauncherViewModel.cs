@@ -80,9 +80,13 @@ public partial class LauncherViewModel : ObservableObject
         };
 
         var settings = LauncherHelper.GetLauncherSettings();
-        foreach (var user in settings.Users.Keys)
-            SavedUsernames.Add(user);
-        
+        if (settings.Users.Count > 0)
+        {
+            foreach (var user in settings.Users.Keys)
+                SavedUsernames.Add(user);
+            OfflineMode = string.IsNullOrEmpty(settings.Users.Values.ElementAt(0));
+        }
+
         _isInitialized = true;
         SubscribeToCoreConfigChildren(_coreConfig);
     }
@@ -314,8 +318,9 @@ public partial class LauncherViewModel : ObservableObject
             return;
         
         LoginStatus = ELoginStatus.SUCCESS;
+        bool isOffline = accessToken == "0";
         var config = await LauncherHelper.GetLauncherSettingsAsync();
-        config.Users.TryAdd(playerName, "reserved"); // Maybe it will be used in the future.
+        config.Users.TryAdd(playerName, isOffline ? "" : "reserved for future use"); // Maybe it will be used in the future.
         config.LastUser = config.Users.Keys.ToList().IndexOf(playerName);
         await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, config, CustomJsonContext.Default.CoreConfigDto);
         
@@ -431,8 +436,7 @@ public partial class LauncherViewModel : ObservableObject
                 MinMemory = newValue.Java.MinMemory,
                 MaxMemory = newValue.Java.MaxMemory,
                 PermaGen = newValue.Java.PermaGen,
-                JavaPath = newValue.Java.DefaultJavaPath,
-                JvmArguments = newValue.Java.JvmArguments,
+                JavaPath = newValue.Java.DefaultJavaPath
             },
             Minecraft = new MinecraftConfigDto
             {

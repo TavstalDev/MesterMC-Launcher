@@ -26,9 +26,6 @@ namespace Tavstal.MesterMC.Launcher.Models.Config.DTOs;
 [RequiresUnreferencedCode("This class uses code that may be removed during trimming.")]
 public class CoreConfigDto
 {
-    [JsonProperty("clientId"), JsonPropertyName("clientId")]
-    public string ClientId { get; set; }
-    
     /// <summary>
     /// Gets or sets the configuration for the launcher.
     /// </summary>
@@ -60,18 +57,6 @@ public class CoreConfigDto
     public DateTime CacheRefreshDate { get; set; }
     
     /// <summary>
-    /// When true, environment variables from <see cref="EnvironmentVariables"/> are applied/used by the launcher.
-    /// </summary>
-    [JsonProperty("enableEnvironmentVariables"), JsonPropertyName("enableEnvironmentVariables")]
-    public bool EnableEnvironmentVariables { get; set; }
-    
-    /// <summary>
-    /// A set of environment variables (name => value) that the launcher may apply when launching processes.
-    /// </summary>
-    [JsonProperty("environmentVariables"), JsonPropertyName("environmentVariables")]
-    public Dictionary<string, string> EnvironmentVariables { get; set; }
-    
-    /// <summary>
     /// Index or identifier of the last user who played/used the launcher.
     /// </summary>
     [JsonProperty("lastPlayed"), JsonPropertyName("lastPlayed")]
@@ -88,20 +73,11 @@ public class CoreConfigDto
     /// </summary>
     public CoreConfigDto()
     {
-        using (var sha = SHA256.Create())
-        {
-            string json = JsonConvert.SerializeObject(OSHelper.CollectHardwareInfo());
-            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(json));
-            ClientId = Convert.ToHexString(bytes);
-        }
-
         Launcher = new LauncherConfigDto();
         Java = new JavaConfigDto();
         Minecraft = new MinecraftConfigDto();
         Misc = new MiscConfigDto();
         CacheRefreshDate = DateTime.UtcNow;
-        EnableEnvironmentVariables = false;
-        EnvironmentVariables = new Dictionary<string, string>();
         LastUser = -1;
         Users = new Dictionary<string, string>();
     }
@@ -109,26 +85,20 @@ public class CoreConfigDto
     /// <summary>
     /// Initializes a new instance of the <see cref="CoreConfigDto"/> class using the provided values.
     /// </summary>
-    /// <param name="clientId">A unique client identifier (typically a hex string). May be null or empty if not provided.</param>
     /// <param name="launcher">The launcher configuration DTO to assign to the <see cref="Launcher"/> property.</param>
     /// <param name="java">The Java configuration DTO to assign to the <see cref="Java"/> property.</param>
     /// <param name="minecraft">The Minecraft configuration DTO to assign to the <see cref="Minecraft"/> property.</param>
     /// <param name="misc">The miscellaneous configuration DTO to assign to the <see cref="Misc"/> property.</param>
     /// <param name="cacheRefreshDate">The date and time when cached data was last refreshed (UTC).</param>
-    /// <param name="enableEnvironmentVariables">Flag indicating whether environment variables are enabled.</param>
-    /// <param name="environmentVariables">A dictionary of environment variables; may be null (no variables).</param>
     /// <param name="lastUser">Index or identifier of the last user who played; -1 typically indicates none.</param>
     /// <param name="users">A dictionary mapping user indices/ids to a display name or identifier; may be null or empty.</param>
-    public CoreConfigDto(string clientId, LauncherConfigDto launcher, JavaConfigDto java, MinecraftConfigDto minecraft, MiscConfigDto misc, DateTime cacheRefreshDate, bool enableEnvironmentVariables, Dictionary<string, string> environmentVariables, int lastUser, Dictionary<string, string> users)
+    public CoreConfigDto(LauncherConfigDto launcher, JavaConfigDto java, MinecraftConfigDto minecraft, MiscConfigDto misc, DateTime cacheRefreshDate, int lastUser, Dictionary<string, string> users)
     {
-        ClientId = clientId;
         Launcher = launcher;
         Java = java;
         Minecraft = minecraft;
         Misc = misc;
         CacheRefreshDate = cacheRefreshDate;
-        EnableEnvironmentVariables = enableEnvironmentVariables;
-        EnvironmentVariables = environmentVariables;
         LastUser = lastUser;
         Users = users;
     }

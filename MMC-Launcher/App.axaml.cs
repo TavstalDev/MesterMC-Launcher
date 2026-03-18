@@ -207,9 +207,7 @@ public partial class App : Application
         CoreConfigDto launcherSettings = LauncherHelper.GetLauncherSettings();
 
         // Attempt to force the use of a dedicated GPU if configured
-        var environmentVariables = launcherSettings.EnableEnvironmentVariables
-            ? launcherSettings.EnvironmentVariables
-            : [];
+        Dictionary<string, string> environmentVariables = [];
         
         var gpuInfo = OSHelper.GetDedicatedGpuType();
         if (launcherSettings.Misc.UseDedicatedGpu && gpuInfo != null)
@@ -266,7 +264,7 @@ public partial class App : Application
             launcherSettings.Java.JavaPath, 
             launcherSettings.Java.MinMemory, 
             launcherSettings.Java.MaxMemory, 
-            launcherSettings.Java.JvmArguments, 
+            "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=50 -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:+OptimizeStringConcat -XX:+UseStringDeduplication -Dfml.ignoreInvalidMinecraftCertificates=true -Dfml.ignorePatchDiscrepancies=true -XX:ParallelGCThreads=4 -Dlog4j2.formatMsgNoLookups=true -Djava.net.preferIPv4Stack=true", 
             "1.21.8", 
             EMinecraftKind.FABRIC, 
             "0.17.3", 

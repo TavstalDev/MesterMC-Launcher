@@ -49,12 +49,6 @@ public class JavaConfigDto
     public string JavaPath { get; set; }
 
     /// <summary>
-    /// Gets or sets the additional JVM arguments to be passed to the Java process.
-    /// </summary>
-    [JsonProperty("jvmArguments"), JsonPropertyName("jvmArguments")]
-    public string JvmArguments { get; set; }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="JavaConfigDto"/> class with default values.
     /// </summary>
     public JavaConfigDto()
@@ -64,7 +58,6 @@ public class JavaConfigDto
         PermaGen = 128;
         IgnoreSystemJava = true;
         JavaPath = string.Empty;
-        JvmArguments = "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=50 -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:+OptimizeStringConcat -XX:+UseStringDeduplication -Dfml.ignoreInvalidMinecraftCertificates=true -Dfml.ignorePatchDiscrepancies=true -XX:ParallelGCThreads=4 -Dlog4j2.formatMsgNoLookups=true -Djava.net.preferIPv4Stack=true";
     }
 
     /// <summary>
@@ -75,14 +68,12 @@ public class JavaConfigDto
     /// <param name="permaGen">The size of the permanent generation (PermGen) memory, in megabytes.</param>
     /// <param name="ignoreSystemJava">Should we ignore java installations outside the launcher's java directory?</param>
     /// <param name="defaultJavaPath">The file system path to the Java executable.</param>
-    /// <param name="jvmArguments">The additional JVM arguments to be passed to the Java process.</param>
-    public JavaConfigDto(uint minMemory, uint maxMemory, uint permaGen, bool ignoreSystemJava, string defaultJavaPath, string jvmArguments)
+    public JavaConfigDto(uint minMemory, uint maxMemory, uint permaGen, bool ignoreSystemJava, string defaultJavaPath)
     {
         MinMemory = minMemory;
         MaxMemory = maxMemory;
         PermaGen = permaGen;
         IgnoreSystemJava = ignoreSystemJava;
         JavaPath = defaultJavaPath;
-        JvmArguments = jvmArguments;
     }
 }

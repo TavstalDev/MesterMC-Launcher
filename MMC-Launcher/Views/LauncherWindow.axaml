@@ -498,14 +498,6 @@
                                                     <TextBlock Classes="FontAwesome" Text="&#xf07c;" />
                                                 </Button>
                                             </Grid>
-                                            <!--  JVM Arguments  -->
-                                            <TextBlock Classes="SettingsCategory" Text="JVM Argumentumok" />
-                                            <TextBox
-                                                MinHeight="128"
-                                                MaxLines="512"
-                                                Classes="TextInput"
-                                                Text="{Binding CoreConfig.Java.JvmArguments, Mode=TwoWay}"
-                                                TextWrapping="Wrap" />
                                         </WrapPanel>
                                     </ScrollViewer>
                                     </Grid>

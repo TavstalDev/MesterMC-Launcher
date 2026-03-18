@@ -51,8 +51,7 @@ public partial class CoreConfigModel : ObservableObject
             coreConfigDto.Java.MinMemory,
             coreConfigDto.Java.MaxMemory,
             coreConfigDto.Java.PermaGen,
-            coreConfigDto.Java.JavaPath,
-            coreConfigDto.Java.JvmArguments);
+            coreConfigDto.Java.JavaPath);
         _performance = new PerformanceConfigModel(
             coreConfigDto.Misc.UseCustomGlfw,
             coreConfigDto.Misc.CustomGlfwPath,
