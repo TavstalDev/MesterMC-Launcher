@@ -13,15 +13,14 @@ This is a list of things that need to be done for this project. If you want to c
 
 ## Backend
 
-- [ ] Remove some configuration options such as:
-  - [ ] "Use custom Java path" because it is not needed and it can cause issues if the user doesn't know what they are doing.
-  - [ ] "Use custom JVM arguments" because it is not needed and it can cause issues if the user doesn't know what they are doing.
-  - [ ] "Environment variables" because it is not needed and it can cause issues if the user doesn't know what they are doing.
-  - [ ] "Ignore system Java" because the launcher should always use its own Java runtime to avoid compatibility issues.
-- [ ] Make java mirrors static and not changeable by the user.
-- [ ] Remove "manifests" directory and download them to the assets directory instead.
-- [ ] Rename "logs" directory to "launcher-logs" to avoid confusion with the logs directory of the game.
-- [ ] "versions" directory should be changed entirely and how the launcher handles game versions.
+- [x] Remove some configuration options such as:
+  - [x] "Use custom JVM arguments" because it is not needed and it can cause issues if the user doesn't know what they are doing.
+  - [x] "Environment variables" because it is not needed and it can cause issues if the user doesn't know what they are doing.
+  - [x] "Ignore system Java" because the launcher should always use its own Java runtime to avoid compatibility issues.
+- [x] Make java mirrors static and not changeable by the user.
+- [x] Remove "manifests" directory and download them to the assets directory instead.
+- [x] Rename "logs" directory to "launcher-logs" to avoid confusion with the logs directory of the game.
+- [x] "versions" directory should be changed entirely and how the launcher handles game versions.
 
 ## API
 

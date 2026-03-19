@@ -22,11 +22,6 @@ public partial class JavaConfigModel : ObservableObject
     /// Gets or sets the permanent generation memory size for Java in megabytes.
     /// </summary>
     [ObservableProperty] private uint _permaGen;
-
-    /// <summary>
-    /// Gets or sets the default file path to the Java executable.
-    /// </summary>
-    [ObservableProperty] private string _defaultJavaPath;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="JavaConfigModel"/> class with default values.
@@ -39,12 +34,10 @@ public partial class JavaConfigModel : ObservableObject
     /// <param name="minMemory">The minimum memory allocation for Java in megabytes.</param>
     /// <param name="maxMemory">The maximum memory allocation for Java in megabytes.</param>
     /// <param name="permaGen">The permanent generation memory size for Java in megabytes.</param>
-    /// <param name="defaultJavaPath">The default file path to the Java executable.</param>
-    public JavaConfigModel(uint minMemory, uint maxMemory, uint permaGen, string defaultJavaPath)
+    public JavaConfigModel(uint minMemory, uint maxMemory, uint permaGen)
     {
         _minMemory = minMemory;
         _maxMemory = maxMemory;
         _permaGen = permaGen;
-        _defaultJavaPath = defaultJavaPath;
     }
 }

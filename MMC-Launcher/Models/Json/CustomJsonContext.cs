@@ -10,7 +10,6 @@ namespace Tavstal.MesterMC.Launcher.Models.Json;
 /// specifying the types to be serialized and the serialization options.
 /// </summary>
 [JsonSerializable(typeof(CoreConfigDto))] // Specifies that the CoreConfigDto type is serializable.
-[JsonSerializable(typeof(JavaMirrorJdks))] // Specifies that the JavaMirrorJdks type is serializable.
 [JsonSerializable(typeof(List<NewsDto>))] // Specifies that a list of NewsDto objects is serializable.
 [JsonSourceGenerationOptions(
     WriteIndented = true, // Enables indented (pretty-printed) JSON output.

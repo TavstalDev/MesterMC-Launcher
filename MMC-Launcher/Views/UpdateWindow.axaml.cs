@@ -161,8 +161,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             if (!string.IsNullOrEmpty(result.Item2))
             {
                 SetStatus("Konfiguráció frissítése...");
-                settings.Java.JavaPath = result.Item2;
-                await JsonHelper.WriteJsonFileAsync(PathHelper.LauncherConfigPath, settings, CustomJsonContext.Default.CoreConfigDto);
+                App.SetJavaPath(result.Item2);
             }
 
             // 4. Check for Updates

@@ -153,6 +153,21 @@ public partial class App : Application
     public static bool? IsUpToDate { get; set; }
     #endregion
     
+    #region JavaPath
+    private static string _javaPath = string.Empty;
+
+    public static string JavaPath => _javaPath;
+
+    public static string SetJavaPath(string javaPath)
+    {
+        if (!string.IsNullOrEmpty(_javaPath))
+            return _javaPath;
+        
+        _javaPath =  javaPath;
+        return _javaPath;
+    }
+    #endregion
+    
     /// <summary>
     /// Loads Avalonia XAML for the application.
     /// </summary>
@@ -261,7 +276,7 @@ public partial class App : Application
             nativeLibraries.Add(launcherSettings.Misc.CustomOpenAlPath);
 
         GameDetails gameDetails = new GameDetails(
-            launcherSettings.Java.JavaPath, 
+            _javaPath, 
             launcherSettings.Java.MinMemory, 
             launcherSettings.Java.MaxMemory, 
             "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=50 -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:+OptimizeStringConcat -XX:+UseStringDeduplication -Dfml.ignoreInvalidMinecraftCertificates=true -Dfml.ignorePatchDiscrepancies=true -XX:ParallelGCThreads=4 -Dlog4j2.formatMsgNoLookups=true -Djava.net.preferIPv4Stack=true", 
@@ -293,54 +308,7 @@ public partial class App : Application
         );
 
         _instance = new FabricInstance(gameDetails, pathDetails, launcherDetails, clientDetails, resolution, progressReporter);
-        _instance.OnSetupDefaultJava += SetupDefaultJavaPath;
         return _instance;
-    }
-    
-    /// <summary>
-    /// Callback invoked by the game instance to suggest a default Java path based on version metadata.
-    /// </summary>
-    /// <param name="meta">The Java version metadata provided by the game or mod loader.</param>
-    private static void SetupDefaultJavaPath(VersionMeta? meta)
-    {
-        var settings = LauncherHelper.GetLauncherSettings();
-        string defaultJavaPath = settings.Java.JavaPath;
-        if (meta == null)
-        {
-            _logger.Warn("Java version meta is null, using existing Java path.");
-            UpdateJavaPath(defaultJavaPath);
-            return;
-        }
-        
-        // Check if the Java version specified in the metadata is available, if not attempt to download it
-        var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, false, true);
-        if (javaInstallations.All(x => x.Major != meta.JavaVersionMeta.MajorVersion) && string.IsNullOrEmpty(defaultJavaPath))
-        {
-            _logger.Error("Required Java version not found and no default Java path set.");
-            return;
-        }
-
-        foreach (var javaInstallation in javaInstallations)
-        {
-            if (meta.JavaVersionMeta != null && javaInstallation.Major == meta.JavaVersionMeta.MajorVersion)
-            {
-                defaultJavaPath = javaInstallation.Path;
-                break;
-            }
-        }
-        UpdateJavaPath(defaultJavaPath);
-    }
-    
-    /// <summary>
-    /// Updates the stored Java path in both the running instance and the launcher settings file.
-    /// </summary>
-    /// <param name="javaPath">Path to the Java executable or home to use for launching Minecraft.</param>
-    private static void UpdateJavaPath(string javaPath)
-    {
-        _instance?.UpdateJavaPath(javaPath);
-        var settings = LauncherHelper.GetLauncherSettings();
-        settings.Java.JavaPath = javaPath;
-        JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, settings, CustomJsonContext.Default.CoreConfigDto);
     }
     #endregion
     

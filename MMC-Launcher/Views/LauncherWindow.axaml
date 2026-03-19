@@ -480,24 +480,6 @@
                                                     Minimum="8"
                                                     Value="{Binding CoreConfig.Java.PermaGen, Mode=TwoWay}" />
                                             </Grid>
-                                            <!--  Java Path  -->
-                                            <Grid ColumnDefinitions="Auto, *, Auto" RowDefinitions="Auto">
-                                                <!--  Text  -->
-                                                <TextBlock Classes="TextInput" Text="Java útvonal" />
-                                                <!--  Input  -->
-                                                <TextBox
-                                                    Grid.Column="1"
-                                                    Classes="TextInput"
-                                                    Text="{Binding CoreConfig.Java.DefaultJavaPath, Mode=TwoWay}"
-                                                    Watermark="Könyvtár kiválasztása" />
-                                                <Button
-                                                    Grid.Column="2"
-                                                    Classes="IconBtn"
-                                                    Command="{Binding ConfigDirSelectCommand}"
-                                                    CommandParameter="9">
-                                                    <TextBlock Classes="FontAwesome" Text="&#xf07c;" />
-                                                </Button>
-                                            </Grid>
                                         </WrapPanel>
                                     </ScrollViewer>
                                     </Grid>

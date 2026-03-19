@@ -287,19 +287,6 @@ public partial class LauncherViewModel : ObservableObject
         CurrentSettingsCategory = category;
         await Task.CompletedTask;
     }
-    
-    /// <summary>
-    /// Trigger a folder picker interaction and set the selected Java path in core config.
-    /// </summary>
-    [RelayCommand]
-    public async Task ConfigDirSelectAsync()
-    {
-        var directoryResult = await OpenFolderPicker.Handle(Unit.Default);
-        if (string.IsNullOrEmpty(directoryResult))
-            return;
-        
-        CoreConfig.Java.DefaultJavaPath = directoryResult;
-    }
     #endregion
     
     /// <summary>
@@ -435,8 +422,7 @@ public partial class LauncherViewModel : ObservableObject
             {
                 MinMemory = newValue.Java.MinMemory,
                 MaxMemory = newValue.Java.MaxMemory,
-                PermaGen = newValue.Java.PermaGen,
-                JavaPath = newValue.Java.DefaultJavaPath
+                PermaGen = newValue.Java.PermaGen
             },
             Minecraft = new MinecraftConfigDto
             {
