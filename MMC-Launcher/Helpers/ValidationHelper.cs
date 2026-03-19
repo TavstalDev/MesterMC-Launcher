@@ -153,7 +153,7 @@ public static class ValidationHelper
         try
         {
             var settings = await LauncherHelper.GetLauncherSettingsAsync();
-            var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, false, settings.Java.IgnoreSystemJava);
+            var javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath);
             bool wasJavaUpdated = false;
             foreach (int javaVersion in javaVersionsToValidate)
             {
@@ -170,7 +170,7 @@ public static class ValidationHelper
                     progressReporter?.SetStatus("Java " + javaVersion + " letöltése... " + prog.ToString("0.00") + "%");
                     progressReporter?.SetProgress(prog);
                 };
-                await JavaHelper.DownloadJavaVersionAsync(javaVersion, settings.Launcher.JavaDirectoryPath, progress);
+                await JavaHelper.DownloadJavaVersionAsync(settings.Launcher.JavaDirectoryPath, progress);
                 wasJavaUpdated = true;
             }
 
@@ -192,12 +192,10 @@ public static class ValidationHelper
                     }
                 }
 
-                javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, true, settings.Java.IgnoreSystemJava);
+                javaInstallations = JavaHelper.LocateJavaInstallations(settings.Launcher.JavaDirectoryPath, true);
             }
 
-            if (string.IsNullOrEmpty(settings.Java.JavaPath) && javaInstallations.Count > 0)
-                return (true, javaInstallations[0].Path);
-            return (true, null);
+            return (true, javaInstallations[0].Path);
         }
         catch (Exception ex)
         {
