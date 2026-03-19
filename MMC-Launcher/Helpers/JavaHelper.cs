@@ -37,138 +37,37 @@ public static class JavaHelper
     private static List<JavaVersion> _cachedJavaVersions = [];
     private static DateTime _cacheExpiration = DateTime.MinValue;
 
-    /// <summary>
-    /// Default directories to probe for Java installations on Windows systems.
-    /// </summary>
-    private static readonly List<string> WindowsDirectories =
-    [
-        @"C:\Program Files\Java",
-        @"C:\Program Files (x86)\Java",
-        @"C:\ProgramData\Oracle\Java",
-        @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Java"
-    ];
-
-    /// <summary>
-    /// Default directories to probe for Java installations on Linux systems.
-    /// </summary>
-    private static readonly List<string> LinuxDirectories =
-    [
-        "/usr/lib/jvm",
-        "/usr/java",
-        "/opt/java",
-        "/usr/local/java"
-    ];
-
-    /// <summary>
-    /// Default directories to probe for Java installations on macOS systems.
-    /// </summary>
-    private static readonly List<string> MacDirectories =
-    [
-        "/Library/Java/JavaVirtualMachines",
-        "/System/Library/Java/JavaVirtualMachines"
-    ];
-
-    private static readonly Dictionary<string, JavaMirrorJdks> JavaSdks = new()
+    private static readonly Dictionary<string, JavaMirrorArchitecture> JavaSdks = new()
     {
         { 
-            "windows", new JavaMirrorJdks(
-            // Java 7
-            new JavaMirrorArchitecture(
-                // x86_64
-                "",
-                // arm
-                ""
-            ),
-            // Java 8
-            new JavaMirrorArchitecture(
-                // x86_64
-                "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_windows_hotspot_8u462b08.zip",
-                // arm
-                ""
-            ),
-            // Java 17
-            new JavaMirrorArchitecture(
-                // x86_64
-                "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.9_9.zip",
-                // arm
-                ""
-            ),
-            // Java 21
-            new JavaMirrorArchitecture(
+            "windows", new JavaMirrorArchitecture(
                 // x86_64
                 "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_x64_windows_hotspot_21.0.8_9.zip",
                 // arm
                 "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_aarch64_windows_hotspot_21.0.8_9.zip"
-            ))
+            )
         },
         {
-            "linux", new JavaMirrorJdks(
-                // Java 7
-                new JavaMirrorArchitecture(
-                    // x86_64
-                    "",
-                    // arm
-                    ""
-                ),
-                // Java 8
-                new JavaMirrorArchitecture(
-                    // x86_64
-                    "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u462b08.tar.gz",
-                    // arm
-                    "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_aarch64_linux_hotspot_8u462b08.tar.gz"
-                ),
-                // Java 17
-                new JavaMirrorArchitecture(
-                    // x86_64
-                    "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_x64_linux_hotspot_17.0.9_9.tar.gz",
-                    // arm
-                    "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.9_9.tar.gz"
-                ),
-                // Java 21
-                new JavaMirrorArchitecture(
-                    // x86_64
-                    "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_x64_linux_hotspot_21.0.8_9.tar.gz",
-                    // arm
-                    "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.8_9.tar.gz"
-                ))
+            "linux", new JavaMirrorArchitecture(
+                // x86_64
+                "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_x64_linux_hotspot_21.0.8_9.tar.gz",
+                // arm
+                "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.8_9.tar.gz"
+            )
         },
         {
-           "macos", new JavaMirrorJdks(
-               // Java 7
-               new JavaMirrorArchitecture(
-                   // x86_64
-                   "",
-                   // arm
-                   ""
-               ),
-               // Java 8
-               new JavaMirrorArchitecture(
-                   // x86_64
-                   "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u462b08.tar.gz",
-                   // arm
-                   ""
-               ),
-               // Java 17
-               new JavaMirrorArchitecture(
-                   // x86_64
-                   "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_x64_mac_hotspot_17.0.9_9.tar.gz",
-                   // arm
-                   "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_aarch64_mac_hotspot_17.0.9_9.tar.gz"
-               ),
-               // Java 21
-               new JavaMirrorArchitecture(
-                   // x86_64
-                   "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_x64_mac_hotspot_21.0.8_9.tar.gz",
-                   // arm
-                   "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.8_9.tar.gz"
-               )) 
+           "macos",  new JavaMirrorArchitecture(
+               // x86_64
+               "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_x64_mac_hotspot_21.0.8_9.tar.gz",
+               // arm
+               "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.8_9.tar.gz"
+           )
         }
     };
 
     /// <summary>
     /// Downloads a specific Java version and extracts it to the target directory.
     /// </summary>
-    /// <param name="majorVersion">The major version of Java to download (e.g., 8, 11, 17).</param>
     /// <param name="targetPath">The directory where the downloaded Java version will be extracted.</param>
     /// <param name="progress">
     /// An optional progress reporter to track the download progress as a percentage.
@@ -177,7 +76,7 @@ public static class JavaHelper
     /// A task that represents the asynchronous operation. The task result is a boolean indicating
     /// whether the download and extraction were successful.
     /// </returns>
-    public static async Task<bool> DownloadJavaVersionAsync(int majorVersion, string targetPath,
+    public static async Task<bool> DownloadJavaVersionAsync(string targetPath,
         Progress<double>? progress = null)
     {
         try
@@ -194,23 +93,11 @@ public static class JavaHelper
             if (osMirror == null)
                 return false;
 
-            var javaMirror = majorVersion switch
-            {
-                7 => osMirror.Jdk7,
-                8 => osMirror.Jdk8,
-                17 => osMirror.Jdk17,
-                21 => osMirror.Jdk21,
-                _ => null
-            };
-
-            if (javaMirror == null)
-                return false;
-
-            string url = isArmBased ? javaMirror.Arm : javaMirror.X86_64;
+            string url = isArmBased ? osMirror.Arm : osMirror.X86_64;
             if (string.IsNullOrEmpty(url))
             {
                 _logger.Warn(
-                    $"No download URL found for Java {majorVersion} on {operatingSystem} OS {(isArmBased ? "arm" : "x64")}.");
+                    $"No download URL found for Java 21 on {operatingSystem} OS {(isArmBased ? "arm" : "x64")}.");
                 return false;
             }
 
@@ -219,7 +106,7 @@ public static class JavaHelper
             {
                 Directory.CreateDirectory(tempDir);
                 string extension = url.EndsWith(".zip") ? "zip" : "tar.gz";
-                string zipFilePath = Path.Combine(tempDir, $"java_{majorVersion}.{extension}");
+                string zipFilePath = Path.Combine(tempDir, $"java_21.{extension}");
                 await HttpHelper.DownloadFileAsync(url, zipFilePath, progress);
 
                 if (!File.Exists(zipFilePath))
@@ -247,7 +134,7 @@ public static class JavaHelper
         }
         catch (Exception ex)
         {
-            _logger.Exc($"Failed to download Java '{majorVersion}'.");
+            _logger.Exc($"Failed to download Java 21.");
             _logger.Exc(ex.ToString());
             return false;
         }
@@ -319,23 +206,20 @@ public static class JavaHelper
             return null;
         }
     }
-
+    
     /// <summary>
-    /// Locates Java installations on the system, optionally refreshing the cache or searching a specific directory.
+    /// Locates Java installations under the provided root directory and returns their parsed versions.
     /// </summary>
-    /// <param name="instanceJavaDir">
-    /// An optional directory path to search for Java installations. If null, default directories are used.
-    /// </param>
+    /// <param name="javaRootDir">The parent directory that contains Java installation subdirectories.</param>
     /// <param name="forceRefresh">
-    /// A boolean indicating whether to force a refresh of the cached Java installations.
-    /// </param>
-    /// <param name="ignoreSystemJava">
-    /// A boolean indicating whether to ignore system-wide Java installations.
+    /// If true, clears the internal cache and forces a fresh scan.
+    /// Note: cache invalidation is not thread-safe; callers should avoid concurrent calls that rely on atomic refresh.
     /// </param>
     /// <returns>
-    /// A list of <see cref="JavaVersion"/> objects representing the located Java installations.
+    /// A <see cref="List{JavaVersion}"/> containing discovered Java versions. The list will be empty if none are found
+    /// or if <paramref name="javaRootDir"/> does not exist or contains no valid Java executables.
     /// </returns>
-    public static List<JavaVersion> LocateJavaInstallations(string? instanceJavaDir = null, bool forceRefresh = false, bool ignoreSystemJava = false)
+    public static List<JavaVersion> LocateJavaInstallations(string javaRootDir, bool forceRefresh = false)
     {
         if (forceRefresh)
         {
@@ -347,27 +231,7 @@ public static class JavaHelper
             return _cachedJavaVersions;
         
         List<JavaVersion> javaVersions = [];
-        List<string> javaPaths = [];
-
-        switch (OSHelper.GetOperatingSystem())
-        {
-            case EOperatingSystem.Windows:
-            {
-                javaPaths = GetWindowsJavaPaths(instanceJavaDir, ignoreSystemJava);
-                break;
-            }
-            case EOperatingSystem.MacOS:
-            {
-                javaPaths = GetMacJavaPaths(instanceJavaDir, ignoreSystemJava);
-                break;
-            }
-            case EOperatingSystem.Linux:
-            case EOperatingSystem.Unknown:
-            {
-                javaPaths = GetLinuxJavaPaths(instanceJavaDir, ignoreSystemJava);
-                break;
-            }
-        }
+        List<string> javaPaths = GetJavaPaths(javaRootDir);
 
         foreach (var path in javaPaths)
         {
@@ -383,124 +247,30 @@ public static class JavaHelper
 
         return javaVersions;
     }
-
+    
     /// <summary>
-    /// Retrieves the paths to Java installations on Windows systems.
+    /// Enumerates subdirectories of <paramref name="javaParentDir"/> and returns paths to Java executables found.
     /// </summary>
-    /// <param name="instanceJavaDir">
-    /// An optional directory path to search for Java installations. If null, default directories are used.
-    /// </param>
-    /// <param name="ignoreSystemJava">
-    /// A boolean indicating whether to ignore system-wide Java installations.
-    /// </param>
+    /// <param name="javaParentDir">The directory expected to contain Java installation folders (each with a 'bin' folder).</param>
     /// <returns>
-    /// A list of file paths to Java executables found in the specified or default directories.
+    /// A <see cref="List{String}"/> of full paths to the Java executable (e.g. "path/to/bin/java" or "path\\to\\bin\\javaw.exe").
+    /// Returns an empty list if <paramref name="javaParentDir"/> does not exist or no executables are found.
     /// </returns>
-    private static List<string> GetWindowsJavaPaths(string? instanceJavaDir = null, bool ignoreSystemJava = false)
+    private static List<string> GetJavaPaths(string javaParentDir)
     {
         List<string> paths = [];
-        List<string> localDirs = [];
-        if (!string.IsNullOrEmpty(instanceJavaDir))
-            localDirs.Add(instanceJavaDir);
-        if (!ignoreSystemJava)
-            localDirs.AddRange(WindowsDirectories);
+        bool isWindows = OSHelper.GetOperatingSystem() == EOperatingSystem.Windows;
+        if (!Directory.Exists(javaParentDir))
+            return paths;
 
-        foreach (var dirPath in localDirs)
+        var subDirs = Directory.GetDirectories(javaParentDir);
+        foreach (var subDir in subDirs)
         {
-            if (!Directory.Exists(dirPath))
+            string javaPath = Path.Combine(subDir, "bin", isWindows ? "javaw.exe" : "java");
+            if (!File.Exists(javaPath))
                 continue;
-
-            var subDirs = Directory.GetDirectories(dirPath);
-            foreach (var subDir in subDirs)
-            {
-                string javaPath = Path.Combine(subDir, "bin", "javaw.exe");
-                if (!File.Exists(javaPath))
-                    continue;
-
-                paths.Add(javaPath);
-            }
+            paths.Add(javaPath);
         }
-
-        return paths;
-    }
-
-    /// <summary>
-    /// Retrieves the paths to Java installations on Linux systems.
-    /// </summary>
-    /// <param name="instanceJavaDir">
-    /// An optional directory path to search for Java installations. If null, default directories are used.
-    /// </param>
-    /// <param name="ignoreSystemJava">
-    /// A boolean indicating whether to ignore system-wide Java installations.
-    /// </param>
-    /// <returns>
-    /// A list of file paths to Java executables found in the specified or default directories.
-    /// </returns>
-    private static List<string> GetLinuxJavaPaths(string? instanceJavaDir = null, bool ignoreSystemJava = false)
-    {
-        List<string> paths = [];
-        List<string> localDirs = [];
-        if (!string.IsNullOrEmpty(instanceJavaDir))
-            localDirs.Add(instanceJavaDir);
-        if (!ignoreSystemJava)
-            localDirs.AddRange(LinuxDirectories);
-
-        foreach (var dirPath in localDirs)
-        {
-            if (!Directory.Exists(dirPath))
-                continue;
-
-            var subDirs = Directory.GetDirectories(dirPath);
-            foreach (var subDir in subDirs)
-            {
-                string javaPath = Path.Combine(subDir, "bin", "java");
-                if (!File.Exists(javaPath))
-                    continue;
-                
-                paths.Add(javaPath);
-            }
-        }
-
-        return paths;
-    }
-
-    /// <summary>
-    /// Retrieves the paths to Java installations on macOS systems.
-    /// </summary>
-    /// <param name="instanceJavaDir">
-    /// An optional directory path to search for Java installations. If null, default directories are used.
-    /// </param>
-    /// <param name="ignoreSystemJava">
-    /// A boolean indicating whether to ignore system-wide Java installations.
-    /// </param>
-    /// <returns>
-    /// A list of file paths to Java executables found in the specified or default directories.
-    /// </returns>
-    private static List<string> GetMacJavaPaths(string? instanceJavaDir = null, bool ignoreSystemJava = false)
-    {
-        List<string> paths = [];
-        List<string> localDirs = [];
-        if (!string.IsNullOrEmpty(instanceJavaDir))
-            localDirs.Add(instanceJavaDir);
-        if (!ignoreSystemJava)
-            localDirs.AddRange(MacDirectories);
-
-        foreach (var dirPath in localDirs)
-        {
-            if (!Directory.Exists(dirPath))
-                continue;
-
-            var subDirs = Directory.GetDirectories(dirPath);
-            foreach (var subDir in subDirs)
-            {
-                string javaPath = Path.Combine(subDir, "bin", "java");
-                if (!File.Exists(javaPath))
-                    continue;
-
-                paths.Add(javaPath);
-            }
-        }
-
         return paths;
     }
 }
