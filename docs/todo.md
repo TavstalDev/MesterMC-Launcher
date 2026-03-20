@@ -24,4 +24,15 @@ This is a list of things that need to be done for this project. If you want to c
 
 ## API
 
-*Nothing to do here for now.*
+- [ ] Add new controllers
+  - [ ] ProductController to handle product related operations.
+  - [ ] CartController to handle cart related operations.
+  - [ ] PaymentController to handle payment related operations.
+  - [ ] OrderController to handle order related operations.
+  - [ ] CouponsController to handle coupon related operations.
+  - [ ] LuckyWheelController to handle lucky wheel related operations.
+  - [ ] UserExtrasController to handle user extra features such as prefixes and welcome messages.
+  - [ ] FriendsController to handle friend related operations.
+  - [ ] NotificationsController to handle notifications related operations.
+- [ ] Review rate limiting and authentication for the API to ensure it is secure and efficient.
+- [ ] Make launcher login endpoint more secure and utilize deviceID and other parameters to prevent abuse and unauthorized access.
