@@ -21,9 +21,12 @@ using Tavstal.KonkordLauncher.Core.Models.MojangApi.Meta;
 
 namespace Tavstal.KonkordLauncher.Core.Services;
 
+/// <summary>
+/// Provides file download, verification, extraction and local caching utilities used by the launcher.
+/// </summary>
 public static class MinecraftFileService
 {
-    private static readonly int MaxParallelDownloads = 24;
+    private const int MaxParallelDownloads = 24;
     
     /// <summary>
     /// Downloads a file from a specified URL, verifies its integrity using a SHA-1 hash (if provided),
@@ -99,11 +102,19 @@ public static class MinecraftFileService
     }
 
     /// <summary>
-    /// Downloads the version metadata and client JAR file for a specific Minecraft version.
+    /// Downloads the version metadata JSON and the corresponding client JAR for a given Minecraft version,
+    /// saving them into the assets cache and returning their locations.
     /// </summary>
-    /// <param name="minecraftVersion">The Minecraft version metadata.</param>
-    /// <param name="progressReporter">An optional progress reporter for tracking download progress.</param>
-    /// <returns>The deserialized version metadata or null if the operation fails.</returns>
+    /// <param name="minecraftVersion">The lightweight version descriptor containing the version JSON URL and expected SHA1.</param>
+    /// <param name="pathDetails">Paths used by the launcher (assets directory, etc.).</param>
+    /// <param name="progressReporter">Optional progress/status reporter used while downloading.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// <br/>- <see cref="VersionMeta"/>? : the deserialized version metadata (null on failure),
+    /// <br/>- <see cref="string"/> : the full path to the saved version JSON,
+    /// <br/>- <see cref="string"/> : the full path to the saved client JAR.
+    /// <br/>The whole tuple is null if the version JSON could not be downloaded/deserialized.
+    /// </returns>
     public static async Task<(VersionMeta?, string, string)?> DownloadVersionAsync(MinecraftVersion minecraftVersion, PathDetails pathDetails, IProgressReporter? progressReporter = null)
     {
         // JSON

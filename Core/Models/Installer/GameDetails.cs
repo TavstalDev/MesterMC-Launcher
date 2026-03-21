@@ -58,9 +58,16 @@ public class GameDetails
     /// </summary>
     public string CustomGameDirectory { get; set; }
     
+    /// <summary>
+    /// If true, enable the in-game gamemode feature (e.g., toggle gamemode overlay or behavior).
+    /// </summary>
     public bool EnableGamemode { get; set; }
-    
+
+    /// <summary>
+    /// If true, enable MangoHud (performance overlay) when launching the game.
+    /// </summary>
     public bool EnableMangoHud { get; set; }
+
 
     /// <summary>
     /// Gets or sets the environment variables to be used when launching the game.

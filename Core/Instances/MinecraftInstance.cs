@@ -246,9 +246,6 @@ public class MinecraftInstance
                 MinecraftVersionMeta.JavaVersionMeta.MajorVersion = 7;
         }
         
-        if (GameDetails.JavaPath == "LAUNCH_ME_FIRST" || string.IsNullOrEmpty(GameDetails.JavaPath))
-            OnSetupDefaultJava?.Invoke(MinecraftVersionMeta);
-        
         await MinecraftFileService.DownloadMappingsAsync(MinecraftVersionMeta, PathDetails.AssetsDir, _progressReporter);
         await MinecraftFileService.DownloadAssetsAsync(MinecraftVersionMeta, PathDetails.AssetsDir, VersionData.GameDir, _progressReporter);
     }
@@ -383,7 +380,7 @@ public class MinecraftInstance
             GameDetails.MinMemory > GameDetails.MaxMemory
                 ? $"-Xms{GameDetails.MaxMemory}M"
                 : $"-Xms{(GameDetails.MinMemory > 0 ? GameDetails.MinMemory : 256)}M",
-            $"-Xmx{(GameDetails.MaxMemory > 0 ? GameDetails.MaxMemory : 4096)}M",
+            $"-Xmx{(GameDetails.MaxMemory > 0 ? GameDetails.MaxMemory : 2048)}M",
             $"-Dminecraft.applet.TargetDirectory=\"{gameDir}\""
         };
 
@@ -523,29 +520,4 @@ public class MinecraftInstance
 
         return replacements.Aggregate(argumentString, (current, replacement) => current.Replace(replacement.Key, replacement.Value));
     }
-    
-    #region  Events
-
-    /// <summary>
-    /// Delegate for handling the setup of the default Java path based on the provided version metadata.
-    /// </summary>
-    /// <param name="versionMeta">The metadata of the Minecraft version used to determine the default Java path.</param>
-    public delegate void SetupDefaultJavaEventHandler(VersionMeta versionMeta);
-
-    /// <summary>
-    /// Event triggered when the default Java path needs to be set up.
-    /// Subscribers can handle this event to configure the Java path based on the provided version metadata.
-    /// </summary>
-    public event SetupDefaultJavaEventHandler? OnSetupDefaultJava;
-
-    /// <summary>
-    /// Updates the Java path used by the game and logs the change.
-    /// </summary>
-    /// <param name="javaPath">The new Java path to be used by the game.</param>
-    public void UpdateJavaPath(string javaPath)
-    {
-        GameDetails.JavaPath = javaPath;
-        _logger.Debug($"Java path updated to: {javaPath}");
-    }
-    #endregion
 }

@@ -12,7 +12,7 @@ public static class ModService
 {
     // Logger instance for the ModService class.
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(ModService));
-    private static readonly int MaxParallelDownloads = 8;
+    private const int MaxParallelDownloads = 8;
     
     /// <summary>
     /// A dictionary containing the list of mods and their corresponding SHA-256 hashes.
