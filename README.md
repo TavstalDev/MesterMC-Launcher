@@ -1,8 +1,6 @@
 # MesterMC Launcher
 
-![Release (latest by date)](https://img.shields.io/github/v/release/TavstalDev/MesterMC-Launcher?style=plastic-square)
 ![License](https://img.shields.io/github/license/TavstalDev/MesterMC-Launcher?style=plastic-square)
-![Downloads](https://img.shields.io/github/downloads/TavstalDev/MesterMC-Launcher/total?style=plastic-square)
 ![Issues](https://img.shields.io/github/issues/TavstalDev/MesterMC-Launcher?style=plastic-square)
 
 > [WARNING]
@@ -40,6 +38,8 @@ This project was designed to remain lightweight and legally compliant rather tha
 ![Starting](docs/images/launcher3.png)
 ![Failed login example](docs/images/launcher4.png)
 ![TFA example](docs/images/launcher5.png)
+
+---
 
 ## Installation
 
