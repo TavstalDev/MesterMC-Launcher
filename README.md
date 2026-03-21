@@ -6,7 +6,10 @@
 ![Issues](https://img.shields.io/github/issues/TavstalDev/MesterMC-Launcher?style=plastic-square)
 
 > [WARNING]
-> **Project Status: Discontinued** > This launcher is no longer maintained. The source code is provided for **educational purposes** and architectural reference.
+> **Project Status: Discontinued** 
+
+> This launcher is no longer maintained. The source code is provided for **educational purposes**. 
+> Please check out the todo list in the [todo.md](./docs/todo.md) file for a list of features and improvements that were planned during active development.
 
 ## Description
 MesterMC Launcher was the official custom Minecraft entry point for the MesterMC network. 
@@ -15,7 +18,7 @@ Built to be lightweight and efficient, it utilizes the backend logic of the [Kon
 ### Tech Stack
 - **Framework:** [Avalonia UI](https://avaloniaui.net/) (Cross-platform XAML)
 - **Runtime:** .NET 9 (C#)
-- **OS Support:** Windows 10/11, Linux (MacOS untested)
+- **OS Support:** Windows 10/11, Linux, MacOS (planned but not tested)
 
 ---
 
