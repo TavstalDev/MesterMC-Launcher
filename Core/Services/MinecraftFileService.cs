@@ -9,6 +9,7 @@
  */
 
 using System.IO.Compression;
+using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Tavstal.KonkordLauncher.Core.Enums;
@@ -579,7 +580,18 @@ public static class MinecraftFileService
         
          var response = await HttpHelper.GetStringAsync(MesterMcEndpoints.LatestRelease);
          if (string.IsNullOrEmpty(response))
+         {
+             // Load from resources as fallback
+             var assembly = Assembly.GetExecutingAssembly();
+             var stream = assembly.GetManifestResourceStream("Tavstal.KonkordLauncher.Core.Assets.launchWrapper-1.0.jar");
+             if (stream != null)
+             {
+                 await using var fileStream = new FileStream(targetFile, FileMode.Create, FileAccess.Write);
+                 await stream.CopyToAsync(fileStream);
+                 return targetFile;
+             }
              return null;
+         }
          
         JObject releaseObject = JObject.Parse(response);
         if (!releaseObject.TryGetValue("assets", out var assetsToken))
