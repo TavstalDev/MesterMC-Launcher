@@ -3,7 +3,7 @@
 This is a list of things that need to be done for this project. If you want to contribute, please feel free to pick any item from the list and work on it.
 
 > Please note that this project is no longer maintained, so any contributions are for educational purposes only. 
-> The following list of tasks are mostly for reference what should have been done.
+> The following list of tasks are mostly for reference what should have been done during active development.
 
 ## UI
 - [ ] Resize the update window and its background image because they took too much transparent space on the screen and the user might be confused why they can't click through it.
@@ -21,6 +21,13 @@ This is a list of things that need to be done for this project. If you want to c
 - [x] Remove "manifests" directory and download them to the assets directory instead.
 - [x] Rename "logs" directory to "launcher-logs" to avoid confusion with the logs directory of the game.
 - [x] "versions" directory should be changed entirely and how the launcher handles game versions.
+- [ ] Anti-tamper and anti-cheat measures to make it **harder** to modify the launcher and cheat in the game.
+  - [ ] Code obfuscation to make it harder to reverse engineer the launcher.
+  - [ ] Integrity checks to ensure that the launcher files have not been modified.
+  - [ ] Anti-debugging techniques to make it harder to debug the launcher.
+  - [ ] Memory protection to prevent memory dumping and modification of the launcher's memory.
+  - [ ] Server-side connection validation.
+  - [ ] Improve authentication complexity to make it harder to reproduce.
 
 ## API
 
@@ -36,3 +43,16 @@ This is a list of things that need to be done for this project. If you want to c
   - [ ] NotificationsController to handle notifications related operations.
 - [ ] Review rate limiting and authentication for the API to ensure it is secure and efficient.
 - [ ] Make launcher login endpoint more secure and utilize deviceID and other parameters to prevent abuse and unauthorized access.
+
+## Client
+
+Note that making a secure client and also respecting Mojang's EULA and terms of service is a very difficult task.
+> Client was not developed at all, these tasks are mostly for reference.
+
+- [ ] Use MCP-Reborn to deobfuscate the Minecraft client and make it easier to modify and add features to the game.
+ - [ ] Custom menu background
+ - [ ] Custom loading screen
+ - [ ] Custom title screen
+- [ ] Customize authlib or replace it entirely.
+- [ ] Add support for HD skins and capes.
+- [ ] Add support for extra player cosmetics such as hats, wings, tails and bands.
