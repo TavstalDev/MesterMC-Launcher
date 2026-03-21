@@ -57,3 +57,9 @@ Note that making a secure client and also respecting Mojang's EULA and terms of 
 - [ ] Customize authlib or replace it entirely.
 - [ ] Add support for HD skins and capes.
 - [ ] Add support for extra player cosmetics such as hats, wings, tails and bands.
+
+## Installer
+
+- [ ] Add logic to detect if the launcher is already installed and if it is, ask the user if they want to repair or uninstall the launcher.
+  - Note: This was planned to be done after the beta testing phase, but was never implemented due to the project being discontinued.
+- [ ] Add logic to detect if the launcher is already running and if it is, ask the user if they want to close the running instance and continue with the installation or cancel the installation.
