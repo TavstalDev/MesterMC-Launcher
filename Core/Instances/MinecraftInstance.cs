@@ -20,6 +20,8 @@ using Tavstal.KonkordLauncher.Core.Services;
 
 namespace Tavstal.KonkordLauncher.Core.Instances;
 
+// TODO: Refactor this class, make it lighter and remove unnecessary operations.
+
 /// <summary>
 /// Represents a Minecraft instance, handling installation, configuration, and launching of the game.
 /// </summary>
