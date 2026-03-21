@@ -28,6 +28,7 @@ This is a list of things that need to be done for this project. If you want to c
   - [ ] Memory protection to prevent memory dumping and modification of the launcher's memory.
   - [ ] Server-side connection validation.
   - [ ] Improve authentication complexity to make it harder to reproduce.
+- [ ] Remove and/or refactor the code related to KonkordLauncher (Core project) since it was made in mind to be a customizable and multi-version supporting launcher, and it is not needed for this project.
 
 ## API
 
@@ -50,9 +51,9 @@ Note that making a secure client and also respecting Mojang's EULA and terms of 
 > Client was not developed at all, these tasks are mostly for reference.
 
 - [ ] Use MCP-Reborn to deobfuscate the Minecraft client and make it easier to modify and add features to the game.
- - [ ] Custom menu background
- - [ ] Custom loading screen
- - [ ] Custom title screen
+- [ ] Custom menu background
+- [ ] Custom loading screen
+- [ ] Custom title screen
 - [ ] Customize authlib or replace it entirely.
 - [ ] Add support for HD skins and capes.
 - [ ] Add support for extra player cosmetics such as hats, wings, tails and bands.
