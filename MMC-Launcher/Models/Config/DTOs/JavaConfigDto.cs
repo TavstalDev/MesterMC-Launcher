@@ -42,7 +42,7 @@ public class JavaConfigDto
     public JavaConfigDto()
     {
         MinMemory = 1024;
-        MaxMemory = 4096;
+        MaxMemory = 2048;
         PermaGen = 128;
     }
 
