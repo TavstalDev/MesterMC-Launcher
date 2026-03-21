@@ -462,8 +462,8 @@
                                                     Classes="NumericInput"
                                                     FormatString="0\ MB"
                                                     Increment="128"
-                                                    Maximum="131072"
-                                                    Minimum="512"
+                                                    Maximum="{Binding MaxMemoryLimit}"
+                                                    Minimum="{Binding CoreConfig.Java.MinMemory}"
                                                     Value="{Binding CoreConfig.Java.MaxMemory, Mode=TwoWay}" />
                                             </Grid>
                                             <!--  PermGen  -->

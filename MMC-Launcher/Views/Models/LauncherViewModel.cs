@@ -53,6 +53,7 @@ public partial class LauncherViewModel : ObservableObject
     [ObservableProperty] private bool settingsOpened;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(isLoggingIn))] [NotifyPropertyChangedFor(nameof(isError))] [NotifyPropertyChangedFor(nameof(isTFA))] [NotifyPropertyChangedFor(nameof(shouldShowFeedback))] private ELoginStatus loginStatus;
     public ObservableCollection<string> SavedUsernames { get; set; } = new();
+    [ObservableProperty] private ulong maxMemoryLimit;
     #endregion
     
     public bool isLoggingIn => LoginStatus != ELoginStatus.NONE;
@@ -86,6 +87,8 @@ public partial class LauncherViewModel : ObservableObject
                 SavedUsernames.Add(user);
             OfflineMode = string.IsNullOrEmpty(settings.Users.Values.ElementAt(0));
         }
+
+        MaxMemoryLimit = OSHelper.GetRamInBytes() / 1024 / 1024 - 512; // Leave 512MB free for system and other applications, convert to MB
 
         _isInitialized = true;
         SubscribeToCoreConfigChildren(_coreConfig);
