@@ -6,7 +6,7 @@ This is a list of things that need to be done for this project. If you want to c
 > The following list of tasks are mostly for reference what should have been done during active development.
 
 ## UI
-- [ ] Resize the update window and its background image because they took too much transparent space on the screen and the user might be confused why they can't click through it.
+- [x] Resize the update window and its background image because they took too much transparent space on the screen and the user might be confused why they can't click through it.
 - [ ] Add a mods tab to the settings page where users can choose which mods they want to be enabled and which ones they want to be disabled.
 - [ ] Add remember me functionality to the login page so that users don't have to log in every time they open the launcher.
 - [ ] Adjust authentication so the users don't have to log in every time even if it is more secure to not store any credentials.
@@ -60,6 +60,4 @@ Note that making a secure client and also respecting Mojang's EULA and terms of 
 
 ## Installer
 
-- [ ] Add logic to detect if the launcher is already installed and if it is, ask the user if they want to repair or uninstall the launcher.
-  - Note: This was planned to be done after the beta testing phase, but was never implemented due to the project being discontinued.
 - [ ] Add logic to detect if the launcher is already running and if it is, ask the user if they want to close the running instance and continue with the installation or cancel the installation.
