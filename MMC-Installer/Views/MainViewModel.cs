@@ -232,6 +232,9 @@ public partial class MainViewModel : ObservableObject
 
         UpdateProgress(0);
         UpdateText("Ellenőrzés...");
+        string shortcutName = InstallHelper.GetShortcutName();
+        string launcherExecutableName = InstallHelper.GetLauncherExecutableName();
+        string updaterExecutableName = InstallHelper.GetUpdaterExecutableName();
         
         try
         {
@@ -435,11 +438,10 @@ public partial class MainViewModel : ObservableObject
                         await stream.CopyToAsync(outFile);
 
                     // Create main shortcut
-                    string exePath = Path.Combine(binDirPath, InstallHelper.GetLauncherExecutableName());
-                    string shortcutName = InstallHelper.GetShortcutName();
+                    string exePath = Path.Combine(binDirPath, launcherExecutableName);
                     string shortcutPath = Path.Combine(GameDirectory, shortcutName);
                     Shortcut.CreateShortcut(exePath, "", binDirPath, iconPath, 0).WriteToFile(shortcutPath);
-                    exePath = Path.Combine(binDirPath, InstallHelper.GetUpdaterExecutableName());
+                    exePath = Path.Combine(binDirPath, updaterExecutableName);
                     Shortcut.CreateShortcut(exePath, "--uninstall-prepare", binDirPath, iconPath, 0).WriteToFile(Path.Combine(GameDirectory, "Uninstall.lnk"));
 
                     // Copy to desktop if needed
@@ -468,7 +470,7 @@ public partial class MainViewModel : ObservableObject
                         await stream.CopyToAsync(outFile);
 
                     // Create app bundle
-                    string appPath = Path.Combine(GameDirectory, InstallHelper.GetLauncherExecutableName());
+                    string appPath = Path.Combine(GameDirectory, launcherExecutableName);
                     StringBuilder appCode = new StringBuilder();
                     appCode.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                     appCode.AppendLine(
@@ -508,13 +510,13 @@ public partial class MainViewModel : ObservableObject
                     string resourcesPath = Path.Combine(contentsPath, "Resources");
                     Directory.CreateDirectory(resourcesPath);
                     await File.WriteAllTextAsync(Path.Combine(contentsPath, "Info.plist"), appCode.ToString());
-                    File.Copy(Path.Combine(binDirPath, InstallHelper.GetLauncherExecutableName()), Path.Combine(macOSPath, InstallHelper.GetLauncherExecutableName()), true);
+                    File.Copy(Path.Combine(binDirPath, launcherExecutableName), Path.Combine(macOSPath,launcherExecutableName), true);
                     File.Copy(iconPath, Path.Combine(resourcesPath, "favicon.icns"), true);
 
                     // Create symlink
                     if (CreateDesktopShortcut)
                     {
-                        var target = Path.Combine(OSHelper.GetDesktopDirectory(), InstallHelper.GetShortcutName());
+                        var target = Path.Combine(OSHelper.GetDesktopDirectory(), shortcutName);
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, appPath);
@@ -522,7 +524,7 @@ public partial class MainViewModel : ObservableObject
 
                     if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
                     {
-                        var target = Path.Combine(StartMenuDirectory, InstallHelper.GetShortcutName());
+                        var target = Path.Combine(StartMenuDirectory, shortcutName);
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, appPath);
@@ -548,7 +550,7 @@ public partial class MainViewModel : ObservableObject
                     await using (FileStream outFile = new FileStream(icon, FileMode.Create, FileAccess.Write))
                         await stream.CopyToAsync(outFile);
 
-                    string appPath = Path.Combine(binDirPath, InstallHelper.GetLauncherExecutableName());
+                    string appPath = Path.Combine(binDirPath, launcherExecutableName);
 
                     foreach (var file in Directory.GetFiles(binDirPath))
                         if (file.Contains("MMC-Launcher") || file.Contains("MMC-Updater"))
@@ -567,14 +569,14 @@ public partial class MainViewModel : ObservableObject
                     desktopFile.AppendLine("Categories=Game;");
                     desktopFile.AppendLine("Keywords=Minecraft;MesterMC;Launcher;Game;");
                     desktopFile.AppendLine("StartupNotify=true");
-                    string desktopFilePath = Path.Combine(GameDirectory, InstallHelper.GetShortcutName());
+                    string desktopFilePath = Path.Combine(GameDirectory, shortcutName);
                     await File.WriteAllTextAsync(desktopFilePath, desktopFile.ToString());
                     await FileSystemHelper.MakeExecutableAsync(desktopFilePath);
 
                     // Create symlink
                     if (CreateDesktopShortcut)
                     {
-                        var target = Path.Combine(OSHelper.GetDesktopDirectory(), InstallHelper.GetShortcutName());
+                        var target = Path.Combine(OSHelper.GetDesktopDirectory(), shortcutName);
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, desktopFilePath);
@@ -582,7 +584,7 @@ public partial class MainViewModel : ObservableObject
 
                     if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
                     {
-                        var target = Path.Combine(StartMenuDirectory, InstallHelper.GetShortcutName());
+                        var target = Path.Combine(StartMenuDirectory, shortcutName);
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, desktopFilePath);
