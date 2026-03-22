@@ -73,13 +73,13 @@ public partial class App : Application
     
     /// <summary>
     /// Called when the framework initialization is completed.
-    /// Sets the main window of the application to an instance of <see cref="UpdateWindow"/>.
+    /// Sets the main window of the application to an instance of <see cref="UpdateWindow"/> or <see cref="UninstallWindow"/>.
     /// </summary>
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new UpdateWindow();
+            desktop.MainWindow = Program.UninstallerMode ? new UninstallWindow() : new UpdateWindow();
             desktop.Exit += (_, _) =>
             {
                 try
