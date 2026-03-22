@@ -29,4 +29,22 @@
         <Setter Property="Source" Value="avares://MMC-Updater/Assets/buttons/close_pressed.png" />
     </Style>
     <!-- #endregion Close Button Style -->
+    
+    <!-- UNINSTALLER WINDOW -->
+    
+    <Style Selector="Button.DefaultBtn">
+        <Setter Property="Foreground" Value="Black" />
+        <Setter Property="Background" Value="#1A000000" />
+        <Setter Property="Cursor" Value="hand" />
+    </Style>
+
+    <Style Selector="Button.DefaultBtn:pointerover /template/ ContentPresenter">
+        <Setter Property="Foreground" Value="Black" />
+        <Setter Property="Background" Value="#33000000" />
+    </Style>
+
+    <Style Selector="Button.DefaultBtn:pressed /template/ ContentPresenter">
+        <Setter Property="Foreground" Value="Black" />
+        <Setter Property="Background" Value="#33000000" />
+    </Style>
 </Styles>
