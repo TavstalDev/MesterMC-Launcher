@@ -3,12 +3,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Tavstal.MesterMC.Launcher.Views.Models"
-        mc:Ignorable="d" d:DesignWidth="1150" d:DesignHeight="665"
+        mc:Ignorable="d" d:DesignWidth="706" d:DesignHeight="597"
         x:Class="Tavstal.MesterMC.Launcher.Views.UpdateWindow"
         x:DataType="vm:UpdateViewModel"
-        Title="MMC Launcher - Update"
-        Width="1150"
-        Height="665"
+        Title="MesterMC Launcher - Update"
+        Width="706"
+        Height="597"
         CanResize="False"
         ShowInTaskbar="True"
         SystemDecorations="None"
@@ -18,7 +18,7 @@
         WindowStartupLocation="CenterScreen"
         Icon="avares://MMC-Launcher/Assets/icons/favicon.png">
     <Viewbox x:Name="RootViewbox" Stretch="Uniform">
-    <Grid IsHitTestVisible="True" Height="665" Width="1150">
+    <Grid IsHitTestVisible="True" Width="706" Height="597">
         <!-- Background Image -->
         <Image Source="{Binding ScreenImage}" 
                Stretch="Fill" 
@@ -26,23 +26,31 @@
                HorizontalAlignment="Stretch"
                IsHitTestVisible="False" />
         
-        <TextBlock Margin="255, 200, 270, 25" 
-                   Foreground="White" 
-                   FontSize="24" 
-                   Text="Jó játékot kíván" 
-                   />
-        <TextBlock Margin="255, 230, 270, 25" 
-                   Foreground="White" 
-                   FontSize="24" 
-                   Text="a MesterMC csapata!" 
-        />
+        <!-- Title -->
+        <StackPanel Margin="80, 155, 270, 25" Orientation="Vertical" Spacing="0">
+            <TextBlock Foreground="White" FontSize="24" Text="Jó játékot kíván">
+                <TextBlock.Effect>
+                    <DropShadowEffect BlurRadius="0" 
+                                      Color="Black" 
+                                      OffsetX="1" 
+                                      OffsetY="1" />
+                </TextBlock.Effect>
+            </TextBlock>
+            <TextBlock Foreground="White" FontSize="24" Text="a MesterMC csapata!">
+                <TextBlock.Effect>
+                    <DropShadowEffect BlurRadius="0" 
+                                      Color="Black" 
+                                      OffsetX="1" 
+                                      OffsetY="1" />
+                </TextBlock.Effect>
+            </TextBlock>
+        </StackPanel>
         
         <!-- Progress -->
-        <Grid Margin="175, 105, 270, 25">
+        <Grid Margin="80, 220, 80, 95">
             <StackPanel VerticalAlignment="Bottom" 
                         Orientation="Vertical" 
-                        Spacing="10"
-                        Margin="80,100, 80,95">
+                        Spacing="10">
                 <!-- Progress Text -->
                 <TextBlock Text="{Binding ProgressText}"
                            FontSize="16"
@@ -50,7 +58,14 @@
                            HorizontalAlignment="Left"
                            VerticalAlignment="Center"
                            TextWrapping="Wrap"
-                           Foreground="White"/>
+                           Foreground="White">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="0" 
+                                          Color="Black" 
+                                          OffsetX="1" 
+                                          OffsetY="1" />
+                    </TextBlock.Effect>
+                </TextBlock>
         
                 <!-- Progress Bar -->
                 <ProgressBar Width="250" Height="20" 
@@ -65,7 +80,7 @@
         
         <!-- Drag Area -->
         <Grid
-            Margin="175, 110, 270, 25"
+            Margin="12, 70, 11, 12"
             IsHitTestVisible="True"
             Background="Transparent"
             PointerPressed="DragStart_PointerPressed"
@@ -75,7 +90,7 @@
         <Button Classes="CloseButton" Height="55"
                 HorizontalAlignment="Right" 
                 VerticalAlignment="Top"
-                Margin="0,106,264,0"
+                Margin="0,64,-6,0"
                 Background="Transparent"
                 IsHitTestVisible="True"
                 Command="{Binding CloseWindowCommand}">

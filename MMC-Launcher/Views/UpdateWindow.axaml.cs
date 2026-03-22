@@ -367,8 +367,8 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
         double screenHeight = (double)App.ScreenHeight;
         
         // Base design resolution
-        double baseWidth = 1150;
-        double baseHeight = 665;
+        const double baseWidth = 706;
+        const double baseHeight = 597;
 
         // Calculate scale factor relative to screen
         double scaleX = screenWidth / baseWidth;
