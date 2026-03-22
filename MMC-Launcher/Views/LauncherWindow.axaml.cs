@@ -248,17 +248,18 @@ public partial class LauncherWindow : KonkordWindow<LauncherViewModel>
         double screenHeight = (double)App.ScreenHeight;
         
         // Base design resolution
-        double baseWidth = 1280;
-        double baseHeight = 665;
-
-        // Calculate scale factor relative to screen
-        double scaleX = screenWidth / baseWidth;
-        double scaleY = screenHeight / baseHeight;
-        double scale = Math.Min(scaleX, scaleY) * 0.5;
+        const double baseWidth = 1280;
+        const double baseHeight = 665;
+        
+        double rawScaleX = screenWidth / baseWidth;
+        double rawScaleY = screenHeight / baseHeight;
+        double rawScale = Math.Min(rawScaleX, rawScaleY);
+        double adaptiveFactor = rawScale < 1.5 ? 0.65 : 0.5;
+        double finalScale = rawScale * adaptiveFactor;
 
         // Apply scaled window size
-        Width = baseWidth * scale;
-        Height = baseHeight * scale;
+        Width = baseWidth * finalScale;
+        Height = baseHeight * finalScale;
 
         // Center window on screen
         Position = new PixelPoint(

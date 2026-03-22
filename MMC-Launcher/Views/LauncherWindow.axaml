@@ -8,7 +8,7 @@
     xmlns:vm="clr-namespace:Tavstal.MesterMC.Launcher.Views.Models"
     xmlns:local="clr-namespace:Tavstal.MesterMC.Launcher"
     xmlns:converters="clr-namespace:Tavstal.MesterMC.Launcher.Models.Converters"
-    Title="MMC Launcher"
+    Title="MesterMC Launcher"
     Width="1280"
     Height="665"
     d:DesignHeight="665"
