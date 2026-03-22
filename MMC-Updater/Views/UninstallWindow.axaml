@@ -1,0 +1,352 @@
+<Window  x:Class="Tavstal.MesterMC.Updater.Views.UninstallWindow"
+         xmlns="https://github.com/avaloniaui"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+         xmlns:converters="clr-namespace:Avalonia.Controls.Converters;assembly=Avalonia.Controls"
+         xmlns:views="clr-namespace:Tavstal.MesterMC.Updater.Views.Models"
+         xmlns:models="clr-namespace:Tavstal.MesterMC.Updater.Models"
+         Title="MesterMC Telepítő"
+         Width="650"
+         Height="400"
+         d:DesignHeight="400"
+         d:DesignWidth="650"
+         x:DataType="views:UninstallViewModel"
+         Background="#F0F0F0"
+         CanResize="False"
+         Icon="avares://MMC-Updater/Assets/icons/favicon.png"
+         WindowStartupLocation="CenterScreen"
+         mc:Ignorable="d">
+    <Window.Resources>
+        <converters:EnumToBoolConverter x:Key="VisibilityConverter" />
+    </Window.Resources>
+    <Grid>
+        <!--  Welcome, Window Content  -->
+        <Grid RowDefinitions="*, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EUninstallerWindow.WELCOME}}">
+
+            <Grid Grid.Row="0" ColumnDefinitions="183, *">
+                <!-- Banner -->
+                <Border
+                    Grid.Column="0"
+                    Background="#F0F0F0"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="0,0,0,0">
+                    <Image
+                        Margin="0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Source="avares://MMC-Updater/Assets/images/banner.png" />
+                </Border>
+
+                <!-- Content -->
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="25"
+                    VerticalAlignment="Top">
+
+                    <TextBlock
+                        Margin="0,0,0,25"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="Black"
+                        Text="Üdvözöl a MesterMC Indító eltávolító varázsló"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,5"
+                        Foreground="Black"
+                        Text="Ez a varázsló segít a MesterMC Indító teljes eltávolításában erről a számítógépről."
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,50"
+                        Foreground="Black"
+                        Text="Kattints a Tovább gombra a folytatáshoz, vagy a Mégse gombra az eltávolító varázsló bezárásához."
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        VerticalAlignment="Bottom"
+                        Foreground="#666"
+                        Text="Copyright © 2025-2026 MesterMC" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="1"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EUninstallerWindow.REVIEW}"
+                        Content="Tovább"
+                        Foreground="Black" />
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Command="{Binding CloseWindowCommand}"
+                        Content="Mégse" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  Ready To Uninstall Window Content  -->
+        <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EUninstallerWindow.REVIEW}}">
+            <!-- Header -->
+            <Border
+                Grid.Row="0"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1">
+                <Grid>
+                    <StackPanel
+                        Margin="20,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Vertical">
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="Black"
+                            Text="Készen áll az eltávolításra" />
+
+                        <TextBlock
+                            Margin="20,0,0,0"
+                            Foreground="Black"
+                            Text="A MesterMC eltávolítója készen áll a fájlok törlésére." />
+                    </StackPanel>
+                    <Image
+                        Height="60"
+                        HorizontalAlignment="Right"
+                        Source="avares://MMC-Updater/Assets/icons/favicon.png" />
+                </Grid>
+            </Border>
+
+            <!-- Content -->
+            <Grid
+                Grid.Row="1"
+                Margin="40,15"
+                VerticalAlignment="Stretch"
+                RowDefinitions="Auto, *"
+                RowSpacing="10">
+
+                <TextBlock
+                    Grid.Row="0"
+                    Margin="0"
+                    Foreground="Black"
+                    Text="Kattints az 'Eltávolítás' gombra a folyamat megkezdéséhez, vagy a 'Mégse' gombra a kilépéshez. FIGYELEM: Ez a művelet véglegesen törli a MesterMC fájlokat a számítógépedről, és nem visszavonható!"
+                    TextWrapping="Wrap" />
+
+                <ScrollViewer
+                    Grid.Row="1"
+                    Background="White"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="1"
+                    VerticalScrollBarVisibility="Auto">
+                    <TextBlock
+                        Padding="10"
+                        VerticalAlignment="Stretch"
+                        Foreground="Black"
+                        TextWrapping="Wrap" 
+                        Text="{Binding ReviewText}"/>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="2"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Vissza"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EUninstallerWindow.WELCOME}"/>
+
+                    <Button
+                        Width="90"
+                        Classes="DefaultBtn"
+                        Content="Eltávolítás"
+                        Foreground="Black"
+                        Command="{Binding OpenWindowCommand}"
+                        CommandParameter="{x:Static models:EUninstallerWindow.PROGRESS}"/>
+
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Mégse"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  Progress Window Content  -->
+        <Grid RowDefinitions="Auto, *, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EUninstallerWindow.PROGRESS}}">
+            <!-- Header -->
+            <Border
+                Grid.Row="0"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1">
+                <Grid>
+                    <StackPanel
+                        Margin="20,10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Vertical">
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="Black"
+                            Text="Eltávolítás" />
+
+                        <TextBlock
+                            Margin="20,0,0,0"
+                            Foreground="Black"
+                            Text="Kérlek várj, amíg a MesterMC eltávolítója dolgozik..." />
+                    </StackPanel>
+                    <Image
+                        Height="60"
+                        HorizontalAlignment="Right"
+                        Source="avares://MMC-Updater/Assets/icons/favicon.png" />
+                </Grid>
+            </Border>
+
+            <!-- Content -->
+            <Grid
+                Grid.Row="1"
+                Margin="40,15"
+                VerticalAlignment="Stretch"
+                RowDefinitions="Auto, Auto, Auto"
+                RowSpacing="10">
+
+                <TextBlock
+                    Grid.Row="0"
+                    Margin="0"
+                    Foreground="Black"
+                    Text="Az eltávolítás folyamatban van. Kérlek várj, amíg a MesterMC eltávolítója befejezi a műveletet. Ez eltarthat néhány percig. Ne zárd be az ablakot, amíg a folyamat tart."
+                    TextWrapping="Wrap" />
+
+                <ProgressBar Grid.Row="1" ShowProgressText="True" Value="{Binding InstallProgress}" />
+                
+                <TextBlock
+                    Grid.Row="2"
+                    Margin="0"
+                    Foreground="Black"
+                    Text="{Binding InstallText}"
+                    TextWrapping="Wrap" />
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="2"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Mégse"
+                        IsEnabled="False"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  Finish Window Content  -->
+        <Grid RowDefinitions="*, Auto" IsVisible="{Binding CurrentWindow, 
+                       Converter={StaticResource VisibilityConverter}, 
+                       ConverterParameter={x:Static models:EUninstallerWindow.FINISH}}">
+            <Grid Grid.Row="0" ColumnDefinitions="183, *">
+                <!-- Banner -->
+                <Border
+                    Grid.Column="0"
+                    Background="#F0F0F0"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="0,0,0,0">
+                    <Image
+                        Margin="0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Source="avares://MMC-Updater/Assets/images/banner.png" />
+                </Border>
+
+                <!-- Content -->
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="25"
+                    VerticalAlignment="Top">
+
+                    <TextBlock
+                        Margin="0,0,0,25"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="Black"
+                        Text="Az eltávolítás befejeződöttt"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,10"
+                        Foreground="Black"
+                        Text="A MesterMC Indító sikeresen el lett távolítva a számítógépedről."
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,5"
+                        Foreground="Black"
+                        Text="Kilépéshez kattints a 'Befejez' gombra."
+                        TextWrapping="Wrap" />
+
+                </StackPanel>
+            </Grid>
+
+            <!-- Footer -->
+            <Border
+                Grid.Row="1"
+                Padding="10"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,1,0,0">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <Button
+                        Width="80"
+                        Classes="DefaultBtn"
+                        Content="Befejez"
+                        Foreground="Black"
+                        Command="{Binding CloseWindowCommand}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
