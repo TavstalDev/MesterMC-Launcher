@@ -7,7 +7,7 @@
     xmlns:converters="clr-namespace:Avalonia.Controls.Converters;assembly=Avalonia.Controls"
     xmlns:views="clr-namespace:Tavstal.MesterMC.Installer.Views"
     xmlns:models="clr-namespace:Tavstal.MesterMC.Installer.Models"
-    Title="MesterMC Telepítő - Üdvözlő"
+    Title="MesterMC Telepítő"
     Width="650"
     Height="400"
     d:DesignHeight="400"
@@ -132,7 +132,7 @@
                     <Image
                         Height="60"
                         HorizontalAlignment="Right"
-                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                        Source="avares://MMC-Installer/Assets/icons/favicon.png" />
                 </Grid>
             </Border>
 
@@ -375,7 +375,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                     <Image
                         Height="60"
                         HorizontalAlignment="Right"
-                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                        Source="avares://MMC-Installer/Assets/icons/favicon.png" />
                 </Grid>
             </Border>
 
@@ -497,7 +497,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                     <Image
                         Height="60"
                         HorizontalAlignment="Right"
-                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                        Source="avares://MMC-Installer/Assets/icons/favicon.png" />
                 </Grid>
             </Border>
 
@@ -627,7 +627,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                     <Image
                         Height="60"
                         HorizontalAlignment="Right"
-                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                        Source="avares://MMC-Installer/Assets/icons/favicon.png" />
                 </Grid>
             </Border>
 
@@ -727,7 +727,7 @@ g) a felhasználó vétkes a törvények, jelen felhasználási feltételek, a h
                     <Image
                         Height="60"
                         HorizontalAlignment="Right"
-                        Source="avares://MMC-Installer/Assets/icons/icon.png" />
+                        Source="avares://MMC-Installer/Assets/icons/favicon.png" />
                 </Grid>
             </Border>
 

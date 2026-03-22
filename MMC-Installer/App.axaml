@@ -7,7 +7,5 @@
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="Styles/Buttons.axaml"  />
-        <StyleInclude Source="Styles/Inputs.axaml"  />
-        <StyleInclude Source="Styles/Checkboxes.axaml"  />
     </Application.Styles>
 </Application>

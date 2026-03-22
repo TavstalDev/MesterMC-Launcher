@@ -105,7 +105,12 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task FinishInstallation()
     {
-        if (LaunchGame && !string.IsNullOrEmpty(GameDirectory))
+        if (string.IsNullOrEmpty(GameDirectory))
+            return;
+        
+        InstallHelper.SaveInstallPath(GameDirectory, StartMenuDirectory ?? " ", "0.0.4"); // TODO: Make this dynamic
+        
+        if (LaunchGame)
         {
             try
             {
@@ -114,7 +119,7 @@ public partial class MainViewModel : ObservableObject
                 {
                     case EOperatingSystem.Windows:
                     {
-                        string appPath = Path.Combine(GameDirectory, "bin", "MMC-Launcher.exe");
+                        string appPath = Path.Combine(GameDirectory, "bin", InstallHelper.GetLauncherExecutableName());
                         string appDirectory = Path.Combine(GameDirectory, "bin");
                         gameLaunchInfo = new ProcessStartInfo
                         {
@@ -128,7 +133,7 @@ public partial class MainViewModel : ObservableObject
                     case EOperatingSystem.Linux:
                     case EOperatingSystem.MacOS:
                     {
-                        string appImagePath = Path.Combine(GameDirectory, "bin", "MMC-Launcher");
+                        string appImagePath = Path.Combine(GameDirectory, "bin", InstallHelper.GetLauncherExecutableName());
                         string appImageDirectory = Path.Combine(GameDirectory, "bin"); 
                         gameLaunchInfo = new ProcessStartInfo
                         {
@@ -270,8 +275,8 @@ public partial class MainViewModel : ObservableObject
                 backupPath = Path.Combine(App.TmpDir, "backup.zip");
                 string backupTmpDir = Path.Combine(App.TmpDir, "backup");
                 Directory.CreateDirectory(backupTmpDir);
-                string backupDataDir = Path.Combine(backupTmpDir, "minecraftData");
-                string minecraftDataDir = Path.Combine(GameDirectory, "minecraftData");
+                string backupDataDir = Path.Combine(backupTmpDir, "game");
+                string minecraftDataDir = Path.Combine(GameDirectory, "game");
 
                 // Directories to delete: minecraftData/mods, minecraftData/config, minecraftData/.fabric, minecraftData/natives
                 // These directories contain data that should be removed to prevent conflicts
@@ -397,7 +402,7 @@ public partial class MainViewModel : ObservableObject
             UpdateText("Alkalmazás...");
             UpdateProgress(60);
             // Extract mods
-            string modsDir = Path.Combine(GameDirectory, "minecraftData");
+            string modsDir = Path.Combine(GameDirectory, "game");
             await using (var targetModsStream = File.OpenRead(targetModsPath))
             {
                 using var targetModsArchive = new ZipArchive(targetModsStream, ZipArchiveMode.Read);
@@ -430,16 +435,19 @@ public partial class MainViewModel : ObservableObject
                         await stream.CopyToAsync(outFile);
 
                     // Create main shortcut
-                    string exePath = Path.Combine(binDirPath, "MMC-Launcher.exe");
-                    string shortcutPath = Path.Combine(GameDirectory, "MesterMC.lnk");
+                    string exePath = Path.Combine(binDirPath, InstallHelper.GetLauncherExecutableName());
+                    string shortcutName = InstallHelper.GetShortcutName();
+                    string shortcutPath = Path.Combine(GameDirectory, shortcutName);
                     Shortcut.CreateShortcut(exePath, "", binDirPath, iconPath, 0).WriteToFile(shortcutPath);
+                    exePath = Path.Combine(binDirPath, InstallHelper.GetUpdaterExecutableName());
+                    Shortcut.CreateShortcut(exePath, "--uninstall-prepare", binDirPath, iconPath, 0).WriteToFile(Path.Combine(GameDirectory, "Uninstall.lnk"));
 
                     // Copy to desktop if needed
                     if (CreateDesktopShortcut)
-                        File.Copy(shortcutPath, Path.Combine(OSHelper.GetDesktopDirectory(), "MesterMC.lnk"), true);
+                        File.Copy(shortcutPath, Path.Combine(OSHelper.GetDesktopDirectory(), shortcutName), true);
 
                     if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
-                        File.Copy(shortcutPath, Path.Combine(StartMenuDirectory, "MesterMC.lnk"), true);
+                        File.Copy(shortcutPath, Path.Combine(StartMenuDirectory, shortcutName), true);
 
                     break;
                 }
@@ -460,7 +468,7 @@ public partial class MainViewModel : ObservableObject
                         await stream.CopyToAsync(outFile);
 
                     // Create app bundle
-                    string appPath = Path.Combine(GameDirectory, "MMC-Launcher.app");
+                    string appPath = Path.Combine(GameDirectory, InstallHelper.GetLauncherExecutableName());
                     StringBuilder appCode = new StringBuilder();
                     appCode.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                     appCode.AppendLine(
@@ -500,13 +508,13 @@ public partial class MainViewModel : ObservableObject
                     string resourcesPath = Path.Combine(contentsPath, "Resources");
                     Directory.CreateDirectory(resourcesPath);
                     await File.WriteAllTextAsync(Path.Combine(contentsPath, "Info.plist"), appCode.ToString());
-                    File.Copy(Path.Combine(binDirPath, "MMC-Launcher"), Path.Combine(macOSPath, "MMC-Launcher"), true);
+                    File.Copy(Path.Combine(binDirPath, InstallHelper.GetLauncherExecutableName()), Path.Combine(macOSPath, InstallHelper.GetLauncherExecutableName()), true);
                     File.Copy(iconPath, Path.Combine(resourcesPath, "favicon.icns"), true);
 
                     // Create symlink
                     if (CreateDesktopShortcut)
                     {
-                        var target = Path.Combine(OSHelper.GetDesktopDirectory(), "MesterMC");
+                        var target = Path.Combine(OSHelper.GetDesktopDirectory(), InstallHelper.GetShortcutName());
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, appPath);
@@ -514,11 +522,13 @@ public partial class MainViewModel : ObservableObject
 
                     if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
                     {
-                        var target = Path.Combine(StartMenuDirectory, "MesterMC");
+                        var target = Path.Combine(StartMenuDirectory, InstallHelper.GetShortcutName());
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, appPath);
                     }
+                    
+                    // TODO: Create uninstaller script
 
                     break;
                 }
@@ -538,7 +548,7 @@ public partial class MainViewModel : ObservableObject
                     await using (FileStream outFile = new FileStream(icon, FileMode.Create, FileAccess.Write))
                         await stream.CopyToAsync(outFile);
 
-                    string appPath = Path.Combine(binDirPath, "MMC-Launcher");
+                    string appPath = Path.Combine(binDirPath, InstallHelper.GetLauncherExecutableName());
 
                     foreach (var file in Directory.GetFiles(binDirPath))
                         if (file.Contains("MMC-Launcher") || file.Contains("MMC-Updater"))
@@ -557,14 +567,14 @@ public partial class MainViewModel : ObservableObject
                     desktopFile.AppendLine("Categories=Game;");
                     desktopFile.AppendLine("Keywords=Minecraft;MesterMC;Launcher;Game;");
                     desktopFile.AppendLine("StartupNotify=true");
-                    string desktopFilePath = Path.Combine(GameDirectory, "MesterMC.desktop");
+                    string desktopFilePath = Path.Combine(GameDirectory, InstallHelper.GetShortcutName());
                     await File.WriteAllTextAsync(desktopFilePath, desktopFile.ToString());
                     await FileSystemHelper.MakeExecutableAsync(desktopFilePath);
 
                     // Create symlink
                     if (CreateDesktopShortcut)
                     {
-                        var target = Path.Combine(OSHelper.GetDesktopDirectory(), "MesterMC.desktop");
+                        var target = Path.Combine(OSHelper.GetDesktopDirectory(), InstallHelper.GetShortcutName());
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, desktopFilePath);
@@ -572,11 +582,13 @@ public partial class MainViewModel : ObservableObject
 
                     if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
                     {
-                        var target = Path.Combine(StartMenuDirectory, "MesterMC.desktop");
+                        var target = Path.Combine(StartMenuDirectory, InstallHelper.GetShortcutName());
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, desktopFilePath);
                     }
+                    
+                    // TODO: Create uninstaller script
 
                     break;
                 }
