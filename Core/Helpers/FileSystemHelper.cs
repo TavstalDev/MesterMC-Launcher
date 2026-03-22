@@ -475,4 +475,28 @@ public static class FileSystemHelper
             return false;
         }
     }
+    
+    /// <summary>
+    /// Checks whether the specified file is locked by attempting to open it with exclusive access.
+    /// </summary>
+    /// <param name="filePath">Full path to the file to test.</param>
+    /// <returns>
+    /// <c>true</c> if the file could not be opened due to an <see cref="IOException"/> (commonly indicates the file is locked);
+    /// <c>false</c> if the file was successfully opened with exclusive access.
+    /// </returns>
+    public static bool IsFileLocked(string filePath)
+    {
+        if (!File.Exists(filePath))
+            return false;
+        
+        try
+        {
+            using FileStream stream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            return false;
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+    }
 }
