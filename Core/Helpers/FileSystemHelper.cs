@@ -24,16 +24,79 @@ public static class FileSystemHelper
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(FileSystemHelper));
 
     /// <summary>
-    /// Deletes a directory and all its contents.
+    /// Deletes the file at the provided path if it exists, is not locked, and passes safety checks.
+    /// </summary>
+    /// <param name="path">Full path to the file to delete.</param>
+    /// <param name="progressReporter">
+    /// Optional progress reporter used to surface user-facing status messages when the file cannot be deleted.
+    /// May be null.</param>
+    public static void DeleteFile(string path, IProgressReporter? progressReporter = null)
+    {
+        if (!File.Exists(path))
+            return;
+
+        if (IsFileLocked(path))
+        {
+            _logger.Error($"Refusing to delete file '{path}' because it is currently locked by another process.");
+            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi fájl mert használatban van: {path}");
+            return;
+        }
+        
+        if (!IsSafeToDelete(path))
+        {
+            _logger.Error("Refusing to delete file '{path}' because it is not considered safe to delete.");
+            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi fájl mert nem biztonságos törölni: {path}");
+            return;
+        }
+
+        File.Delete(path);
+    }
+    
+    /// <summary>
+    /// Deletes a directory and all its contents after verifying the directory is safe to delete.
     /// </summary>
     /// <param name="path">The path of the directory to delete.</param>
-    public static void DeleteDirectory(string path)
+    /// <param name="progressReporter">
+    /// Optional progress reporter used to surface user-facing status messages when deletion is refused.
+    /// May be null.</param>
+    public static void DeleteDirectory(string path, IProgressReporter? progressReporter = null)
     {
-        var forgeInstallerDirInfo = new DirectoryInfo(path);
-        foreach (FileInfo file in forgeInstallerDirInfo.GetFiles())
-            file.Delete();
+        if (!IsSafeToDelete(path))
+        {
+            _logger.Error($"Refusing to delete directory '{path}' because it is not considered safe to delete.");
+            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár mert nem biztonságos törölni: {path}");
+            return;
+        }
 
-        foreach (DirectoryInfo subDirectory in forgeInstallerDirInfo.GetDirectories())
+        string homeDir = OSHelper.GetHomeDirectory();
+        if (string.Equals(path, homeDir, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.Error($"Refusing to delete directory '{path}' because it is the user's home directory.");
+            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár mert az a felhasználó gyári könyvtára: {path}");
+            return;
+        }
+        
+        string programsDir = OSHelper.GetProgramsDirectory();
+        if (string.Equals(path, programsDir, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.Error($"Refusing to delete directory '{path}' because it is the system's programs directory.");
+            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár mert az a rendszer programkönyvtára: {path}");
+            return;
+        }
+        
+        string desktopDir = OSHelper.GetDesktopDirectory();
+        if (string.Equals(path, desktopDir, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.Error($"Refusing to delete directory '{path}' because it is the user's desktop directory.");
+            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár mert az a felhasználó asztali könyvtára: {path}");
+            return;
+        }
+        
+        var dirInfo = new DirectoryInfo(path);
+        foreach (FileInfo file in dirInfo.GetFiles())
+            DeleteFile(file.FullName, progressReporter);
+
+        foreach (DirectoryInfo subDirectory in dirInfo.GetDirectories())
             subDirectory.Delete(true);
 
         Directory.Delete(path);
@@ -502,5 +565,26 @@ public static class FileSystemHelper
         {
             return true;
         }
+    }
+    
+    /// <summary>
+    /// Determines whether the specified path is considered safe for deletion.
+    /// </summary>
+    /// <param name="path">The path to evaluate.</param>
+    /// <returns>
+    /// <c>true</c> when the path appears valid and not obviously unsafe to delete (e.g. not null/empty,
+    /// not a drive root and of reasonable length); otherwise <c>false</c>.
+    /// </returns>
+    public static bool IsSafeToDelete(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) 
+            return false;
+        var full = Path.GetFullPath(path);
+        var root = Path.GetPathRoot(full);
+        if (string.Equals(full, root, StringComparison.OrdinalIgnoreCase)) 
+            return false;
+        if (full.Length < 10) 
+            return false;
+        return true;
     }
 }
