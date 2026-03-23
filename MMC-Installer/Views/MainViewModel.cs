@@ -91,7 +91,7 @@ public partial class MainViewModel : ObservableObject
             {
                 // Start installation process
                 CurrentWindow = window;
-                await Dispatcher.UIThread.InvokeAsync(async () => await StartInstallProcessAsync());
+                await Task.Run(async () => await StartInstallProcessAsync());
                 return;
             }
         }
@@ -108,60 +108,71 @@ public partial class MainViewModel : ObservableObject
         if (string.IsNullOrEmpty(GameDirectory))
             return;
         
-        InstallHelper.SaveInstallPath(GameDirectory, StartMenuDirectory ?? " ", "0.0.4"); // TODO: Make this dynamic
-        
-        if (LaunchGame)
+        await Task.Run(() =>
         {
             try
             {
-                ProcessStartInfo gameLaunchInfo;
-                switch (OSHelper.GetOperatingSystem())
+                if (LaunchGame)
                 {
-                    case EOperatingSystem.Windows:
+                    try
                     {
-                        string appPath = Path.Combine(GameDirectory, "bin", InstallHelper.GetLauncherExecutableName());
-                        string appDirectory = Path.Combine(GameDirectory, "bin");
-                        gameLaunchInfo = new ProcessStartInfo
+                        ProcessStartInfo gameLaunchInfo;
+                        switch (OSHelper.GetOperatingSystem())
                         {
-                            FileName = appPath,
-                            Arguments = "",
-                            WorkingDirectory = appDirectory,
-                            UseShellExecute = false
-                        };
-                        break;
+                            case EOperatingSystem.Windows:
+                            {
+                                string appPath = Path.Combine(GameDirectory, "bin",
+                                    InstallHelper.GetLauncherExecutableName());
+                                string appDirectory = Path.Combine(GameDirectory, "bin");
+                                gameLaunchInfo = new ProcessStartInfo
+                                {
+                                    FileName = appPath,
+                                    Arguments = "",
+                                    WorkingDirectory = appDirectory,
+                                    UseShellExecute = true
+                                };
+                                break;
+                            }
+                            case EOperatingSystem.Linux:
+                            case EOperatingSystem.MacOS:
+                            {
+                                string appImagePath = Path.Combine(GameDirectory, "bin",
+                                    InstallHelper.GetLauncherExecutableName());
+                                string appImageDirectory = Path.Combine(GameDirectory, "bin");
+                                gameLaunchInfo = new ProcessStartInfo
+                                {
+                                    FileName = appImagePath,
+                                    Arguments = "",
+                                    WorkingDirectory = appImageDirectory,
+                                    UseShellExecute = true
+                                };
+                                break;
+                            }
+                            default:
+                            {
+                                _logger.Error("Unsupported operating system for launching the game.");
+                                return Task.CompletedTask;
+                            }
+                        }
+
+                        Process.Start(gameLaunchInfo);
                     }
-                    case EOperatingSystem.Linux:
-                    case EOperatingSystem.MacOS:
+                    catch (Exception ex)
                     {
-                        string appImagePath = Path.Combine(GameDirectory, "bin", InstallHelper.GetLauncherExecutableName());
-                        string appImageDirectory = Path.Combine(GameDirectory, "bin"); 
-                        gameLaunchInfo = new ProcessStartInfo
-                        {
-                            FileName = appImagePath,
-                            Arguments = "",
-                            WorkingDirectory = appImageDirectory, 
-                            UseShellExecute = false
-                        };
-                        break;
-                    }
-                    default:
-                    {
-                        _logger.Error("Unsupported operating system for launching the game.");
-                        return;
+                        _logger.Error($"Failed to launch the game after installation: {ex}");
                     }
                 }
-                Process.Start(gameLaunchInfo);
+
+                if (OpenWebsite)
+                    OSHelper.OpenUrl("https://mestermc.hu/");
+                return Task.CompletedTask;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.Error($"Failed to launch the game after installation: {ex}");
+                return Task.FromException(exception);
             }
-        }
+        });
 
-        if (OpenWebsite)
-            OSHelper.OpenUrl("https://mestermc.hu/");
-
-        await Task.Delay(500); // Small delay to ensure processes start before closing
         await CloseInteraction.Handle(Unit.Default);
     }
     
@@ -225,8 +236,8 @@ public partial class MainViewModel : ObservableObject
         }
         
         // Normalize paths
-        GameDirectory = Path.GetFullPath(GameDirectory);
-        StartMenuDirectory = Path.GetFullPath(StartMenuDirectory);
+        string gameDir = Path.GetFullPath(GameDirectory);
+        string startMenuDir = Path.GetFullPath(StartMenuDirectory);
         string? backupPath = null;
         bool success = false;
 
@@ -239,14 +250,14 @@ public partial class MainViewModel : ObservableObject
         try
         {
             // Check write permissions
-            if (!await FileSystemHelper.HasWritePermissionAsync(GameDirectory))
+            if (!await FileSystemHelper.HasWritePermissionAsync(gameDir))
             {
                 UpdateText("Hiba: Nincs írási jogosultság a megadott játékkönyvtárban.");
                 _logger.Error("No write permission for the game directory.");
                 return;
             }
 
-            if (!await FileSystemHelper.HasWritePermissionAsync(StartMenuDirectory))
+            if (!await FileSystemHelper.HasWritePermissionAsync(startMenuDir))
             {
                 UpdateText("Hiba: Nincs írási jogosultság a megadott start menü könyvtárban.");
                 _logger.Error("No write permission for the start menu directory.");
@@ -261,7 +272,7 @@ public partial class MainViewModel : ObservableObject
             }
             
             const long requiredBytesEstimate = 500L * 1024 * 1024; 
-            if (!FileSystemHelper.HasEnoughFreeSpace(App.TmpDir, requiredBytesEstimate) || !FileSystemHelper.HasEnoughFreeSpace(GameDirectory, requiredBytesEstimate))
+            if (!FileSystemHelper.HasEnoughFreeSpace(App.TmpDir, requiredBytesEstimate) || !FileSystemHelper.HasEnoughFreeSpace(gameDir, requiredBytesEstimate))
             {
                 UpdateText("Hiba: Nincs elegendő lemezterület a telepítéshez.");
                 _logger.Error("Not enough disk space for installation.");
@@ -269,7 +280,7 @@ public partial class MainViewModel : ObservableObject
             }
 
             UpdateText("Előkészítés...");
-            if (Directory.Exists(GameDirectory))
+            if (Directory.Exists(gameDir))
             {
 
                 _logger.Warn(
@@ -279,7 +290,7 @@ public partial class MainViewModel : ObservableObject
                 string backupTmpDir = Path.Combine(App.TmpDir, "backup");
                 Directory.CreateDirectory(backupTmpDir);
                 string backupDataDir = Path.Combine(backupTmpDir, "game");
-                string minecraftDataDir = Path.Combine(GameDirectory, "game");
+                string minecraftDataDir = Path.Combine(gameDir, "game");
 
                 // Directories to delete: minecraftData/mods, minecraftData/config, minecraftData/.fabric, minecraftData/natives
                 // These directories contain data that should be removed to prevent conflicts
@@ -304,7 +315,7 @@ public partial class MainViewModel : ObservableObject
                     if (Directory.Exists(dirToCheck))
                         FileSystemHelper.MoveDirectory(dirToCheck, Path.Combine(backupDataDir, "natives"), true);
 
-                    string configFilePath = Path.Combine(GameDirectory, "config.json");
+                    string configFilePath = Path.Combine(gameDir, "config.json");
                     if (File.Exists(configFilePath))
                     {
                         UpdateText("Létező konfigurációs fájl mentése és eltávolítása...");
@@ -314,7 +325,7 @@ public partial class MainViewModel : ObservableObject
                     #endregion
 
                     UpdateText("Régi futattó fájlok mentése és eltávolítása...");
-                    dirToCheck = Path.Combine(GameDirectory, "bin");
+                    dirToCheck = Path.Combine(gameDir, "bin");
                     if (Directory.Exists(dirToCheck))
                         FileSystemHelper.MoveDirectory(dirToCheck, Path.Combine(backupTmpDir, "bin"), true);
 
@@ -328,10 +339,10 @@ public partial class MainViewModel : ObservableObject
                 }
             }
             else
-                Directory.CreateDirectory(GameDirectory);
+                Directory.CreateDirectory(gameDir);
 
-            if (CreateStartMenuShortcut && !Directory.Exists(StartMenuDirectory))
-                Directory.CreateDirectory(StartMenuDirectory);
+            if (CreateStartMenuShortcut && !Directory.Exists(startMenuDir))
+                Directory.CreateDirectory(startMenuDir);
 
             string targetAssetName = string.Empty;
             bool isArm = OSHelper.IsArmBased();
@@ -405,14 +416,14 @@ public partial class MainViewModel : ObservableObject
             UpdateText("Alkalmazás...");
             UpdateProgress(60);
             // Extract mods
-            string modsDir = Path.Combine(GameDirectory, "game");
+            string modsDir = Path.Combine(gameDir, "game");
             await using (var targetModsStream = File.OpenRead(targetModsPath))
             {
                 using var targetModsArchive = new ZipArchive(targetModsStream, ZipArchiveMode.Read);
                 targetModsArchive.ExtractToDirectory(modsDir, true);
             }
 
-            string binDirPath = Path.Combine(GameDirectory, "bin");
+            string binDirPath = Path.Combine(gameDir, "bin");
             if (!Directory.Exists(binDirPath))
                 Directory.CreateDirectory(binDirPath);
             FileSystemHelper.MoveDirectory(targetTempDir, binDirPath, true);
@@ -439,17 +450,17 @@ public partial class MainViewModel : ObservableObject
 
                     // Create main shortcut
                     string exePath = Path.Combine(binDirPath, launcherExecutableName);
-                    string shortcutPath = Path.Combine(GameDirectory, shortcutName);
+                    string shortcutPath = Path.Combine(gameDir, shortcutName);
                     Shortcut.CreateShortcut(exePath, "", binDirPath, iconPath, 0).WriteToFile(shortcutPath);
                     exePath = Path.Combine(binDirPath, updaterExecutableName);
-                    Shortcut.CreateShortcut(exePath, "--uninstall-prepare", binDirPath, iconPath, 0).WriteToFile(Path.Combine(GameDirectory, "Uninstall.lnk"));
+                    Shortcut.CreateShortcut(exePath, "--uninstall-prepare", OSHelper.GetDesktopDirectory(), iconPath, 0).WriteToFile(Path.Combine(gameDir, "Uninstall.lnk"));
 
                     // Copy to desktop if needed
                     if (CreateDesktopShortcut)
                         File.Copy(shortcutPath, Path.Combine(OSHelper.GetDesktopDirectory(), shortcutName), true);
 
-                    if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
-                        File.Copy(shortcutPath, Path.Combine(StartMenuDirectory, shortcutName), true);
+                    if (CreateStartMenuShortcut && !string.IsNullOrEmpty(startMenuDir))
+                        File.Copy(shortcutPath, Path.Combine(startMenuDir, shortcutName), true);
 
                     break;
                 }
@@ -470,7 +481,7 @@ public partial class MainViewModel : ObservableObject
                         await stream.CopyToAsync(outFile);
 
                     // Create app bundle
-                    string appPath = Path.Combine(GameDirectory, launcherExecutableName);
+                    string appPath = Path.Combine(gameDir, launcherExecutableName);
                     StringBuilder appCode = new StringBuilder();
                     appCode.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                     appCode.AppendLine(
@@ -522,9 +533,9 @@ public partial class MainViewModel : ObservableObject
                         File.CreateSymbolicLink(target, appPath);
                     }
 
-                    if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
+                    if (CreateStartMenuShortcut && !string.IsNullOrEmpty(startMenuDir))
                     {
-                        var target = Path.Combine(StartMenuDirectory, shortcutName);
+                        var target = Path.Combine(startMenuDir, shortcutName);
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, appPath);
@@ -569,7 +580,7 @@ public partial class MainViewModel : ObservableObject
                     desktopFile.AppendLine("Categories=Game;");
                     desktopFile.AppendLine("Keywords=Minecraft;MesterMC;Launcher;Game;");
                     desktopFile.AppendLine("StartupNotify=true");
-                    string desktopFilePath = Path.Combine(GameDirectory, shortcutName);
+                    string desktopFilePath = Path.Combine(gameDir, shortcutName);
                     await File.WriteAllTextAsync(desktopFilePath, desktopFile.ToString());
                     await FileSystemHelper.MakeExecutableAsync(desktopFilePath);
 
@@ -582,9 +593,9 @@ public partial class MainViewModel : ObservableObject
                         File.CreateSymbolicLink(target, desktopFilePath);
                     }
 
-                    if (CreateStartMenuShortcut && !string.IsNullOrEmpty(StartMenuDirectory))
+                    if (CreateStartMenuShortcut && !string.IsNullOrEmpty(startMenuDir))
                     {
-                        var target = Path.Combine(StartMenuDirectory, shortcutName);
+                        var target = Path.Combine(startMenuDir, shortcutName);
                         if (File.Exists(target))
                             File.Delete(target);
                         File.CreateSymbolicLink(target, desktopFilePath);
@@ -610,12 +621,16 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             if (!success && !string.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
-                ZipFile.ExtractToDirectory(backupPath, GameDirectory, true);
+                ZipFile.ExtractToDirectory(backupPath, gameDir, true);
             
             if (Directory.Exists(App.TmpDir))
                 FileSystemHelper.DeleteDirectory(App.TmpDir);
 
-            CurrentWindow = success ? EInstallerWindow.FINISHED : EInstallerWindow.ERROR;
+            await InstallHelper.SaveInstallPathAsync(gameDir, startMenuDir ?? " ", "0.0.4"); // TODO: Make this dynamic
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                CurrentWindow = success ? EInstallerWindow.FINISHED : EInstallerWindow.ERROR;
+            });
         }
     }
 
@@ -624,7 +639,7 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     private void UpdateText(string text)
     {
-        Dispatcher.UIThread.Invoke(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             InstallText = text;
         });
@@ -635,7 +650,7 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     private void UpdateProgress(double progress)
     {
-        Dispatcher.UIThread.Invoke(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             InstallProgress = progress;
         });
