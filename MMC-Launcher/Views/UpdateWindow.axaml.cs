@@ -394,7 +394,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// <param name="progress">The progress value, typically between 0.0 and 1.0.</param>
     public void SetProgress(double progress)
     {
-        Dispatcher.UIThread.Invoke(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             if (DataContext == null)
                 return;
@@ -409,7 +409,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// <param name="status">The status message to display.</param>
     public void SetStatus(string status)
     {
-        Dispatcher.UIThread.Invoke(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             if (DataContext == null)
                 return;
@@ -425,7 +425,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// <param name="args">Optional arguments for formatting the status message.</param>
     public void SetStatus(string status, params object[]? args)
     {
-        Dispatcher.UIThread.Invoke(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             if (DataContext == null)
                 return;
