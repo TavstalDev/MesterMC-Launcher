@@ -494,6 +494,10 @@ public static class FileSystemHelper
             using FileStream stream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
             return false;
         }
+        catch (UnauthorizedAccessException)
+        {
+            return true;
+        }
         catch (IOException)
         {
             return true;
