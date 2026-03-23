@@ -2,6 +2,7 @@ using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Threading;
 using ReactiveUI;
 using Tavstal.KonkordLauncher.Common.Models;
 using Tavstal.KonkordLauncher.Core.Models;
@@ -9,8 +10,18 @@ using Tavstal.MesterMC.Updater.Views.Models;
 
 namespace Tavstal.MesterMC.Updater.Views;
 
-public partial class UninstallWindow : KonkordWindow<UninstallViewModel>, IProgressReporter
+/// <summary>
+/// Window used for uninstall operations.
+/// Binds to <see cref="UninstallViewModel"/> and implements <see cref="IProgressReporter"/>
+/// to allow the view model or external code to report progress and status text to the UI.
+/// </summary>
+public partial class UninstallWindow : KonkordWindow<UninstallViewModel>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UninstallWindow"/> class.
+    /// Sets up the DataContext with an <see cref="UninstallViewModel"/> if none is provided,
+    /// attaches debug tools in DEBUG builds, and registers activation handlers for window closing.
+    /// </summary>
     public UninstallWindow()
     {
         InitializeComponent();
@@ -31,45 +42,4 @@ public partial class UninstallWindow : KonkordWindow<UninstallViewModel>, IProgr
             }).DisposeWith(disposables);
         });
     }
-    
-    #region IProgressReporter Implementation
-    /// <summary>
-    /// Sets the progress value for the startup process.
-    /// </summary>
-    /// <param name="progress">The progress value, typically between 0.0 and 1.0.</param>
-    public void SetProgress(double progress)
-    {
-        if (DataContext == null)
-            return;
-        DataContext.InstallProgress = progress;
-    }
-
-    /// <summary>
-    /// Sets the status message for the startup process.
-    /// </summary>
-    /// <param name="status">The status message to display.</param>
-    public void SetStatus(string status)
-    {
-        if (DataContext == null)
-            return;
-        DataContext.InstallText = status;
-    }
-
-    /// <summary>
-    /// Sets the status message with optional arguments.
-    /// </summary>
-    /// <param name="status">The status message to display.</param>
-    /// <param name="args">Optional arguments for formatting the status message.</param>
-    public void SetStatus(string status, params object[]? args)
-    {
-        if (DataContext == null)
-            return;
-        if (args == null || args.Length == 0)
-        {
-            DataContext.InstallText = status;
-            return;
-        }
-        DataContext.InstallText = string.Format(status, args);
-    }
-    #endregion 
 }

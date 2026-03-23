@@ -14,6 +14,11 @@ using Tavstal.MesterMC.Updater.Models;
 
 namespace Tavstal.MesterMC.Updater.Views.Models;
 
+/// <summary>
+/// ViewModel used by the uninstaller UI.
+/// Manages the uninstallation flow: prepares a review text, runs the uninstallation steps (delete shortcuts and installation folder),
+/// reports progress/status to the UI and logs errors.
+/// </summary>
 public partial class UninstallViewModel : ObservableObject
 {
     private readonly CoreLogger _logger = new(typeof(UninstallViewModel));
@@ -23,11 +28,22 @@ public partial class UninstallViewModel : ObservableObject
     [ObservableProperty] private string installText = "";
     [ObservableProperty] private string reviewText = "...";
     
+    /// <summary>
+    /// Interaction used to request the window to close. The view should handle this to
+    /// close the window in a UI-safe way.
+    /// </summary>
     public Interaction<Unit, Unit> CloseWindowInteraction { get; } = new();
     
+    /// <summary>
+    /// Command that triggers closing the window via <see cref="CloseWindowInteraction"/>.
+    /// </summary>
     [RelayCommand]
     public async Task CloseWindow() => await CloseWindowInteraction.Handle(Unit.Default);
     
+    /// <summary>
+    /// Command that opens a given uninstaller window state.
+    /// </summary>
+    /// <param name="window">Target window state to open.</param>
     [RelayCommand]
     private async Task OpenWindow(EUninstallerWindow window)
     {
@@ -57,7 +73,7 @@ public partial class UninstallViewModel : ObservableObject
             {
                 // Start installation process
                 CurrentWindow = window;
-                await Dispatcher.UIThread.InvokeAsync(async () => await StartAsync());
+                await Task.Run(async () => await StartAsync());
                 return;
             }
         }
@@ -65,6 +81,18 @@ public partial class UninstallViewModel : ObservableObject
         CurrentWindow = window;
     }
 
+    /// <summary>
+    /// Executes the uninstallation procedure.
+    /// <br/>Steps:
+    /// <br/>1. Validate install path and write permissions.
+    /// <br/>2. Check whether launcher/updater executables are running and abort if so.
+    /// <br/>3. Delete desktop shortcut, start menu shortcut/folder, then installation directory.
+    /// <br/>4. Remove stored install path via <see cref="InstallHelper.RemoveInstallPath"/>.
+    /// <br/>5. Set final window state to FINISH on the UI thread.
+    /// <br/>
+    /// <br/>All UI-visible status and progress updates are performed via <see cref="SetStatus"/> and <see cref="SetProgress"/>,
+    /// which marshal updates to the Avalonia UI thread. Exceptions are caught, logged and reported to the user through status text.
+    /// </summary>
     private async Task StartAsync()
     {
         try
@@ -78,21 +106,21 @@ public partial class UninstallViewModel : ObservableObject
 
             if (string.IsNullOrEmpty(gameDir))
             {
-                InstallText = "Hiba: Nem található a MesterMC telepítési könyvtára.";
+                SetStatus("Hiba: Nem található a MesterMC telepítési könyvtára.");
                 _logger.Error("The game directory path is empty.");
                 return;
             }
             
             if (!await FileSystemHelper.HasWritePermissionAsync(gameDir))
             {
-                InstallText = "Hiba: Nincs írási jogosultság a játék könyvtárához.";
+                SetStatus("Hiba: Nincs írási jogosultság a játék könyvtárához.");
                 _logger.Error("No write permission for the game directory.");
                 return;
             }
 
             if (!await FileSystemHelper.HasWritePermissionAsync(startMenuRootDir))
             {
-                InstallText = "Hiba: Nincs írási jogosultság a Start menü könyvtárához.";
+                SetStatus("Hiba: Nincs írási jogosultság a Start menü könyvtárához.");
                 _logger.Error("No write permission for the Start Menu directory.");
                 return;
             }
@@ -101,18 +129,18 @@ public partial class UninstallViewModel : ObservableObject
             string updaterPath = Path.Combine(gameDir, "bin", InstallHelper.GetUpdaterExecutableName());
             if (FileSystemHelper.IsFileLocked(launcherPath) || FileSystemHelper.IsFileLocked(updaterPath))
             {
-                InstallText = "Hiba: A MesterMC Launcher vagy Updater jelenleg fut. Kérlek zárd be őket a törlés előtt.";
+                SetStatus("Hiba: A MesterMC Launcher vagy Updater jelenleg fut. Kérlek zárd be őket a törlés előtt.");
                 _logger.Error("The launcher or updater executable is currently running.");
                 return;
             }
             
-            InstallText = "Asztali ikon törlése...";
-            InstallProgress = 1f / 3f;
+            SetStatus("Asztali ikon törlése...");
+            SetProgress(1.0 / 3.0);
             if (File.Exists(desktopShortcutPath))
                 File.Delete(desktopShortcutPath);
 
-            InstallText = "Startmenü ikon törlése...";
-            InstallProgress = 2f / 3f;
+            SetStatus("Startmenü ikon törlése...");
+            SetProgress(2.0 / 3.0);
             if (startMenuRootDir == startMenuShortcutDir)
             {
                 if (File.Exists(startMenuShortcutPath))
@@ -124,17 +152,66 @@ public partial class UninstallViewModel : ObservableObject
                     Directory.Delete(startMenuShortcutDir, true);
             }
             
-            InstallText = "Játék könyvtár törlése...";
-            InstallProgress = 1.0f;
+            SetStatus("Játék könyvtár törlése...");
+            SetProgress(1.0);
             if (Directory.Exists(gameDir))
                 Directory.Delete(gameDir, true);
             
             InstallHelper.RemoveInstallPath();
-            CurrentWindow = EUninstallerWindow.FINISH;
+            Dispatcher.UIThread.Invoke(() =>
+            {
+                CurrentWindow = EUninstallerWindow.FINISH;
+            });
         }
         catch (Exception ex)
         {
-            InstallText = $"Hiba történt a törlés során: {ex.Message}";
+            SetStatus($"Hiba történt a törlés során: {ex.Message}");
+            _logger.Error($"An error occurred during uninstallation: {ex}");
         }
     }
+    
+    #region IProgressReporter Implementation
+
+    /// <summary>
+    /// Sets the progress value for the startup process.
+    /// </summary>
+    /// <param name="progress">The progress value, typically between 0.0 and 1.0.</param>
+    public void SetProgress(double progress)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            InstallProgress = progress;
+        });
+    }
+
+    /// <summary>
+    /// Sets the status message for the startup process.
+    /// </summary>
+    /// <param name="status">The status message to display.</param>
+    public void SetStatus(string status)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            InstallText = status;
+        });
+    }
+
+    /// <summary>
+    /// Sets the status message with optional arguments.
+    /// </summary>
+    /// <param name="status">The status message to display.</param>
+    /// <param name="args">Optional arguments for formatting the status message.</param>
+    public void SetStatus(string status, params object[]? args)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (args == null || args.Length == 0)
+            {
+                InstallText = status;
+                return;
+            }
+            InstallText = string.Format(status, args);
+        });
+    }
+    #endregion 
 }
