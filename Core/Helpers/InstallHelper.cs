@@ -15,7 +15,7 @@ public static class InstallHelper
     /// <param name="installPath">Full path to the installation directory.</param>
     /// <param name="startMenuPath">Path to the start menu / shortcuts folder.</param>
     /// <param name="appVersion">Application version used for Windows registry registration.</param>
-    public static void SaveInstallPath(string installPath, string startMenuPath, string appVersion)
+    public static async Task SaveInstallPathAsync(string installPath, string startMenuPath, string appVersion)
     {
         switch (OSHelper.GetOperatingSystem())
         {
@@ -33,7 +33,7 @@ public static class InstallHelper
                 if (File.Exists(path))
                     File.Delete(path);
                 
-                File.WriteAllLines(path, [installPath, startMenuPath]);
+                await File.WriteAllLinesAsync(path, [installPath, startMenuPath]);
                 break;
             }
             case EOperatingSystem.MacOS:
@@ -45,7 +45,7 @@ public static class InstallHelper
                 if (File.Exists(path))
                     File.Delete(path);
                 
-                File.WriteAllLines(path, [installPath, startMenuPath]);
+                await File.WriteAllLinesAsync(path, [installPath, startMenuPath]);
                 break;
             }
         }

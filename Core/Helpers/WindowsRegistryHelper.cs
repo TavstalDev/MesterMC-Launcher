@@ -23,10 +23,14 @@ public static class WindowsRegistryHelper
     /// <exception cref="Exception">Thrown when the registry key could not be created.</exception>
     public static void RegisterApp(string installPath, string startMenuPath, string version)
     {
-        using RegistryKey key = Registry.CurrentUser.CreateSubKey(RegPath);
+        // Make sure existing key is removed
+        try { UnregisterApp(); } catch (Exception) { /* Ignore errors if the key doesn't exist */ }
+
+        using RegistryKey key = Registry.CurrentUser.CreateSubKey(RegPath, RegistryKeyPermissionCheck.ReadWriteSubTree);
         if (key == null)
             throw new Exception("Failed to create registry key for MesterMC Launcher.");
 
+        
         string exePath = Path.Combine(installPath, "bin", InstallHelper.GetLauncherExecutableName());
         string updaterPath = Path.Combine(installPath, "bin", InstallHelper.GetUpdaterExecutableName());
 
@@ -40,6 +44,8 @@ public static class WindowsRegistryHelper
         key.SetValue("Publisher", "Tavstal");
         key.SetValue("Contact", "Tavstal");
         key.SetValue("HelpLink", "https://github.com/TavstalDev/MesterMC-Launcher");
+
+        key.Flush(); // Force the update
     }
 
     /// <summary>
