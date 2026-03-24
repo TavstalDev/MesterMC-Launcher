@@ -11,7 +11,6 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
-using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Models;
 
 namespace Tavstal.KonkordLauncher.Core.Helpers;
@@ -23,6 +22,7 @@ public static class FileSystemHelper
 {
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(FileSystemHelper));
 
+    #region Core Operations
     /// <summary>
     /// Deletes the file at the provided path if it exists, is not locked, and passes safety checks.
     /// </summary>
@@ -38,13 +38,20 @@ public static class FileSystemHelper
         if (!File.Exists(path))
             return true; // Act like the file was deleted
 
+        if (!MakeFileWritable(path))
+        {
+            _logger.Error($"Failed to clear read-only attribute from file '{path}' before deletion.");
+            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi fájl mert nem írható: {path}");
+            return false;
+        }
+        
         if (IsFileLocked(path))
         {
             _logger.Error($"Refusing to delete file '{path}' because it is currently locked by another process.");
             progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi fájl mert használatban van: {path}");
             return false;
         }
-        
+
         if (!IsSafeToDelete(path))
         {
             _logger.Error("Refusing to delete file '{path}' because it is not considered safe to delete.");
@@ -118,11 +125,39 @@ public static class FileSystemHelper
             }
 
             var dirInfo = new DirectoryInfo(path);
-            foreach (FileInfo file in dirInfo.GetFiles())
-                DeleteFile(file.FullName, progressReporter);
+            // Delete files
+            var files = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories);
+            foreach (FileInfo file in files)
+            {
+                if (!DeleteFile(file.FullName, progressReporter))
+                {
+                    _logger.Error($"Failed to delete file '{file.FullName}' while deleting directory '{path}'. Aborting directory deletion.");
+                    progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár mert nem törölhető egy fájl: {file.FullName}");
+                    return false;
+                }
+            }
 
-            foreach (DirectoryInfo subDirectory in dirInfo.GetDirectories())
-                subDirectory.Delete(true);
+            // Delete sub dirs
+            var dirs = Directory.EnumerateDirectories(path, "*", SearchOption.AllDirectories)
+                .OrderByDescending(d => d.Length)
+                .ToList();
+            foreach (string dir in dirs)
+            {
+                try
+                {
+                    var subDir =  new DirectoryInfo(dir);
+                    var attrs = subDir.Attributes;
+                    if (attrs.HasFlag(FileAttributes.ReadOnly))
+                        dirInfo.Attributes = attrs & ~FileAttributes.ReadOnly;
+                    Directory.Delete(dir);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error($"Unexpected error while trying to delete subdirectory '{dir}': {ex}");
+                    progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár: {dir}. Hiba üzenet: {ex.Message}");
+                    return false;
+                }
+            }
 
             Directory.Delete(path);
             return true;
@@ -179,45 +214,199 @@ public static class FileSystemHelper
         if (deleteSource)
             DeleteDirectory(sourceDir);
     }
-    
-    /// <summary>
-    /// Opens a folder in the system's default file explorer.
-    /// </summary>
-    /// <param name="path">The path to the folder to open.</param>
-    public static void OpenFolderInFileExplorer(string path)
-    {
-        // Ensure the path exists
-        if (!Directory.Exists(path))
-        {
-            _logger.Error($"Error: Folder not found at '{path}'");
-            return;
-        }
+    #endregion
 
-        switch (OSHelper.GetOperatingSystem())
+    #region File Permissions and Attributes
+
+    /// <summary>
+    /// Makes a file executable by modifying its permissions using the `chmod` command.
+    /// </summary>
+    /// <param name="path">The path of the file to make executable.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains a boolean value:
+    /// true if the operation succeeded, false otherwise.
+    /// </returns>
+    public static async Task<bool> MakeExecutableAsync(string path)
+    {
+        try
         {
-            case EOperatingSystem.Windows:
+            if (string.IsNullOrEmpty(path))
+                return false;
+            
+            var process = new Process
             {
-                Process.Start("explorer.exe", path);
-                break;
-            }
-            case EOperatingSystem.MacOS:
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "chmod",
+                    Arguments = $"+x \"{path}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
             {
-                Process.Start("open", path);
-                break;
+                string error = await process.StandardError.ReadToEndAsync();
+                _logger.Exc($"Error while making '{path}' executable:");
+                _logger.Error(error);
+                return false;
             }
-            case EOperatingSystem.Linux:
-            {
-                Process.Start("xdg-open", path);
-                break;
-            }
-            case EOperatingSystem.Unknown:
-            {
-                _logger.Error("Error: Unsupported operating system for opening folder in file explorer.");
-                break;
-            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc($"Failed to make '{path}' executable:");
+            _logger.Error(ex.ToString());
+            return false;
         }
     }
 
+    /// <summary>
+    /// Sets the file at <paramref name="pathToFile"/> to read-only by adding the <see cref="FileAttributes.ReadOnly"/> flag.
+    /// If the file does not exist or is already read-only the method returns immediately.
+    /// </summary>
+    /// <param name="pathToFile">Full path to the file to mark as read-only.</param>
+    public static bool MakeFileReadonly(string pathToFile)
+    {
+        try
+        {
+            if (!File.Exists(pathToFile))
+                return false;
+            
+            var attributes = File.GetAttributes(pathToFile);
+            if (attributes.HasFlag(FileAttributes.ReadOnly))
+                return true;
+            
+            attributes |= FileAttributes.ReadOnly;
+            File.SetAttributes(pathToFile, attributes);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc($"Failed to following file readonly {pathToFile}:");
+            _logger.Error(ex);
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Clears the read-only flag from the file at <paramref name="pathToFile"/>, making it writable.
+    /// If the file does not exist or is not read-only the method returns immediately.
+    /// </summary>
+    /// <param name="pathToFile">Full path to the file to make writable.</param>
+    public static bool MakeFileWritable(string pathToFile)
+    {
+        try
+        {
+            if (!File.Exists(pathToFile))
+                return false;
+            
+            var attributes = File.GetAttributes(pathToFile);
+            if (!attributes.HasFlag(FileAttributes.ReadOnly))
+                return true;
+            
+            attributes &= ~FileAttributes.ReadOnly;
+            File.SetAttributes(pathToFile, attributes);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc($"Failed to following file writable {pathToFile}:");
+            _logger.Error(ex);
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Tests whether the application can write to the given directory by creating a small test file.
+    /// Preserves the original behavior: creates the directory if needed, creates "test.txt", verifies its existence,
+    /// deletes it if created, and returns true on success; logs and returns false on any exception.
+    /// </summary>
+    /// <param name="targetDir">Directory to test write permissions for.</param>
+    /// <returns>True if a test file could be created and detected; otherwise false.</returns>
+    public static bool HasWritePermission(string targetDir)
+    {
+        try
+        {
+            Directory.CreateDirectory(targetDir);
+            
+            string testFile = Path.Combine(targetDir, "test.txt");
+            DeleteFile(testFile);
+            
+            File.WriteAllText(testFile, "test");
+            bool success = File.Exists(testFile);
+            if (success)
+                DeleteFile(testFile);
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Unexpected error while testing write permissions at {targetDir}:");
+            _logger.Error(ex);
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Asynchronously tests whether the application has write permission to the given directory by attempting
+    /// to create a small test file ("test.txt") inside it.
+    /// </summary>
+    /// <param name="targetDir">The directory to test write permissions for. The directory will be created if it does not exist.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result is <c>true</c> if the test file could be created
+    /// and detected; otherwise <c>false</c>. Any exception is logged and results in <c>false</c>.
+    /// </returns>
+    public static async Task<bool> HasWritePermissionAsync(string targetDir)
+    {
+        try
+        {
+            Directory.CreateDirectory(targetDir);
+            
+            string testFile = Path.Combine(targetDir, "test.txt");
+            DeleteFile(testFile);
+            
+            await File.WriteAllTextAsync(testFile, "test");
+            bool success = File.Exists(testFile);
+            if (success)
+                File.Delete(testFile);
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Unexpected error while testing write permissions at {targetDir}:");
+            _logger.Error(ex);
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Checks whether the drive containing <paramref name="targetDir"/> has at least <paramref name="bytes"/>
+    /// bytes of available free space.
+    /// </summary>
+    /// <param name="targetDir">The directory to check the drive of. The method will determine the root drive from this path.</param>
+    /// <param name="bytes">The minimum number of free bytes required.</param>
+    public static bool HasEnoughFreeSpace(string targetDir, long bytes)
+    {
+        try
+        {
+            var driveInfo = new DriveInfo(Path.GetPathRoot(targetDir) ?? targetDir);
+            return driveInfo.AvailableFreeSpace >= bytes;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Unexpected error while checking free space at {targetDir}:");
+            _logger.Error(ex);
+            return false;
+        }
+    }
+    #endregion
+    
+    #region Hashing
     /// <summary>
     /// Verifies the SHA1 hash of a file against a given hash value.
     /// </summary>
@@ -383,193 +572,9 @@ public static class FileSystemHelper
             return null;
         }
     }
-
-    /// <summary>
-    /// Makes a file executable by modifying its permissions using the `chmod` command.
-    /// </summary>
-    /// <param name="path">The path of the file to make executable.</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation. The task result contains a boolean value:
-    /// true if the operation succeeded, false otherwise.
-    /// </returns>
-    public static async Task<bool> MakeExecutableAsync(string path)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(path))
-                return false;
-            
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "chmod",
-                    Arguments = $"+x \"{path}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                }
-            };
-
-            process.Start();
-            await process.WaitForExitAsync();
-
-            if (process.ExitCode != 0)
-            {
-                string error = await process.StandardError.ReadToEndAsync();
-                _logger.Exc($"Error while making '{path}' executable:");
-                _logger.Error(error);
-                return false;
-            }
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.Exc($"Failed to make '{path}' executable:");
-            _logger.Error(ex.ToString());
-            return false;
-        }
-    }
+    #endregion
     
-    /// <summary>
-    /// Converts a file size in bytes to a human-readable string format.
-    /// </summary>
-    /// <param name="size">The size of the file in bytes.</param>
-    /// <returns>
-    /// A string representing the file size in the most appropriate unit 
-    /// (B, KB, MB, GB, or TB) with two decimal places of precision.
-    /// </returns>
-    public static string GetFormatedSize(long size)
-    {
-        if (size < 1024)
-            return $"{size} B";
-        if (size < 1024 * 1024)
-            return $"{size / 1024.0:F2} KB";
-        if (size < 1024 * 1024 * 1024)
-            return $"{size / 1024.0 / 1024.0:F2} MB";
-        if (size < 1024L * 1024L * 1024L * 1024L)
-            return $"{size / 1024.0 / 1024.0 / 1024.0:F2} GB";
-        // Hopefully we won't reach this point, but just in case
-        return $"{size / 1024.0 / 1024.0 / 1024.0 / 1024.0:F2} TB";
-    }
-
-    /// <summary>
-    /// Ensures the existence of the `command_history.txt` file in the specified game directory.
-    /// If the file already exists, it is deleted and recreated as a read-only file.
-    /// </summary>
-    /// <param name="gameDir">The path to the game directory where the file should be fixed.</param>
-    public static void FixCommandHistoryFile(string gameDir)
-    {
-        try
-        {
-            if (!Directory.Exists(gameDir))
-                Directory.CreateDirectory(gameDir);
-
-            string commandHistoryFilePath = Path.Combine(gameDir, "command_history.txt");
-            if (File.Exists(commandHistoryFilePath))
-            {
-                var attribute = File.GetAttributes(commandHistoryFilePath);
-                if (attribute.HasFlag(FileAttributes.ReadOnly))
-                    return;
-                DeleteFile(commandHistoryFilePath);
-            }
-
-            File.Create(commandHistoryFilePath).Close();
-            var attributes = File.GetAttributes(commandHistoryFilePath);
-            attributes |= FileAttributes.ReadOnly;
-            File.SetAttributes(commandHistoryFilePath, attributes);
-        }
-        catch (Exception e)
-        {
-            _logger.Exc("Failed to fix command_history.txt file:");
-            _logger.Error(e.ToString());
-        }
-    }
-
-    /// <summary>
-    /// Tests whether the application can write to the given directory by creating a small test file.
-    /// Preserves the original behavior: creates the directory if needed, creates "test.txt", verifies its existence,
-    /// deletes it if created, and returns true on success; logs and returns false on any exception.
-    /// </summary>
-    /// <param name="targetDir">Directory to test write permissions for.</param>
-    /// <returns>True if a test file could be created and detected; otherwise false.</returns>
-    public static bool HasWritePermission(string targetDir)
-    {
-        try
-        {
-            Directory.CreateDirectory(targetDir);
-            
-            string testFile = Path.Combine(targetDir, "test.txt");
-            DeleteFile(testFile);
-            
-            File.WriteAllText(testFile, "test");
-            bool success = File.Exists(testFile);
-            if (success)
-                DeleteFile(testFile);
-            return success;
-        }
-        catch (Exception ex)
-        {
-            _logger.Error($"Unexpected error while testing write permissions at {targetDir}:");
-            _logger.Error(ex);
-            return false;
-        }
-    }
-    
-    /// <summary>
-    /// Asynchronously tests whether the application has write permission to the given directory by attempting
-    /// to create a small test file ("test.txt") inside it.
-    /// </summary>
-    /// <param name="targetDir">The directory to test write permissions for. The directory will be created if it does not exist.</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation. The task result is <c>true</c> if the test file could be created
-    /// and detected; otherwise <c>false</c>. Any exception is logged and results in <c>false</c>.
-    /// </returns>
-    public static async Task<bool> HasWritePermissionAsync(string targetDir)
-    {
-        try
-        {
-            Directory.CreateDirectory(targetDir);
-            
-            string testFile = Path.Combine(targetDir, "test.txt");
-            DeleteFile(testFile);
-            
-            await File.WriteAllTextAsync(testFile, "test");
-            bool success = File.Exists(testFile);
-            if (success)
-                File.Delete(testFile);
-            return success;
-        }
-        catch (Exception ex)
-        {
-            _logger.Error($"Unexpected error while testing write permissions at {targetDir}:");
-            _logger.Error(ex);
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Checks whether the drive containing <paramref name="targetDir"/> has at least <paramref name="bytes"/>
-    /// bytes of available free space.
-    /// </summary>
-    /// <param name="targetDir">The directory to check the drive of. The method will determine the root drive from this path.</param>
-    /// <param name="bytes">The minimum number of free bytes required.</param>
-    public static bool HasEnoughFreeSpace(string targetDir, long bytes)
-    {
-        try
-        {
-            var driveInfo = new DriveInfo(Path.GetPathRoot(targetDir) ?? targetDir);
-            return driveInfo.AvailableFreeSpace >= bytes;
-        }
-        catch (Exception ex)
-        {
-            _logger.Error($"Unexpected error while checking free space at {targetDir}:");
-            _logger.Error(ex);
-            return false;
-        }
-    }
-    
+    #region Safety
     /// <summary>
     /// Checks whether the specified file is locked by attempting to open it with exclusive access.
     /// </summary>
@@ -617,5 +622,62 @@ public static class FileSystemHelper
         if (full.Length < 10) 
             return false;
         return true;
+    }
+    #endregion
+    
+    /// <summary>
+    /// Converts a byte count into a human-readable string using binary (1024) units.
+    /// </summary>
+    /// <param name="size">Size in bytes.</param>
+    /// <returns>
+    /// A formatted string like "123 B", "456 KB", "789 MB" etc.
+    /// </returns>
+    public static string GetFormatedSize(long size)
+    {
+        if (size < 1024)
+            return $"{size} B";
+        
+        string[] units = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+        long bytes = size / 1024;
+        
+        for (int i = 0; i < units.Length; i++)
+        {
+            if (i == units.Length - 1 || bytes < 1024)
+                return $"{bytes} {units[i]}";
+            
+            bytes /= 1024;
+        }
+        return $"{bytes} RB";
+    }
+
+    /// <summary>
+    /// Ensures the existence of the `command_history.txt` file in the specified game directory.
+    /// If the file already exists, it is deleted and recreated as a read-only file.
+    /// </summary>
+    /// <param name="gameDir">The path to the game directory where the file should be fixed.</param>
+    public static void FixCommandHistoryFile(string gameDir)
+    {
+        try
+        {
+            if (!Directory.Exists(gameDir))
+                Directory.CreateDirectory(gameDir);
+
+            string commandHistoryFilePath = Path.Combine(gameDir, "command_history.txt");
+            if (File.Exists(commandHistoryFilePath))
+            {
+                var attribute = File.GetAttributes(commandHistoryFilePath);
+                if (attribute.HasFlag(FileAttributes.ReadOnly))
+                    return;
+                DeleteFile(commandHistoryFilePath);
+            }
+
+            File.Create(commandHistoryFilePath).Close();
+            MakeFileReadonly(commandHistoryFilePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc("Failed to fix command_history.txt file:");
+            _logger.Error(ex);
+        }
     }
 }
