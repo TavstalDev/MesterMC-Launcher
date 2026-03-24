@@ -15,7 +15,7 @@ public static class WindowsRegistryHelper
     private const string RegPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\MesterMC";
 
     /// <summary>
-    /// Creates or updates the uninstall registration for MesterMC Launcher in the current user's registry.
+    /// Creates or updates the uninstallation registration for the application in the current user's registry.
     /// </summary>
     /// <param name="installPath">Full path to the application's installation directory.</param>
     /// <param name="startMenuPath">Path to the application's Start Menu shortcut folder.</param>
@@ -45,6 +45,26 @@ public static class WindowsRegistryHelper
         key.SetValue("Contact", "Tavstal");
         key.SetValue("HelpLink", "https://github.com/TavstalDev/MesterMC-Launcher");
 
+        key.Flush(); // Force the update
+    }
+    
+    /// <summary>
+    /// Updates the "UninstallString" value for the application entry under the current user's
+    /// </summary>
+    /// <param name="uninstallString">
+    /// The complete command line to store as the uninstallation command (for example: "\"C:\path\updater.exe\" --uninstall-prepare").
+    /// </param>
+    /// <exception cref="Exception">
+    /// Thrown when the registry key cannot be opened for read/write access (for example if the key does not exist
+    /// or access is denied).
+    /// </exception>
+    public static void UpdateUninstallString(string uninstallString)
+    {
+        using RegistryKey key = Registry.CurrentUser.OpenSubKey(RegPath, RegistryKeyPermissionCheck.ReadWriteSubTree);
+        if (key == null)
+            throw new Exception("Failed to create registry key for MesterMC Launcher.");
+        
+        key.SetValue("UninstallString", uninstallString);
         key.Flush(); // Force the update
     }
 
