@@ -59,6 +59,7 @@ class Program
             }
             
             File.Copy(executablePath, targetPath, true);
+            WindowsRegistryHelper.UpdateUninstallString($"\"{targetPath}\" --uninstall");
 
             Process.Start(new ProcessStartInfo
             {

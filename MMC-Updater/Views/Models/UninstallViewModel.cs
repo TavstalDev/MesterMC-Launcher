@@ -135,11 +135,11 @@ public partial class UninstallViewModel : ObservableObject, IProgressReporter
             }
             
             SetStatus("Asztali ikon törlése...");
-            SetProgress(1.0 / 3.0);
+            SetProgress(33.0);
             FileSystemHelper.DeleteFile(desktopShortcutPath, this);
 
             SetStatus("Startmenü ikon törlése...");
-            SetProgress(2.0 / 3.0);
+            SetProgress(66.0);
             if (startMenuRootDir == startMenuShortcutDir)
             {
                 FileSystemHelper.DeleteFile(startMenuShortcutPath, this);
@@ -151,7 +151,7 @@ public partial class UninstallViewModel : ObservableObject, IProgressReporter
             }
             
             SetStatus("Játék könyvtár törlése...");
-            SetProgress(1.0);
+            SetProgress(100.0);
             if (!FileSystemHelper.DeleteDirectory(gameDir, this))
                 return;
             
