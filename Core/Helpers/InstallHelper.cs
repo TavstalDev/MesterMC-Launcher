@@ -30,9 +30,7 @@ public static class InstallHelper
                 if (string.IsNullOrEmpty(path))
                     return;
                 
-                if (File.Exists(path))
-                    File.Delete(path);
-                
+                FileSystemHelper.DeleteFile(path);
                 await File.WriteAllLinesAsync(path, [installPath, startMenuPath]);
                 break;
             }
@@ -42,9 +40,7 @@ public static class InstallHelper
                 if (string.IsNullOrEmpty(path))
                     return;
                 
-                if (File.Exists(path))
-                    File.Delete(path);
-                
+                FileSystemHelper.DeleteFile(path);
                 await File.WriteAllLinesAsync(path, [installPath, startMenuPath]);
                 break;
             }
@@ -69,7 +65,7 @@ public static class InstallHelper
                 string path = GetLinuxFilePath();
                 if (string.IsNullOrEmpty(path) || !File.Exists(path))
                     return;
-                File.Delete(path);
+                FileSystemHelper.DeleteFile(path);
                 break;
             }
             case EOperatingSystem.MacOS:
@@ -77,7 +73,7 @@ public static class InstallHelper
                 string path = GetMacOSFilePath();
                 if (string.IsNullOrEmpty(path) || !File.Exists(path))
                     return;
-                File.Delete(path);
+                FileSystemHelper.DeleteFile(path);
                 break;
             }
         }

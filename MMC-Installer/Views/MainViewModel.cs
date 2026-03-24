@@ -528,17 +528,15 @@ public partial class MainViewModel : ObservableObject
                     if (CreateDesktopShortcut)
                     {
                         var target = Path.Combine(OSHelper.GetDesktopDirectory(), shortcutName);
-                        if (File.Exists(target))
-                            File.Delete(target);
-                        File.CreateSymbolicLink(target, appPath);
+                        if (FileSystemHelper.DeleteFile(target))
+                            File.CreateSymbolicLink(target, appPath);
                     }
 
                     if (CreateStartMenuShortcut && !string.IsNullOrEmpty(startMenuDir))
                     {
                         var target = Path.Combine(startMenuDir, shortcutName);
-                        if (File.Exists(target))
-                            File.Delete(target);
-                        File.CreateSymbolicLink(target, appPath);
+                        if (FileSystemHelper.DeleteFile(target))
+                            File.CreateSymbolicLink(target, appPath);
                     }
                     
                     // TODO: Create uninstaller script
@@ -588,17 +586,15 @@ public partial class MainViewModel : ObservableObject
                     if (CreateDesktopShortcut)
                     {
                         var target = Path.Combine(OSHelper.GetDesktopDirectory(), shortcutName);
-                        if (File.Exists(target))
-                            File.Delete(target);
-                        File.CreateSymbolicLink(target, desktopFilePath);
+                        if (FileSystemHelper.DeleteFile(target))
+                            File.CreateSymbolicLink(target, desktopFilePath);
                     }
 
                     if (CreateStartMenuShortcut && !string.IsNullOrEmpty(startMenuDir))
                     {
                         var target = Path.Combine(startMenuDir, shortcutName);
-                        if (File.Exists(target))
-                            File.Delete(target);
-                        File.CreateSymbolicLink(target, desktopFilePath);
+                        if (FileSystemHelper.DeleteFile(target))
+                            File.CreateSymbolicLink(target, desktopFilePath);
                     }
                     
                     // TODO: Create uninstaller script
@@ -623,9 +619,7 @@ public partial class MainViewModel : ObservableObject
             if (!success && !string.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
                 ZipFile.ExtractToDirectory(backupPath, gameDir, true);
             
-            if (Directory.Exists(App.TmpDir))
-                FileSystemHelper.DeleteDirectory(App.TmpDir);
-
+            FileSystemHelper.DeleteDirectory(App.TmpDir);
             await InstallHelper.SaveInstallPathAsync(gameDir, startMenuDir ?? " ", "0.0.4"); // TODO: Make this dynamic
             await Dispatcher.UIThread.InvokeAsync(() =>
             {

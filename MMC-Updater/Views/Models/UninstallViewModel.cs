@@ -19,7 +19,7 @@ namespace Tavstal.MesterMC.Updater.Views.Models;
 /// Manages the uninstallation flow: prepares a review text, runs the uninstallation steps (delete shortcuts and installation folder),
 /// reports progress/status to the UI and logs errors.
 /// </summary>
-public partial class UninstallViewModel : ObservableObject
+public partial class UninstallViewModel : ObservableObject, IProgressReporter
 {
     private readonly CoreLogger _logger = new(typeof(UninstallViewModel));
     
@@ -136,26 +136,24 @@ public partial class UninstallViewModel : ObservableObject
             
             SetStatus("Asztali ikon törlése...");
             SetProgress(1.0 / 3.0);
-            if (File.Exists(desktopShortcutPath))
-                File.Delete(desktopShortcutPath);
+            FileSystemHelper.DeleteFile(desktopShortcutPath, this);
 
             SetStatus("Startmenü ikon törlése...");
             SetProgress(2.0 / 3.0);
             if (startMenuRootDir == startMenuShortcutDir)
             {
-                if (File.Exists(startMenuShortcutPath))
-                    File.Delete(startMenuShortcutPath);
+                FileSystemHelper.DeleteFile(startMenuShortcutPath, this);
             }
             else
             {
                 if (Directory.Exists(startMenuShortcutDir) && Directory.GetFiles(startMenuShortcutDir).Length == 1)
-                    Directory.Delete(startMenuShortcutDir, true);
+                    FileSystemHelper.DeleteDirectory(startMenuShortcutDir, this);
             }
             
             SetStatus("Játék könyvtár törlése...");
             SetProgress(1.0);
-            if (Directory.Exists(gameDir))
-                Directory.Delete(gameDir, true);
+            if (!FileSystemHelper.DeleteDirectory(gameDir, this))
+                return;
             
             InstallHelper.RemoveInstallPath();
             Dispatcher.UIThread.Invoke(() =>
@@ -213,5 +211,8 @@ public partial class UninstallViewModel : ObservableObject
             InstallText = string.Format(status, args);
         });
     }
+
+    public void Show() { }
+    public void Hide() { }
     #endregion 
 }

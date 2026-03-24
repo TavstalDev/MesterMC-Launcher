@@ -62,7 +62,7 @@ public class FabricInstance(
             fabricVersionMeta = JsonConvert.DeserializeObject<FabricVersionMeta>(resultJson);
             if (fabricVersionMeta == null)
             {
-                File.Delete(VersionData.CustomVersionJsonPath); // Delete it because this if part won't be executed again if it exists
+                FileSystemHelper.DeleteFile(VersionData.CustomVersionJsonPath, _progressReporter); // Delete it because this if part won't be executed again if it exists
                 _logger.Error("Fabric version meta is null after deserialization. Invalid JSON format.");
                 return null;
             }

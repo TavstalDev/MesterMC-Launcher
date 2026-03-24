@@ -711,6 +711,6 @@ public static class MinecraftFileService
                 File.Move(file, destFile);
         }
 
-        Directory.Delete(tempDir, true);
+        FileSystemHelper.DeleteDirectory(tempDir);
     }
 }

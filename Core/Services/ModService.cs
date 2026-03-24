@@ -87,14 +87,14 @@ public static class ModService
             if (modEntry == null)
             {
                 _logger.Info("Deleting unknown mod file: " + fileName);
-                File.Delete(file);
+                FileSystemHelper.DeleteFile(file);
                 return;
             }
 
             if (!FileSystemHelper.CheckSHA256(file, modEntry.Sha256Hash))
             {
                 _logger.Info("Deleting invalid mod file: " + fileName);
-                File.Delete(file);
+                FileSystemHelper.DeleteFile(file);
             }
         });
     }

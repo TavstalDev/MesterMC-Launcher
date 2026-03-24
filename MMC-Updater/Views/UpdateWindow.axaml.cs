@@ -243,13 +243,13 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             // 4. Remove Updater from the extracted files
             foreach (var file in Directory.GetFiles(targetTempDir))
                 if (file.Contains("Updater"))
-                    File.Delete(file);
+                    FileSystemHelper.DeleteFile(file, this);
 
             string tempBinDir = Path.Combine(targetTempDir, "bin");
             if (Directory.Exists(tempBinDir))
                 foreach (var file in Directory.GetFiles(tempBinDir))
                     if (file.Contains("Updater"))
-                        File.Delete(file);
+                        FileSystemHelper.DeleteFile(file, this);
             #endregion
 
             // 3. Move the extracted files to the application directory
@@ -259,7 +259,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             // 4. Delete the temporary directory
             SetStatus("Tisztítás...");
             if (Directory.Exists(App.TmpDir))
-                FileSystemHelper.DeleteDirectory(App.TmpDir);
+                FileSystemHelper.DeleteDirectory(App.TmpDir, this);
 
             // 5. Restart the application
             SetStatus("Újraindítás...");
@@ -290,7 +290,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
                 if (!success && backupCreated)
                     ZipFile.ExtractToDirectory(backupPath, applicationDir, true);
                 if (backupCreated)
-                    File.Delete(backupPath);
+                    FileSystemHelper.DeleteFile(backupPath, this);
                 if (success && !string.IsNullOrEmpty(executablePath))
                 {
                     ProcessStartInfo processInfo = new ProcessStartInfo()
