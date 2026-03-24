@@ -30,26 +30,39 @@ public static class FileSystemHelper
     /// <param name="progressReporter">
     /// Optional progress reporter used to surface user-facing status messages when the file cannot be deleted.
     /// May be null.</param>
-    public static void DeleteFile(string path, IProgressReporter? progressReporter = null)
+    public static bool DeleteFile(string path, IProgressReporter? progressReporter = null)
     {
+        if (string.IsNullOrEmpty(path) || string.IsNullOrWhiteSpace(path))
+            return false;
+        
         if (!File.Exists(path))
-            return;
+            return true; // Act like the file was deleted
 
         if (IsFileLocked(path))
         {
             _logger.Error($"Refusing to delete file '{path}' because it is currently locked by another process.");
             progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi fájl mert használatban van: {path}");
-            return;
+            return false;
         }
         
         if (!IsSafeToDelete(path))
         {
             _logger.Error("Refusing to delete file '{path}' because it is not considered safe to delete.");
             progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi fájl mert nem biztonságos törölni: {path}");
-            return;
+            return false;
         }
 
-        File.Delete(path);
+        try
+        {
+            File.Delete(path);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Unexpected error while trying to delete file '{path}': {ex}");
+            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi fájl: {path}. Hiba üzenet: {ex.Message}");
+            return false;
+        }
     }
     
     /// <summary>
@@ -59,47 +72,67 @@ public static class FileSystemHelper
     /// <param name="progressReporter">
     /// Optional progress reporter used to surface user-facing status messages when deletion is refused.
     /// May be null.</param>
-    public static void DeleteDirectory(string path, IProgressReporter? progressReporter = null)
+    public static bool DeleteDirectory(string path, IProgressReporter? progressReporter = null)
     {
-        if (!IsSafeToDelete(path))
+        try
         {
-            _logger.Error($"Refusing to delete directory '{path}' because it is not considered safe to delete.");
-            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár mert nem biztonságos törölni: {path}");
-            return;
-        }
+            if (string.IsNullOrEmpty(path) || string.IsNullOrWhiteSpace(path))
+                return false;
+            
+            if (!Directory.Exists(path))
+                return true;
 
-        string homeDir = OSHelper.GetHomeDirectory();
-        if (string.Equals(path, homeDir, StringComparison.OrdinalIgnoreCase))
-        {
-            _logger.Error($"Refusing to delete directory '{path}' because it is the user's home directory.");
-            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár mert az a felhasználó gyári könyvtára: {path}");
-            return;
-        }
-        
-        string programsDir = OSHelper.GetProgramsDirectory();
-        if (string.Equals(path, programsDir, StringComparison.OrdinalIgnoreCase))
-        {
-            _logger.Error($"Refusing to delete directory '{path}' because it is the system's programs directory.");
-            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár mert az a rendszer programkönyvtára: {path}");
-            return;
-        }
-        
-        string desktopDir = OSHelper.GetDesktopDirectory();
-        if (string.Equals(path, desktopDir, StringComparison.OrdinalIgnoreCase))
-        {
-            _logger.Error($"Refusing to delete directory '{path}' because it is the user's desktop directory.");
-            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár mert az a felhasználó asztali könyvtára: {path}");
-            return;
-        }
-        
-        var dirInfo = new DirectoryInfo(path);
-        foreach (FileInfo file in dirInfo.GetFiles())
-            DeleteFile(file.FullName, progressReporter);
+            if (!IsSafeToDelete(path))
+            {
+                _logger.Error($"Refusing to delete directory '{path}' because it is not considered safe to delete.");
+                progressReporter?.SetStatus(
+                    $"Hiba: Nem törölhető az alábbi könyvtár mert nem biztonságos törölni: {path}");
+                return false;
+            }
 
-        foreach (DirectoryInfo subDirectory in dirInfo.GetDirectories())
-            subDirectory.Delete(true);
+            string homeDir = OSHelper.GetHomeDirectory();
+            if (string.Equals(path, homeDir, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.Error($"Refusing to delete directory '{path}' because it is the user's home directory.");
+                progressReporter?.SetStatus(
+                    $"Hiba: Nem törölhető az alábbi könyvtár mert az a felhasználó gyári könyvtára: {path}");
+                return false;
+            }
 
-        Directory.Delete(path);
+            string programsDir = OSHelper.GetProgramsDirectory();
+            if (string.Equals(path, programsDir, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.Error($"Refusing to delete directory '{path}' because it is the system's programs directory.");
+                progressReporter?.SetStatus(
+                    $"Hiba: Nem törölhető az alábbi könyvtár mert az a rendszer programkönyvtára: {path}");
+                return false;
+            }
+
+            string desktopDir = OSHelper.GetDesktopDirectory();
+            if (string.Equals(path, desktopDir, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.Error($"Refusing to delete directory '{path}' because it is the user's desktop directory.");
+                progressReporter?.SetStatus(
+                    $"Hiba: Nem törölhető az alábbi könyvtár mert az a felhasználó asztali könyvtára: {path}");
+                return false;
+            }
+
+            var dirInfo = new DirectoryInfo(path);
+            foreach (FileInfo file in dirInfo.GetFiles())
+                DeleteFile(file.FullName, progressReporter);
+
+            foreach (DirectoryInfo subDirectory in dirInfo.GetDirectories())
+                subDirectory.Delete(true);
+
+            Directory.Delete(path);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Unexpected error while trying to delete directory '{path}': {ex}");
+            progressReporter?.SetStatus($"Hiba: Nem törölhető az alábbi könyvtár: {path}. Hiba üzenet: {ex.Message}");
+            return false;
+        }
     }
 
     /// <summary>
@@ -439,7 +472,7 @@ public static class FileSystemHelper
                 var attribute = File.GetAttributes(commandHistoryFilePath);
                 if (attribute.HasFlag(FileAttributes.ReadOnly))
                     return;
-                File.Delete(commandHistoryFilePath);
+                DeleteFile(commandHistoryFilePath);
             }
 
             File.Create(commandHistoryFilePath).Close();
@@ -468,13 +501,12 @@ public static class FileSystemHelper
             Directory.CreateDirectory(targetDir);
             
             string testFile = Path.Combine(targetDir, "test.txt");
-            if (File.Exists(testFile))
-                File.Delete(testFile);
+            DeleteFile(testFile);
             
             File.WriteAllText(testFile, "test");
             bool success = File.Exists(testFile);
             if (success)
-                File.Delete(testFile);
+                DeleteFile(testFile);
             return success;
         }
         catch (Exception ex)
@@ -501,8 +533,7 @@ public static class FileSystemHelper
             Directory.CreateDirectory(targetDir);
             
             string testFile = Path.Combine(targetDir, "test.txt");
-            if (File.Exists(testFile))
-                File.Delete(testFile);
+            DeleteFile(testFile);
             
             await File.WriteAllTextAsync(testFile, "test");
             bool success = File.Exists(testFile);
