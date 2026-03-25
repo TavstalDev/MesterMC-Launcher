@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using OtpNet;
@@ -256,6 +257,9 @@ public class LoginController : CustomControllerBase
                 await _dbContext.SaveChangesAsync();
             }
             
+            if (!user.TwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecret))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled for this user.");
+                
             var sessionAttemptClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorSessionAttempt && x.UserId == user.Id);
             int sessionAttempt = 0;
             if (sessionAttemptClaim != null)
@@ -266,7 +270,7 @@ public class LoginController : CustomControllerBase
                         "To many failed attempts. Please try reauthorizing again.");
             }
 
-            var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
+            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
             if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
             {
                 sessionAttempt += 1;
@@ -318,7 +322,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, ex.ToString());
         }
     }
     
@@ -503,6 +507,9 @@ public class LoginController : CustomControllerBase
                 await _dbContext.SaveChangesAsync();
             }
             
+            if (!user.TwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecret))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled for this user.");
+            
             var sessionAttemptClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionAttempt && x.UserId == user.Id);
             int sessionAttempt = 0;
             if (sessionAttemptClaim != null)
@@ -513,7 +520,7 @@ public class LoginController : CustomControllerBase
                         "To many failed attempts. Please try reauthorizing again.");
             }
 
-            var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
+            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
             if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
             {
                 sessionAttempt += 1;
