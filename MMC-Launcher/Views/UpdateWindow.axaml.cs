@@ -100,7 +100,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
-        Dispatcher.UIThread.InvokeAsync(async () => await OnLoadedAsync());
+        Task.Run(async () => await InitAsync());
     }
     
     /// <summary>
@@ -120,7 +120,7 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
     /// recoverable validation failures to avoid launching the main window in an invalid state.
     /// </summary>
     /// <returns>A task that completes when the startup sequence finishes.</returns>
-    private async Task OnLoadedAsync()
+    private async Task InitAsync()
     {
         try
         {
@@ -226,24 +226,27 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             }
             
             // 9. Start Main Window
-            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            Dispatcher.UIThread.Post(() =>
             {
-                SetStatus("Nem sikerült elindítani a fő ablakot.");
-                _logger.Error("Failed to start main window: Application lifetime is not IClassicDesktopStyleApplicationLifetime");
-                return;
-            }
+                if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    SetStatus("Nem sikerült elindítani a fő ablakot.");
+                    _logger.Error("Failed to start main window: Application lifetime is not IClassicDesktopStyleApplicationLifetime");
+                    return;
+                }
             
-            desktop.MainWindow =  new LauncherWindow
-            {
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            };
-            desktop.MainWindow.Show();
-            Close();
+                desktop.MainWindow =  new LauncherWindow
+                {
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                };
+                desktop.MainWindow.Show();
+                Close();
+            });
         }
         catch (Exception ex)
         {
-            SetStatus("Váratlan hiba.");
-            _logger.Error("Unexpected error during startup sequence: \n" + ex.Message);
+            SetStatus($"Váratlan hiba: \n{ex}");
+            _logger.Error("Unexpected error during startup sequence: \n" + ex);
         }
     }
     
