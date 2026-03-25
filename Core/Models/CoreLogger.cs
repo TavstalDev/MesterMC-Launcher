@@ -88,7 +88,7 @@ public class CoreLogger
         {
             // If console output fails, fallback to Debug.WriteLine
             System.Diagnostics.Debug.WriteLine($"{prefix} {message}");
-            System.Diagnostics.Debug.WriteLine($"Error logging message: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error logging message: {ex}");
         }
         finally
         {

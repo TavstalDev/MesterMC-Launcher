@@ -304,7 +304,7 @@ public static class OSHelper
         }
         catch (Exception ex)
         {
-            _logger.Error($"Failed to open the website after installation: {ex.Message}");
+            _logger.Error($"Failed to open the website after installation: {ex}");
         }
     }
 
