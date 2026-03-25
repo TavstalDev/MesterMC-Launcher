@@ -42,7 +42,7 @@ public static class TokenHelper
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(
             new JwtHeader(credentials),
-            new JwtPayload(issuer, audience, claims, DateTime.UtcNow, expireDate.Date)
+            new JwtPayload(issuer, audience, claims, DateTime.UtcNow, expireDate.UtcDateTime)
         );
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
