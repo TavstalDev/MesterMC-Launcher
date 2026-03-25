@@ -13,7 +13,7 @@ public class RegisterRequestBody
     /// Gets or sets the username of the user.
     /// This field is required and must be between 3 and 16 characters long.
     /// </summary>
-    [Required]
+    [Required(AllowEmptyStrings = false)]
     [MinLength(3)]
     [MaxLength(16)]
     public required string Username { get; set; }
@@ -22,16 +22,17 @@ public class RegisterRequestBody
     /// Gets or sets the email address of the user.
     /// This field is required and must be between 5 and 320 characters long.
     /// </summary>
-    [Required]
+    [Required(AllowEmptyStrings = false)]
     [MinLength(5)]
     [MaxLength(320)]
+    [EmailAddress]
     public required string EmailAddress { get; set; }
     
     /// <summary>
     /// Gets or sets the password of the user.
     /// This field is required and must be between 8 and 64 characters long.
     /// </summary>
-    [Required]
+    [Required(AllowEmptyStrings = false)]
     [MinLength(8)]
     [MaxLength(64)]
     public required string Password { get; set; }

@@ -120,4 +120,25 @@ public class Settings
         ImplementationName = configuration["Yggdrasil:ImplementationName"] ?? throw new ArgumentNullException("ImplementationName");
         ImplementationVersion = configuration["Yggdrasil:ImplementationVersion"] ?? throw new ArgumentNullException("ImplementationVersion");
     }
+
+    public Settings(string websiteUrl, string apiUrl, string databaseUser, string databasePassword, string encryptionKey, string issuer, string audience, string emailProvider, int emailPort, string emailAddress, string emailPassword, string[] skinDomains, string certPassword, byte[] cert, string serverName, string implementationName, string implementationVersion)
+    {
+        WebsiteUrl = websiteUrl;
+        ApiUrl = apiUrl;
+        DatabaseUser = databaseUser;
+        DatabasePassword = databasePassword;
+        EncryptionKey = encryptionKey;
+        Issuer = issuer;
+        Audience = audience;
+        EmailProvider = emailProvider;
+        EmailPort = emailPort;
+        EmailAddress = emailAddress;
+        EmailPassword = emailPassword;
+        SkinDomains = skinDomains;
+        CertPassword = certPassword;
+        Cert = cert;
+        ServerName = serverName;
+        ImplementationName = implementationName;
+        ImplementationVersion = implementationVersion;
+    }
 }
