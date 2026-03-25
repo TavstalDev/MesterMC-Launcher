@@ -62,9 +62,9 @@ public static class ImageHelper
         catch (HttpRequestException ex)
         {
             if (logger != null)
-                logger.Error($"An error occurred while downloading image '{url}' : {ex.Message}");
+                logger.Error($"An error occurred while downloading image '{url}' : {ex}");
             else
-                Console.WriteLine($"An error occurred while downloading image '{url}' : {ex.Message}");
+                Console.WriteLine($"An error occurred while downloading image '{url}' : {ex}");
             return null;
         }
     }

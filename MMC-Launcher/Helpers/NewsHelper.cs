@@ -50,7 +50,7 @@ public static class NewsHelper
         catch (Exception ex)
         {
             // Log any errors that occur during the operation
-            _logger.Error("Failed to fetch news: " + ex.Message);
+            _logger.Error($"Failed to fetch news: {ex}");
             return null;
         }
     }

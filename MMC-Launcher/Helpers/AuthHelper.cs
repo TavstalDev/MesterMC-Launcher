@@ -48,14 +48,14 @@ public static class AuthHelper
 
             if (!result.IsSuccessStatusCode && result.StatusCode != HttpStatusCode.Redirect)
             {
-                _logger.Error("Login failed with status code: " + result.StatusCode);
+                _logger.Error($"Login failed with status code: {result.StatusCode}");
                 try
                 {
                     var localCont = await result.Content.ReadAsStringAsync();
                     JObject localJson = JObject.Parse(localCont);
 
                     if (localJson.TryGetValue("message", out var value))
-                        _logger.Error("Login error message: " + value);
+                        _logger.Error($"Login error message: {value}");
                 }
                 catch
                 {
@@ -65,7 +65,7 @@ public static class AuthHelper
             }
 
             var content = await result.Content.ReadAsStringAsync();
-            _logger.Debug("Login response content: " + content);
+            _logger.Debug($"Login response content: {content}");
             JObject json = JObject.Parse(content);
 
             if (result.StatusCode == HttpStatusCode.Redirect) // When 2FA is required
@@ -73,7 +73,7 @@ public static class AuthHelper
                 string? sessionToken = json["Token"]?.ToString();
                 if (sessionToken == null)
                 {
-                    _logger.Error("Failed to get TFA session token: " + result.StatusCode);
+                    _logger.Error($"Failed to get TFA session token: {result.StatusCode}");
                     return null;
                 }
                 return (sessionToken, true, null);
@@ -82,13 +82,13 @@ public static class AuthHelper
             string? token = json["Token"]?.ToString();
             if (token == null)
             {
-                _logger.Error("Failed to get auth token: " + result.StatusCode);
+                _logger.Error($"Failed to get auth token: {result.StatusCode}");
                 return null;
             }
             string? userId = json["UserId"]?.ToString();
             if (userId == null)
             {
-                _logger.Error("Failed to get user ID: " + result.StatusCode);
+                _logger.Error($"Failed to get user ID: {result.StatusCode}");
                 return null;
             }
             
@@ -96,7 +96,7 @@ public static class AuthHelper
         }
         catch (Exception ex)
         {
-            _logger.Error("Login failed: " + ex.Message);
+            _logger.Error($"Login failed: {ex}");
             return null;
         }
     }
@@ -126,14 +126,14 @@ public static class AuthHelper
 
             if (!result.IsSuccessStatusCode)
             {
-                _logger.Error("Login failed with status code: " + result.StatusCode);
+                _logger.Error($"Login failed with status code: {result.StatusCode}");
                 try
                 {
                     var localCont = await result.Content.ReadAsStringAsync();
                     JObject localJson = JObject.Parse(localCont);
 
                     if (localJson.TryGetValue("message", out var value))
-                        _logger.Error("Login error message: " + value);
+                        _logger.Error($"Login error message: {value}");
                 }
                 catch
                 {
@@ -143,25 +143,25 @@ public static class AuthHelper
             }
 
             var content = await result.Content.ReadAsStringAsync();
-            _logger.Debug("TFA submission response content: " + content);
+            _logger.Debug($"TFA submission response content: {content}");
             JObject json = JObject.Parse(content);
             string? accessToken = json["Token"]?.ToString();
             if (accessToken == null)
             {
-                _logger.Error("Failed to get auth token: " + result.StatusCode);
+                _logger.Error($"Failed to get auth token: {result.StatusCode}");
                 return null;
             }
             string? userId = json["UserId"]?.ToString();
             if (userId == null)
             {
-                _logger.Error("Failed to get user ID: " + result.StatusCode);
+                _logger.Error($"Failed to get user ID: {result.StatusCode}");
                 return null;
             }
             return (accessToken, userId);
         }
         catch (Exception ex)
         {
-            _logger.Error("TFA submission failed: " + ex.Message);
+            _logger.Error($"TFA submission failed: {ex}");
             return null;
         }
     }
