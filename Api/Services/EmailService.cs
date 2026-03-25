@@ -9,7 +9,7 @@ namespace Tavstal.MesterMC.Api.Services;
 /// <summary>
 /// Service responsible for sending emails using SMTP.
 /// </summary>
-public class EmailService
+public class EmailService : IEmailService
 {
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<EmailService> _logger;
