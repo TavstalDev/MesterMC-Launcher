@@ -52,76 +52,97 @@ public class CapesController : CustomControllerBase
      TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UploadCape([BindRequired] IFormFile file)
     {
-        CustomUser? user = await GetCurrentUserAsync(_userManager);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
-        
-        if (!_userManager.HasPermission(user, CustomPermissions.Capes.Create))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
-        
-        if (file.Length > 1024 * 512) // 500 KB limit
-            return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
-        
-        if (!file.FileName.EndsWith(".png"))
-            return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
-
-        await using var stream = file.OpenReadStream();
-        using var sha256 = SHA256.Create();
-        byte[] hashBytes = await sha256.ComputeHashAsync(stream);
-        string fileHash = Convert.ToHexStringLower(hashBytes);
-        stream.Position = 0;
-        
-        FileData? existingCape = await _dbContext.FindFileDataAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE);
-        if (existingCape != null)
-            return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape with the same content already exists.");
-        
-        try 
+        try
         {
-            // 4. Check Format and Dimensions using ImageSharp
-            using var image = await Image.LoadAsync(stream);
-            var info = image.Metadata.DecodedImageFormat;
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
 
-            if (info?.Name != "PNG") 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
 
-            int width = image.Width;
-            int height = image.Height;
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!((width == 64 && (height == 32 || height == 64)) || (width == 512 && (height == 256 || height == 512)))) 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
-                
+            if (!_userManager.HasPermission(user, CustomPermissions.Capes.Create))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+
+            if (file.Length > 1024 * 512) // 500 KB limit
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+
+            if (!file.FileName.EndsWith(".png"))
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+
+            await using var stream = file.OpenReadStream();
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
-        }
-        catch (Exception)
-        {
-            Logger.LogError($"Failed to upload cape file: {fileHash}");
-            return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
-        }
 
-        FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData? existingCape =
+                await _dbContext.FindFileDataAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE);
+            if (existingCape != null)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape with the same content already exists.");
+
+            try
+            {
+                // 4. Check Format and Dimensions using ImageSharp
+                using var image = await Image.LoadAsync(stream);
+                var info = image.Metadata.DecodedImageFormat;
+
+                if (info?.Name != "PNG")
+                    return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+
+                int width = image.Width;
+                int height = image.Height;
+
+                if (!((width == 64 && (height == 32 || height == 64)) ||
+                      (width == 512 && (height == 256 || height == 512))))
+                    return ReturnResponseCode(HttpStatusCode.BadRequest,
+                        "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
+
+                stream.Position = 0;
+            }
+            catch (Exception)
+            {
+                Logger.LogError($"Failed to upload cape file: {fileHash}");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
+            }
+
+            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            {
+                Hash = fileHash,
+                FileName = $"{Guid.NewGuid():N}.png",
+                ContentType = "image/png",
+                Type = EFileDataType.CAPE,
+            }, true);
+            fd.SaveFile(stream);
+            Cape cape = await _dbContext.AddCapeAsync(new Cape
+            {
+                Name = file.FileName.Split('.')[0],
+                FileId = fd.Id,
+                IsPublic = true
+            }, true);
+            await _dbContext.AddUserCapeAsync(new UserCape
+            {
+                UserId = user.Id,
+                CapeId = cape.Id,
+                IsSelected = false,
+                Reason = "Uploaded by user",
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            }, true);
+            return ReturnResponseCode(HttpStatusCode.OK, "Cape uploaded successfully");
+        }
+        catch (Exception ex)
         {
-            Hash = fileHash,
-            FileName = $"{Guid.NewGuid():N}.png",
-            ContentType = "image/png",
-            Type = EFileDataType.CAPE,
-        }, true);
-        fd.SaveFile(stream);
-        Cape cape = await _dbContext.AddCapeAsync(new Cape
-        {
-            Name = file.FileName.Split('.')[0],
-            FileId = fd.Id,
-            IsPublic = true
-        }, true);
-        await _dbContext.AddUserCapeAsync(new UserCape
-        {
-            UserId = user.Id,
-            CapeId = cape.Id,
-            IsSelected = false,
-            Reason = "Uploaded by user",
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow
-        }, true);
-        return ReturnResponseCode(HttpStatusCode.OK, "Cape uploaded successfully");
+            Logger.LogError(ex, "Error uploading cape");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 
     
@@ -141,26 +162,44 @@ public class CapesController : CustomControllerBase
         TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteCape([BindRequired, FromRoute] ulong capeId)
     {
-        CustomUser? user = await GetCurrentUserAsync(_userManager);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
 
-        if (!_userManager.HasPermission(user, CustomPermissions.Capes.Delete))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
 
-        Cape? cape = await _dbContext.FindCapeAsync(x => x.Id == capeId);
-        if (cape == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found");
-        
-        cape.FileData.DeleteFile();
-        await _dbContext.RemoveFileDataAsync(cape.FileData);
-        await _dbContext.RemoveCapeAsync(cape);
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-        var capes = await _dbContext.GetUserCapesAsync(x => x.CapeId == capeId);
-        foreach (var userCape in capes)
-          await _dbContext.RemoveUserCapeAsync(userCape);
+            if (!_userManager.HasPermission(user, CustomPermissions.Capes.Delete))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
 
-        await _dbContext.SaveChangesAsync();
-        return ReturnResponseCode(HttpStatusCode.OK, "Cape deleted successfully");
+            Cape? cape = await _dbContext.FindCapeAsync(x => x.Id == capeId);
+            if (cape == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found");
+
+            cape.FileData.DeleteFile();
+            await _dbContext.RemoveFileDataAsync(cape.FileData);
+            await _dbContext.RemoveCapeAsync(cape);
+
+            var capes = await _dbContext.GetUserCapesAsync(x => x.CapeId == capeId);
+            foreach (var userCape in capes)
+                await _dbContext.RemoveUserCapeAsync(userCape);
+
+            await _dbContext.SaveChangesAsync();
+            return ReturnResponseCode(HttpStatusCode.OK, "Cape deleted successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Failed to delete cape with ID {capeId}");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 }

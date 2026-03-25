@@ -46,39 +46,59 @@ public class FilesController : CustomControllerBase
      TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetFile([BindRequired, FromRoute] string hash)
     {
-        string cacheKey = $"file:{hash}";
-        byte[]? bytes;
-        string contentType;
-        if (!_memoryCache.TryGetValue<(byte[], string)>(cacheKey, out var fd))
+        try
         {
-            var fileData = await _dbContext.FindFileDataAsync(x => x.Hash == hash && (x.Type == EFileDataType.CAPE || x.Type == EFileDataType.SKIN || x.Type == EFileDataType.PROFILE_PICTURE || x.Type == EFileDataType.NEWS_BANNER));
-            if (fileData == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "File not found.");
-            bytes = fileData.GetFileData();
-            if (bytes == null)
-                return ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to retrieve file data.");
-            contentType = fileData.ContentType;
-            _memoryCache.SetValue(cacheKey, (bytes, contentType), CacheTtl);
-        }
-        else
-        {
-            bytes = fd.Item1;
-            contentType = fd.Item2;
-        }
-        
-        string etag = "\"" + hash + "\"";
-        if (HttpContext.Request.Headers.TryGetValue("If-None-Match", out var incomingEtag))
-        {
-            if (incomingEtag.ToString().Equals(etag, StringComparison.Ordinal))
+            if (!ModelState.IsValid)
             {
-                HttpContext.Response.Headers.ETag = etag;
-                HttpContext.Response.Headers.CacheControl = "public,max-age=86400,immutable";
-                return ReturnResponseCode(HttpStatusCode.NotModified);
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
+
+            string cacheKey = $"file:{hash}";
+            byte[]? bytes;
+            string contentType;
+            if (!_memoryCache.TryGetValue<(byte[], string)>(cacheKey, out var fd))
+            {
+                var fileData = await _dbContext.FindFileDataAsync(x =>
+                    x.Hash == hash && (x.Type == EFileDataType.CAPE || x.Type == EFileDataType.SKIN ||
+                                       x.Type == EFileDataType.PROFILE_PICTURE || x.Type == EFileDataType.NEWS_BANNER));
+                if (fileData == null)
+                    return ReturnResponseCode(HttpStatusCode.NotFound, "File not found.");
+                bytes = fileData.GetFileData();
+                if (bytes == null)
+                    return ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to retrieve file data.");
+                contentType = fileData.ContentType;
+                _memoryCache.SetValue(cacheKey, (bytes, contentType), CacheTtl);
+            }
+            else
+            {
+                bytes = fd.Item1;
+                contentType = fd.Item2;
+            }
+
+            string etag = "\"" + hash + "\"";
+            if (HttpContext.Request.Headers.TryGetValue("If-None-Match", out var incomingEtag))
+            {
+                if (incomingEtag.ToString().Equals(etag, StringComparison.Ordinal))
+                {
+                    HttpContext.Response.Headers.ETag = etag;
+                    HttpContext.Response.Headers.CacheControl = "public,max-age=86400,immutable";
+                    return ReturnResponseCode(HttpStatusCode.NotModified);
+                }
+            }
+
+            HttpContext.Response.Headers.ETag = etag;
+            HttpContext.Response.Headers.CacheControl = "public,max-age=86400,immutable";
+            return File(bytes, contentType);
         }
-        
-        HttpContext.Response.Headers.ETag = etag;
-        HttpContext.Response.Headers.CacheControl = "public,max-age=86400,immutable";
-        return File(bytes, contentType);
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error retrieving file with hash {Hash}", hash);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 }

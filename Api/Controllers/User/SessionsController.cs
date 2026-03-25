@@ -44,15 +44,23 @@ public class SessionsController : CustomControllerBase
     [JsonResponse(typeof(List<CustomUserLogin>)),TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetSessions()
     {
-        CustomUser? user = await GetCurrentUserAsync(_userManager);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
-        
-        if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Sessions))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
-        
-        var userLogins = _dbContext.GetUserLogins(x => x.UserId == user.Id);
-        return ReturnJson(userLogins);
+        try
+        {
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+
+            if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Sessions))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+
+            var userLogins = _dbContext.GetUserLogins(x => x.UserId == user.Id);
+            return ReturnJson(userLogins);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred while retrieving user sessions.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 
     /// <summary>
@@ -69,19 +77,37 @@ public class SessionsController : CustomControllerBase
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeSession([BindRequired, FromRoute] ulong sessionId)
     {
-        CustomUser? user = await GetCurrentUserAsync(_userManager);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
 
-        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Session))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
-        
-        var userLogin = _dbContext.FindUserLogin(x => x.Id == sessionId && x.UserId == user.Id);
-        if (userLogin == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "Session not found.");
-        
-        await _dbContext.RemoveUserLoginAsync(userLogin, true);
-        return ReturnResponseCode(HttpStatusCode.OK, "Session revoked successfully.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+
+            if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Session))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+
+            var userLogin = _dbContext.FindUserLogin(x => x.Id == sessionId && x.UserId == user.Id);
+            if (userLogin == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Session not found.");
+
+            await _dbContext.RemoveUserLoginAsync(userLogin, true);
+            return ReturnResponseCode(HttpStatusCode.OK, "Session revoked successfully.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred while revoking the user session.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 
     /// <summary>
@@ -96,15 +122,23 @@ public class SessionsController : CustomControllerBase
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> RevokeAllSessions()
     {
-        CustomUser? user = await GetCurrentUserAsync(_userManager);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
-        
-        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Sessions))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
-        
-        await _dbContext.ClearUserLoginsAsync(user.Id, true);
-        return ReturnResponseCode(HttpStatusCode.OK, "All sessions revoked successfully.");
+        try
+        {
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+
+            if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Sessions))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+
+            await _dbContext.ClearUserLoginsAsync(user.Id, true);
+            return ReturnResponseCode(HttpStatusCode.OK, "All sessions revoked successfully.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred while revoking all user sessions.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
     
     #region Admin Endpoints
@@ -122,22 +156,40 @@ public class SessionsController : CustomControllerBase
     [JsonResponse(typeof(List<CustomUserLogin>)),TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSessionsAdmin([BindRequired, FromRoute] string userId)
     {
-        CustomUser? user = await GetCurrentUserAsync(_userManager);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
-        
-        if (!_userManager.HasPermission(user, CustomPermissions.Account.View.SessionsOther))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
-        
-        CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
-        if (targetUser == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
-        
-        if (!_userManager.HasHigherRoleThan(user, targetUser))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
-        
-        var userLogins = _dbContext.GetUserLogins(x => x.UserId == targetUser.Id);
-        return ReturnJson(userLogins);
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+
+            if (!_userManager.HasPermission(user, CustomPermissions.Account.View.SessionsOther))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+
+            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            if (targetUser == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
+
+            if (!_userManager.HasHigherRoleThan(user, targetUser))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+
+            var userLogins = _dbContext.GetUserLogins(x => x.UserId == targetUser.Id);
+            return ReturnJson(userLogins);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred while retrieving sessions for user with ID {UserId}.", userId);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 
     /// <summary>
@@ -155,26 +207,44 @@ public class SessionsController : CustomControllerBase
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeSessionAdmin([BindRequired, FromRoute] string userId, [BindRequired, FromRoute] ulong sessionId)
     {
-        CustomUser? user = await GetCurrentUserAsync(_userManager);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
-        
-        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.SessionOther))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
-        
-        CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
-        if (targetUser == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
-        
-        if (!_userManager.HasHigherRoleThan(user, targetUser))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
-        
-        var userLogin = _dbContext.FindUserLogin(x => x.Id == sessionId && x.UserId == targetUser.Id);
-        if (userLogin == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "Session not found.");
-        
-        await _dbContext.RemoveUserLoginAsync(userLogin, true);
-        return ReturnResponseCode(HttpStatusCode.OK, "Session revoked successfully.");
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+
+            if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.SessionOther))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+
+            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            if (targetUser == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
+
+            if (!_userManager.HasHigherRoleThan(user, targetUser))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+
+            var userLogin = _dbContext.FindUserLogin(x => x.Id == sessionId && x.UserId == targetUser.Id);
+            if (userLogin == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Session not found.");
+
+            await _dbContext.RemoveUserLoginAsync(userLogin, true);
+            return ReturnResponseCode(HttpStatusCode.OK, "Session revoked successfully.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred while revoking session.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 
     /// <summary>
@@ -191,22 +261,40 @@ public class SessionsController : CustomControllerBase
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeAllSessionsAdmin([BindRequired, FromRoute] string userId)
     {
-        CustomUser? user = await GetCurrentUserAsync(_userManager);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
-        
-        if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.SessionsOther))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
-        
-        CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
-        if (targetUser == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
-        
-        if (!_userManager.HasHigherRoleThan(user, targetUser))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
-        
-        await _dbContext.ClearUserLoginsAsync(targetUser.Id, true);
-        return ReturnResponseCode(HttpStatusCode.OK, "All sessions revoked successfully.");
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+
+            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+
+            if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.SessionsOther))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+
+            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            if (targetUser == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
+
+            if (!_userManager.HasHigherRoleThan(user, targetUser))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+
+            await _dbContext.ClearUserLoginsAsync(targetUser.Id, true);
+            return ReturnResponseCode(HttpStatusCode.OK, "All sessions revoked successfully.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred while revoking all sessions of the target user.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
     #endregion
 }

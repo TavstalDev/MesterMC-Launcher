@@ -22,7 +22,7 @@ public class TwoFactorController : CustomControllerBase {
     
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
-    private readonly EmailService _emailService;
+    private readonly IEmailService _emailService;
     private readonly Settings _settings;
     
     /// <summary>
@@ -33,7 +33,7 @@ public class TwoFactorController : CustomControllerBase {
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings) : base(logger)
+    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger)
     {
         _userManager = userManager;
         _dbContext = dbContext;
@@ -48,7 +48,7 @@ public class TwoFactorController : CustomControllerBase {
     /// <response code="200">Two-factor authentication enabled successfully.</response>
     /// <response code="401">Unauthorized. User is not authenticated.</response>
     /// <response code="403">Forbidden. Two-factor authentication is already enabled.</response>
-    /// <response code="500">Internal server error. Unexpected error occurred.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPatch("enable")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status500InternalServerError)]
@@ -56,6 +56,15 @@ public class TwoFactorController : CustomControllerBase {
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
@@ -75,8 +84,8 @@ public class TwoFactorController : CustomControllerBase {
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, "Failed to enable 2FA.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -87,7 +96,7 @@ public class TwoFactorController : CustomControllerBase {
     /// <response code="200">Two-factor authentication disabled successfully.</response>
     /// <response code="401">Unauthorized. User is not authenticated.</response>
     /// <response code="403">Forbidden. Two-factor authentication is not enabled.</response>
-    /// <response code="500">Internal server error. Unexpected error occurred.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPatch("disable")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status500InternalServerError)]
@@ -95,6 +104,15 @@ public class TwoFactorController : CustomControllerBase {
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             CustomUser? user = await GetCurrentUserAsync(_userManager);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
@@ -114,8 +132,8 @@ public class TwoFactorController : CustomControllerBase {
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, "Failed to disable 2FA.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -125,7 +143,7 @@ public class TwoFactorController : CustomControllerBase {
     /// <response code="200">2FA secret generated successfully.</response>
     /// <response code="401">Unauthorized. User is not authenticated.</response>
     /// <response code="403">Forbidden. Two-factor authentication is already enabled.</response>
-    /// <response code="500">Internal server error. Unexpected error occurred.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPatch("generate")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status500InternalServerError)]
@@ -154,8 +172,8 @@ public class TwoFactorController : CustomControllerBase {
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, "Failed to generate 2FA secret.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -165,7 +183,7 @@ public class TwoFactorController : CustomControllerBase {
     /// <response code="200">Recovery codes regenerated successfully.</response>
     /// <response code="401">Unauthorized. User is not authenticated.</response>
     /// <response code="403">Forbidden. Two-factor authentication is not enabled.</response>
-    /// <response code="500">Internal server error. Unexpected error occurred.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPatch("regenerate/recovery")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status500InternalServerError)]
@@ -206,8 +224,8 @@ public class TwoFactorController : CustomControllerBase {
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            Logger.LogError(ex, "Failed to regenerate recovery codes.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 }

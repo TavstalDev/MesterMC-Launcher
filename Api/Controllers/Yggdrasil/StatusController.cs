@@ -48,24 +48,33 @@ public class StatusController : CustomControllerBase
     [HttpGet] 
     public IActionResult Root()
     {
-        var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, _settings.CertPassword);
-        var rsa = cert.GetRSAPrivateKey();
-        if (rsa == null)
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to load RSA private key from certificate");
-
-        string signature = rsa.ExportSubjectPublicKeyInfoPem();
-        return ReturnJson(new
+        try
         {
-            skinDomains = _settings.SkinDomains,
-            signaturePublickey = signature,
-            meta = new Dictionary<string, object>
+            var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, _settings.CertPassword);
+            var rsa = cert.GetRSAPrivateKey();
+            if (rsa == null)
+                return ReturnResponseCode(HttpStatusCode.InternalServerError,
+                    "Failed to load RSA private key from certificate");
+
+            string signature = rsa.ExportSubjectPublicKeyInfoPem();
+            return ReturnJson(new
             {
-                { "serverName", _settings.ServerName },
-                { "implementationVersion", _settings.ImplementationVersion },
-                { "feature.non_email_login", true },
-                { "implementationName", _settings.ImplementationName }
-            }
-        });
+                skinDomains = _settings.SkinDomains,
+                signaturePublickey = signature,
+                meta = new Dictionary<string, object>
+                {
+                    { "serverName", _settings.ServerName },
+                    { "implementationVersion", _settings.ImplementationVersion },
+                    { "feature.non_email_login", true },
+                    { "implementationName", _settings.ImplementationName }
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error retrieving yggdrasil status");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 
     /// <summary>

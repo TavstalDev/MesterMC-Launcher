@@ -25,7 +25,7 @@ public class LoginController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
-    private readonly EmailService _emailService;
+    private readonly IEmailService _emailService;
     private readonly Settings _settings;
     
     /// <summary>
@@ -37,7 +37,7 @@ public class LoginController : CustomControllerBase
     /// <param name="emailService">The email service for sending emails.</param>
     /// <param name="settings">The application settings.</param>
     public LoginController(ILogger<LoginController> logger, CustomDbContext dbContext,
-        CustomUserManager userManager, EmailService emailService, Settings settings) : base(logger)
+        CustomUserManager userManager, IEmailService emailService, Settings settings) : base(logger)
     {
         _dbContext = dbContext;
         _userManager = userManager;
@@ -67,6 +67,15 @@ public class LoginController : CustomControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             var normalizedEmail = request.Email.Normalize();
             CustomUser? user = await _dbContext.FindUserAsync(x => (x.NormalizedEmail.Equals(normalizedEmail) || x.NormalizedUserName.Equals(normalizedEmail)));
             if (user == null)
@@ -179,7 +188,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, ex.ToString());
         }
     }
 
@@ -204,6 +213,15 @@ public class LoginController : CustomControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             if (!Request.Cookies.TryGetValue("mmc-twofactor-session", out var cookieValue) || string.IsNullOrEmpty(cookieValue))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
             
@@ -300,7 +318,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -324,6 +342,15 @@ public class LoginController : CustomControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             var normalizedUsername = request.Username.Normalize();
             CustomUser? user = await _dbContext.FindUserAsync(x => x.NormalizedUserName.Equals(normalizedUsername));
             if (user == null)
@@ -412,7 +439,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -432,10 +459,19 @@ public class LoginController : CustomControllerBase
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LoginTwoFactorAsync([FromBody] LauncherLoginTFASessionRequestBody request)
+    public async Task<IActionResult> LoginLauncherTwoFactorAsync([FromBody] LauncherLoginTFASessionRequestBody request)
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             var sessionClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionToken && x.ClaimValue == request.SessionToken);
             if (sessionClaim == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret.");
@@ -520,50 +556,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
-        }
-    }
-    
-    /// <summary>
-    /// Checks if the current user is logged in and retrieves their details.
-    /// </summary>
-    /// <response code="200">Request successful. Returns user details, roles, claims, and avatar information.</response>
-    /// <response code="401">Unauthorized. The user is not authenticated.</response>
-    /// <response code="500">Internal server error. An unexpected error occurred while processing the request.</response>
-    [HttpGet("/login/check")]
-    [TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status500InternalServerError)]
-    [JsonResponse(StatusCodes.Status200OK, typeof(LoggedInResponse))]
-    public async Task<IActionResult> CheckIfLoggedInAsync()
-    {
-        try
-        {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
-            if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
-            
-            List<CustomRole> roles = _userManager.GetUserRoles(user.Id);
-            var claims = _userManager.GetAllClaimsOfUser(user.Id);
-            FileData? avatar = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
-            bool hasAvatar = avatar?.Exists() ?? false;
-            string? avatarUrl = hasAvatar ? avatar?.GetUrl(_settings.ApiUrl) : string.Empty;
-            
-            return ReturnJson(new
-            {
-                statusCode = HttpStatusCode.OK,
-                UserId = user.Id,
-                Username = user.UserName,
-                DisplayName = user.DisplayName ?? user.UserName,
-                user.Email,
-                HasAvatar = hasAvatar,
-                Avatar = avatarUrl,
-                Roles = roles,
-                Claims = claims,
-            });
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -611,7 +604,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during logout: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 }

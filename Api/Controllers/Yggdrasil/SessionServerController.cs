@@ -89,32 +89,53 @@ public class SessionServerController : CustomControllerBase
     [HttpPost("join")]
     public async Task<IActionResult> Join([FromBody] YigJoinServerRequest request)
     {
-        string dashedUuid = Guid.Parse(request.selectedProfile).ToString("D");
-        CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "User not found for the provided selectedProfile UUID");
-        
-        UserPlaySession? session = await _dbContext.FindUserPlaySessionAsync(x => x.Token == request.accessToken);
-        if (session == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "No active session found for the provided access token");
-        
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        if (now > session.ExpiresAt) 
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "The access token has expired");
-        
-        string host = HttpContext.Request.Host.Host;
-        if (session.UserIp != host)
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "The IP address associated with the access token does not match the IP address of the request");
-        
-        await _dbContext.AddServerJoinAsync(new ServerJoin
+        try
         {
-            ServerId = request.serverId,
-            UserId = user.Id, 
-            UserIp = host, 
-            CreatedAt = now, 
-            ExpiresAt = now.AddDays(1) 
-        }, true);
-        return ReturnResponseCode(HttpStatusCode.NoContent);
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+
+            string dashedUuid = Guid.Parse(request.selectedProfile).ToString("D");
+            CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound,
+                    "User not found for the provided selectedProfile UUID");
+
+            UserPlaySession? session = await _dbContext.FindUserPlaySessionAsync(x => x.Token == request.accessToken);
+            if (session == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound,
+                    "No active session found for the provided access token");
+
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            if (now > session.ExpiresAt)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "The access token has expired");
+
+            string host = HttpContext.Request.Host.Host;
+            if (session.UserIp != host)
+                return ReturnResponseCode(HttpStatusCode.Forbidden,
+                    "The IP address associated with the access token does not match the IP address of the request");
+
+            await _dbContext.AddServerJoinAsync(new ServerJoin
+            {
+                ServerId = request.serverId,
+                UserId = user.Id,
+                UserIp = host,
+                CreatedAt = now,
+                ExpiresAt = now.AddDays(1)
+            }, true);
+            return ReturnResponseCode(HttpStatusCode.NoContent);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogCritical(ex, "Unknown error while processing join request for selectedProfile: {SelectedProfile}, serverId: {ServerId}.", request.selectedProfile, request.serverId);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 
     /// <summary>
@@ -133,23 +154,44 @@ public class SessionServerController : CustomControllerBase
     [HttpGet("hasJoined")]
     public async Task<IActionResult> HasJoined([FromQuery] string serverId, [FromQuery] string username, [FromQuery] string? ip)
     {
-        CustomUser? user = await _userManager.FindByNameAsync(username);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
-        
-        ServerJoin? join = await _dbContext.FindServerJoinAsync(x => x.ServerId == serverId && (x.UserIp == ip || ip == null));
-        if (join == null) 
-            return ReturnResponseCode(HttpStatusCode.NotFound, "No matching server join found for the provided serverId and IP address");
-        
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        if (now > join.ExpiresAt) 
-            return ReturnResponseCode(HttpStatusCode.Unauthorized, "The server join has expired");
-        
-        if (user.Id != join.UserId)
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "The provided username does not match the user associated with the server join");
-        
-        string json = await GetProfileResponseJsonAsync(user);
-        return ReturnJson(json);
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+
+            CustomUser? user = await _userManager.FindByNameAsync(username);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
+
+            ServerJoin? join =
+                await _dbContext.FindServerJoinAsync(x => x.ServerId == serverId && (x.UserIp == ip || ip == null));
+            if (join == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound,
+                    "No matching server join found for the provided serverId and IP address");
+
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            if (now > join.ExpiresAt)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "The server join has expired");
+
+            if (user.Id != join.UserId)
+                return ReturnResponseCode(HttpStatusCode.Forbidden,
+                    "The provided username does not match the user associated with the server join");
+
+            string json = await GetProfileResponseJsonAsync(user);
+            return ReturnJson(json);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogCritical(ex, "Unknown error while processing hasJoined request for serverId: {ServerId}, username: {Username}.", serverId, username);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 
     /// <summary>
@@ -168,6 +210,15 @@ public class SessionServerController : CustomControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             string dashedUuid = Guid.Parse(uuid).ToString("D");
             CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
             if (user == null)
@@ -190,7 +241,7 @@ public class SessionServerController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Unknown error while processing profile request for uuid: {Uuid}, unsigned: {Unsigned}. Error: {ErrorMessage}", uuid, unsigned, ex);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An error occurred while processing the request: " + ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     

@@ -46,22 +46,40 @@ public class PublicUserController : CustomControllerBase
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUserInfo([BindRequired, FromRoute] string userId)
     {
-        CustomUser? user = await _userManager.FindByIdAsync(userId);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
-
-        return ReturnJson(new
+        try
         {
-            user.Id,
-            AvatarUrl = user.Avatar?.GetUrl(_settings.ApiUrl),
-            user.DiscordId,
-            user.UserName,
-            user.CreateDate,
-            user.LastUpdate,
-            user.LockoutEnabled,
-            user.LockoutEnd,
-            user.LockoutReason
-        });
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+
+            CustomUser? user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+
+            return ReturnJson(new
+            {
+                user.Id,
+                AvatarUrl = user.Avatar?.GetUrl(_settings.ApiUrl),
+                user.DiscordId,
+                user.UserName,
+                user.CreateDate,
+                user.LastUpdate,
+                user.LockoutEnabled,
+                user.LockoutEnd,
+                user.LockoutReason
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred while retrieving user information.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 
     /// <summary>
@@ -76,26 +94,46 @@ public class PublicUserController : CustomControllerBase
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status304NotModified), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAvatar([BindRequired, FromRoute] string userId)
     {
-        CustomUser? user = await _userManager.FindByIdAsync(userId);
-        if (user == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
-        
-        if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Avatar))
-            return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
-        
-        FileData? existingAvatar = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
-        if (existingAvatar == null)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found to delete.");
-        
-        string etag = $"\"{existingAvatar.Hash}\"";
-        if (Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) &&
-            incomingEtag == etag)
+        try
         {
-            return ReturnResponseCode(HttpStatusCode.NotModified);
-        }
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
 
-        Response.Headers.CacheControl =
-            "public,max-age=3600,immutable";
-        return File(existingAvatar.GetFileStream(), existingAvatar.ContentType, existingAvatar.FileName, enableRangeProcessing: true);
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+
+            CustomUser? user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+
+            if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Avatar))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+
+            FileData? existingAvatar =
+                await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
+            if (existingAvatar == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found to delete.");
+
+            string etag = $"\"{existingAvatar.Hash}\"";
+            if (Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) &&
+                incomingEtag == etag)
+            {
+                return ReturnResponseCode(HttpStatusCode.NotModified);
+            }
+
+            Response.Headers.CacheControl =
+                "public,max-age=3600,immutable";
+            return File(existingAvatar.GetFileStream(), existingAvatar.ContentType, existingAvatar.FileName,
+                enableRangeProcessing: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occurred while retrieving the user's avatar.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 }

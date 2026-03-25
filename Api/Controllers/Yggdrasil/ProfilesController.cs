@@ -40,24 +40,42 @@ public class ProfilesController : CustomControllerBase
     [JsonResponse(typeof(List<Dictionary<string, string>>)), TextResponse(StatusCodes.Status404NotFound)]
     public IActionResult MinecraftProfile([FromBody] List<String> names)
     {
-        // Retrieve users from the database whose usernames match the provided list.
-        List<CustomUser> users = _dbContext.GetUsers(x => names.Contains(x.UserName));
-        if (users.Count == 0)
-            return ReturnResponseCode(HttpStatusCode.NotFound, "No users found with the provided usernames.");
-
-        // Prepare the response containing user IDs and usernames.
-        List<Dictionary<string, string>> response = new List<Dictionary<string, string>>();
-        foreach (CustomUser user in users)
+        try
         {
-            Dictionary<string, string> userData = new Dictionary<string, string>
+            if (!ModelState.IsValid)
             {
-                { "id", user.Id },
-                { "name", user.UserName }
-            };
-            response.Add(userData);
-        }
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
 
-        // Return the response as JSON.
-        return ReturnJson(response);
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+
+            // Retrieve users from the database whose usernames match the provided list.
+            List<CustomUser> users = _dbContext.GetUsers(x => names.Contains(x.UserName));
+            if (users.Count == 0)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "No users found with the provided usernames.");
+
+            // Prepare the response containing user IDs and usernames.
+            List<Dictionary<string, string>> response = new List<Dictionary<string, string>>();
+            foreach (CustomUser user in users)
+            {
+                Dictionary<string, string> userData = new Dictionary<string, string>
+                {
+                    { "id", user.Id },
+                    { "name", user.UserName }
+                };
+                response.Add(userData);
+            }
+
+            // Return the response as JSON.
+            return ReturnJson(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogCritical(ex, "Error retrieving Minecraft profiles for usernames: {Usernames}", string.Join(", ", names));
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
     }
 }

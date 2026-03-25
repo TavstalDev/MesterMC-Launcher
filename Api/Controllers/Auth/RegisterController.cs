@@ -28,7 +28,7 @@ public class RegisterController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
-    private readonly EmailService _emailService;
+    private readonly IEmailService _emailService;
     private readonly Settings _settings;
     
     /// <summary>
@@ -39,7 +39,7 @@ public class RegisterController : CustomControllerBase
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, EmailService emailService, Settings settings) : base(logger)
+    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, IEmailService emailService, Settings settings) : base(logger)
     {
         _dbContext = dbContext;
         _userManager = userManager;
@@ -55,7 +55,7 @@ public class RegisterController : CustomControllerBase
     /// <response code="400">Bad request. Invalid input data.</response>
     /// <response code="403">Forbidden. Password is compromised.</response>
     /// <response code="409">Conflict. User already exists.</response>
-    /// <response code="500">Internal server error. Unexpected error occurred.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPost("")]
     [EnableRateLimiting(RateLimits.AUTH_REGISTER)]
     [Consumes("multipart/form-data")]
@@ -66,6 +66,15 @@ public class RegisterController : CustomControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             if (await _userManager.IsCompromisedPasswordAsync(request.Password)) 
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Password is compromised.");
             
@@ -163,7 +172,7 @@ public class RegisterController : CustomControllerBase
     /// <response code="400">Bad request. Invalid confirmation token.</response>
     /// <response code="403">Forbidden. User is already confirmed.</response>
     /// <response code="404">Not found. User does not exist.</response>
-    /// <response code="500">Internal server error. Unexpected error occurred.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPatch("confirm")]
     [EnableRateLimiting(RateLimits.AUTH_REGISTER)]
     [Consumes("application/json")]
@@ -174,10 +183,19 @@ public class RegisterController : CustomControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             // Find the user by ID
             CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == request.UserId);
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "User does not exist.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "User does not exist.");
 
             // Check if the user's email is already confirmed
             if (user.EmailConfirmed)

@@ -24,7 +24,7 @@ public class RecoveryController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
-    private readonly EmailService _emailService;
+    private readonly IEmailService _emailService;
     private readonly Settings _settings;
     
     /// <summary>
@@ -35,7 +35,7 @@ public class RecoveryController : CustomControllerBase
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, EmailService emailService, Settings settings) : base(logger)
+    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger)
     {
         _userManager = userManager;
         _dbContext = dbContext;
@@ -51,7 +51,7 @@ public class RecoveryController : CustomControllerBase
     /// <response code="201">Recovery email sent successfully.</response>
     /// <response code="403">Forbidden. Email is not confirmed or recovery request is too frequent.</response>
     /// <response code="404">Not found. User does not exist.</response>
-    /// <response code="500">Internal server error. Unexpected error occurred.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPost("request")]
     [EnableRateLimiting(RateLimits.AUTH_RESET)]
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
@@ -60,6 +60,15 @@ public class RecoveryController : CustomControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             CustomUser? user = await _userManager.FindByEmailAsync(email);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
@@ -106,7 +115,7 @@ public class RecoveryController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -117,7 +126,7 @@ public class RecoveryController : CustomControllerBase
     /// <response code="200">Password reset successful.</response>
     /// <response code="403">Forbidden. Too many recovery attempts or token expired.</response>
     /// <response code="404">Not found. User or required claims do not exist.</response>
-    /// <response code="500">Internal server error. Unexpected error occurred.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPost("password")]
     [EnableRateLimiting(RateLimits.AUTH_RESET)]
     [Consumes("application/json")]
@@ -127,6 +136,15 @@ public class RecoveryController : CustomControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             CustomUser? user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
@@ -215,7 +233,7 @@ public class RecoveryController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -226,7 +244,7 @@ public class RecoveryController : CustomControllerBase
     /// <response code="200">2FA reset successful.</response>
     /// <response code="403">Forbidden. Too many recovery attempts.</response>
     /// <response code="404">Not found. User or required claims do not exist.</response>
-    /// <response code="500">Internal server error. Unexpected error occurred.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPost("2fa")]
     [EnableRateLimiting(RateLimits.AUTH_RESET)]
     [Consumes("application/json")]
@@ -236,6 +254,15 @@ public class RecoveryController : CustomControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
             CustomUser? user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
@@ -315,7 +342,7 @@ public class RecoveryController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred.");
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 }
