@@ -27,6 +27,9 @@ namespace Tavstal.MesterMC.Installer.Views;
 public partial class MainViewModel : ObservableObject
 {
     private readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(MainViewModel));
+    public readonly string HomeDirectory = OSHelper.GetHomeDirectory();
+    public readonly string DesktopDirectory = OSHelper.GetDesktopDirectory();
+    public readonly string StartmenuDirectory = OSHelper.GetProgramsDirectory();
     
     [ObservableProperty] private EInstallerWindow currentWindow;
     [ObservableProperty] private bool isLicenseAccepted;
@@ -192,6 +195,43 @@ public partial class MainViewModel : ObservableObject
         if (string.IsNullOrEmpty(directoryResult))
             return;
         
+        if (!PathHelper.IsValidPath(directoryResult))
+        {
+            PathErrorMessage = "A megadott könyvtár elérési útja érvénytelen.";
+            return;
+        }
+        
+        string? rootPath = Path.GetPathRoot(directoryResult);
+        if (string.IsNullOrEmpty(rootPath) || rootPath.Equals(directoryResult, StringComparison.OrdinalIgnoreCase))
+        {
+            PathErrorMessage = "A megadott játékkönyvtár a gyökér könyvtár, ami nem érvényes.";
+            return;
+        }
+
+        if (HomeDirectory.Equals(directoryResult, StringComparison.OrdinalIgnoreCase))
+        {
+            PathErrorMessage = "A megadott játékkönyvtár nem lehet a 'home' könyvtár.";
+            return;
+        }
+            
+        if (DesktopDirectory.Equals(directoryResult, StringComparison.OrdinalIgnoreCase))
+        {
+            PathErrorMessage = "A megadott játékkönyvtár nem lehet az 'asztal' könyvtár.";
+            return;
+        }
+            
+        if (StartmenuDirectory.Equals(directoryResult, StringComparison.OrdinalIgnoreCase))
+        {
+            PathErrorMessage = "A megadott játékkönyvtár nem lehet a 'start menü' könyvtár.";
+            return;
+        }
+        
+        if (!FileSystemHelper.HasEnoughFreeSpace(directoryResult, 1L * 1024 * 1024 * 1024)) // Check for at least 1 GB of free space
+        {
+            PathErrorMessage = "A megadott könyvtárban nincs elegendő szabad hely (legalább 1 GB szükséges).";
+            return;
+        }
+        PathErrorMessage = string.Empty;
         GameDirectory = directoryResult;
     }
     
@@ -204,6 +244,31 @@ public partial class MainViewModel : ObservableObject
         var directoryResult = await DirPickerInteraction.Handle(Unit.Default);
         if (string.IsNullOrEmpty(directoryResult))
             return;
+        
+        if (!PathHelper.IsValidPath(directoryResult))
+        {
+            PathErrorMessage = "A megadott könyvtár elérési útja érvénytelen.";
+            return;
+        }
+        
+        string? rootPath = Path.GetPathRoot(directoryResult);
+        if (string.IsNullOrEmpty(rootPath) || rootPath.Equals(directoryResult, StringComparison.OrdinalIgnoreCase))
+        {
+            PathErrorMessage = "A megadott könyvtár a gyökér könyvtár, ami nem érvényes.";
+            return;
+        }
+        
+        if (HomeDirectory.Equals(directoryResult, StringComparison.OrdinalIgnoreCase))
+        {
+            PathErrorMessage = "A megadott játékkönyvtár nem lehet a 'home' könyvtár.";
+            return;
+        }
+            
+        if (DesktopDirectory.Equals(directoryResult, StringComparison.OrdinalIgnoreCase))
+        {
+            PathErrorMessage = "A megadott játékkönyvtár nem lehet az 'asztal' könyvtár.";
+            return;
+        }
         
         StartMenuDirectory = directoryResult;
     }

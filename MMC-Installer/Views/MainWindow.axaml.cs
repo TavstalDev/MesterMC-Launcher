@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -82,6 +83,7 @@ public partial class MainWindow : KonkordWindow<MainViewModel>
     }
 
     #region Events
+
     /// <summary>
     /// Event handler for changes to the game directory text field.
     /// Validates the path and sets <see cref="MainViewModel.PathErrorMessage"/> accordingly.
@@ -91,7 +93,46 @@ public partial class MainWindow : KonkordWindow<MainViewModel>
     private void GameDirPath_OnTextChanged(object? sender, TextChangedEventArgs e)
     {
         if (DataContext == null) return;
-        DataContext.PathErrorMessage = PathHelper.IsValidPath(DataContext.GameDirectory) ? string.Empty : "A megadott játékkönyvtár nem érvényes.";
+        if (!PathHelper.IsValidPath(DataContext.GameDirectory))
+        {
+            DataContext.PathErrorMessage = "A megadott játékkönyvtár nem érvényes.";
+            return;
+        }
+
+        string gameDir = DataContext.GameDirectory!;
+        string? rootPath = Path.GetPathRoot(gameDir);
+        if (string.IsNullOrEmpty(rootPath) || rootPath.Equals(gameDir, StringComparison.OrdinalIgnoreCase))
+        {
+            DataContext.PathErrorMessage = "A megadott játékkönyvtár a gyökér könyvtár, ami nem érvényes.";
+            return;
+        }
+
+        if (DataContext.HomeDirectory.Equals(gameDir, StringComparison.OrdinalIgnoreCase))
+        {
+            DataContext.PathErrorMessage = "A megadott játékkönyvtár nem lehet a 'home' könyvtár.";
+            return;
+        }
+
+        if (DataContext.DesktopDirectory.Equals(gameDir, StringComparison.OrdinalIgnoreCase))
+        {
+            DataContext.PathErrorMessage = "A megadott játékkönyvtár nem lehet az 'asztal' könyvtár.";
+            return;
+        }
+
+        if (DataContext.StartmenuDirectory.Equals(gameDir, StringComparison.OrdinalIgnoreCase))
+        {
+            DataContext.PathErrorMessage = "A megadott játékkönyvtár nem lehet a 'start menü' könyvtár.";
+            return;
+        }
+
+        if (!FileSystemHelper.HasEnoughFreeSpace(gameDir, 1L * 1024 * 1024 * 1024))
+        {
+            DataContext.PathErrorMessage =
+                "A megadott játékkönyvtárban nincs elegendő szabad hely (legalább 1 GB szükséges).";
+            return;
+        }
+
+        DataContext.PathErrorMessage = string.Empty;
     }
 
     /// <summary>
@@ -103,7 +144,34 @@ public partial class MainWindow : KonkordWindow<MainViewModel>
     private void StartMenuPath_OnTextChanged(object? sender, TextChangedEventArgs e)
     {
         if (DataContext == null) return;
-        DataContext.PathErrorMessage = PathHelper.IsValidPath(DataContext.GameDirectory) ? string.Empty : "A megadott start menü könyvtár nem érvényes.";
+        
+        if (!PathHelper.IsValidPath(DataContext.StartMenuDirectory))
+        {
+            DataContext.PathErrorMessage = "A megadott start menü  nem érvényes.";
+            return;
+        }
+
+        string startMenuDir = DataContext.StartMenuDirectory!;
+        string? rootPath = Path.GetPathRoot(startMenuDir);
+        if (string.IsNullOrEmpty(rootPath) || rootPath.Equals(startMenuDir, StringComparison.OrdinalIgnoreCase))
+        {
+            DataContext.PathErrorMessage = "A megadott start menü könyvtár a gyökér könyvtár, ami nem érvényes.";
+            return;
+        }
+
+        if (DataContext.HomeDirectory.Equals(startMenuDir, StringComparison.OrdinalIgnoreCase))
+        {
+            DataContext.PathErrorMessage = "A megadott start menü könyvtár nem lehet a 'home' könyvtár.";
+            return;
+        }
+
+        if (DataContext.DesktopDirectory.Equals(startMenuDir, StringComparison.OrdinalIgnoreCase))
+        {
+            DataContext.PathErrorMessage = "A megadott start menü könyvtár nem lehet az 'asztal' könyvtár.";
+            return;
+        }
+        
+        DataContext.PathErrorMessage = string.Empty;
     }
     #endregion
 
