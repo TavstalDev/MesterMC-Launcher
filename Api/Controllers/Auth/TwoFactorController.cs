@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using OtpNet;
@@ -72,7 +73,7 @@ public class TwoFactorController : CustomControllerBase {
             if (user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
             
-            var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
+            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret!));
             if (!totp.VerifyTotp(twoFactorCode, out _, new VerificationWindow(2, 2)))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
@@ -120,7 +121,7 @@ public class TwoFactorController : CustomControllerBase {
             if (!user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
             
-            var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
+            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
             if (!totp.VerifyTotp(twoFactorCode, out _, new VerificationWindow(2, 2)))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             

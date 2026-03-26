@@ -9,7 +9,6 @@ using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
 using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
-using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
@@ -145,7 +144,7 @@ public class LoginController : CustomControllerBase
                 }
 
 
-                var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
+                var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
                 if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
                     return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             }
@@ -416,7 +415,7 @@ public class LoginController : CustomControllerBase
                 }
 
 
-                var totp = new Totp(Base32Encoding.ToBytes(user.TwoFactorSecret));
+                var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret!));
                 if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
                     return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             }
