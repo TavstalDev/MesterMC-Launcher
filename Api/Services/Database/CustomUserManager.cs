@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using OtpNet;
 using Tavstal.MesterMC.Api.Models;
-using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Models.Database.User.Claims;
 using Tavstal.MesterMC.Api.Utils.Extensions;
@@ -38,19 +37,6 @@ public class CustomUserManager(
     
 
     #region Roles & Claims
-
-    /// <summary>
-    /// Defines a list of claim types that should not be exposed.
-    /// These claims are used for sensitive operations such as email confirmation, recovery, and two-factor authentication.
-    /// </summary>
-    public readonly string[] UnexposableClaims =
-    [
-        CustomClaimTypes.EmailConfirmationToken,
-        CustomClaimTypes.EmailRecoveryToken,
-        CustomClaimTypes.TwoFactorRecoveryCode,
-        CustomClaimTypes.TwoFactorSessionToken,
-        CustomClaimTypes.TwoFactorLauncherSessionToken
-    ];
     
     #region Roles
     /// <summary>
@@ -466,9 +452,6 @@ public class CustomUserManager(
             if (string.IsNullOrEmpty(userClaim.ClaimType))
                 continue;
             
-            if (UnexposableClaims.Contains(userClaim.ClaimType))
-                continue;
-                
             if (addedKeys.Contains(userClaim.ClaimType))
                 continue;
                 
@@ -482,9 +465,6 @@ public class CustomUserManager(
                 if (string.IsNullOrEmpty(userClaim.ClaimType))
                     continue;
                 
-                if (UnexposableClaims.Contains(userClaim.ClaimType))
-                    continue;
-                    
                 if (addedKeys.Contains(userClaim.ClaimType))
                     continue;
                 

@@ -56,6 +56,8 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
     /// </remarks>
     public new DbSet<IdentityRoleClaim<string>> RoleClaims { get; private set; }
 
+    private DbSet<UserBackupCode> UserBackupCodes { get; set; }
+    
     private DbSet<UserBillingInformation> UserBillingInformations { get; set; }
     
     private DbSet<UserPlaySession> UserPlaySessions { get; set; }
@@ -701,6 +703,81 @@ public class CustomDbContext : IdentityDbContext<CustomUser, CustomRole, string,
     }
     #endregion
 
+    #region User Backup Codes
+    
+    /// <summary>
+    /// Operations for managing user backup codes in the database.
+    /// </summary>
+    /// <remarks>
+    /// These methods operate on the <see cref="UserBackupCodes"/> DbSet and provide
+    /// simple add/update/remove/query helpers. They support an optional
+    /// <paramref name="shouldSave"/> flag to persist changes immediately.
+    /// </remarks>
+    public async Task<UserBackupCode> AddUserBackupCodeAsync(UserBackupCode value,
+        bool shouldSave = false)
+    {
+        var result = await UserBackupCodes.AddAsync(value);
+        if (shouldSave) await SaveChangesAsync();
+        return result.Entity;
+    }
+    
+    /// <summary>
+    /// Updates an existing <see cref="UserBackupCode"/> entity.
+    /// </summary>
+    /// <param name="value">The backup code entity to update. It must be tracked or have a valid key.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the record.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public async Task UpdateUserBackupCodeAsync(UserBackupCode value, bool shouldSave = false)
+    {
+        UserBackupCodes.Update(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    /// <summary>
+    /// Removes an existing <see cref="UserBackupCode"/> entity from the context.
+    /// </summary>
+    /// <param name="value">The backup code entity to remove. It should exist in the database.</param>
+    /// <param name="shouldSave">Indicates whether to save changes to the database after adding the record.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public async Task RemoveUserBackupCodeAsync(UserBackupCode value, bool shouldSave = false)
+    {
+        UserBackupCodes.Remove(value);
+        if (shouldSave) await SaveChangesAsync();
+    }
+    
+    /// <summary>
+    /// Retrieves backup codes from the database.
+    /// </summary>
+    /// <param name="predicate">
+    /// Optional LINQ predicate to filter the returned backup codes.
+    /// If null, all backup codes are returned.
+    /// </param>
+    /// <returns>
+    /// A <see cref="Task{TResult}"/> whose result is a <see cref="List{UserBackupCode}"/>
+    /// containing the matching backup codes.
+    /// </returns>
+    public async Task<List<UserBackupCode>> GetUserBackupCodeAsync(
+        Expression<Func<UserBackupCode, bool>>? predicate = null)
+    {
+        if (predicate != null)
+            return await UserBackupCodes.Where(predicate).ToListAsync();
+        return await UserBackupCodes.ToListAsync();
+    }
+    
+    /// <summary>
+    /// Finds a single <see cref="UserBackupCode"/> that matches the provided predicate.
+    /// </summary>
+    /// <param name="predicate">A required predicate used to find the backup code.</param>
+    /// <returns>
+    /// A <see cref="Task{TResult}"/> whose result is the matching <see cref="UserBackupCode"/> or null if none found.
+    /// </returns>
+    public async Task<UserBackupCode?> FindUserBackupCodeAsync(Expression<Func<UserBackupCode, bool>> predicate)
+    {
+        return await UserBackupCodes.FirstOrDefaultAsync(predicate);
+    }
+
+    #endregion
+    
     #region User Billing Information
 
     /// <summary>
