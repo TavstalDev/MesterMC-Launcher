@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -8,6 +9,7 @@ using Tavstal.MesterMC.Api.Tests.Services;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Tavstal.MesterMC.Api.Tests.Models;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.Auth;
@@ -20,6 +22,7 @@ public class RegisterControllerTests
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly FakeEmailService _emailService;
     private readonly RegisterController _controller;
+    private readonly DefaultHttpContext _controllerHttpContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RegisterControllerTests"/> class and prepares
@@ -32,9 +35,23 @@ public class RegisterControllerTests
         var loggerMock = new Mock<ILogger<RegisterController>>();
         var dbContext = TestHelper.CreateInMemoryDbContext();
         var userManager = TestHelper.CreateCustomUserManager(dbContext);
-        _emailService = TestHelper.CreateEmailService();
+        _emailService = TestHelper.FakeEmailService;
         var settings = TestHelper.CreateTestSettings();
         _controller = new RegisterController(loggerMock.Object, dbContext, userManager, _emailService, settings);
+        
+        _controllerHttpContext = new DefaultHttpContext
+        {
+            Connection =
+            {
+                RemoteIpAddress = IPAddress.Parse(TestHelper.IpAddress)
+            }
+        };
+        _controllerHttpContext.Request.Headers.UserAgent = TestHelper.UserAgent;
+        _controllerHttpContext.Request.Host = new HostString("localhost", 5000);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = _controllerHttpContext
+        };
     }
 
     /// <summary>
