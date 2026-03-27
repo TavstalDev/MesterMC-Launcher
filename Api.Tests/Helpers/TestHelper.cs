@@ -13,11 +13,27 @@ using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Tests.Services;
+using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Tests.Helpers;
 
 public class TestHelper
 {
+    public const string UserAgent = "UnitTest/1.0";
+    public const string IpAddress = "127.0.0.1";
+    public static readonly ServiceProvider ServiceProvider = new ServiceCollection()
+        .AddLogging()
+        .AddMemoryCache()
+        .BuildServiceProvider();
+    public static readonly MemoryCacheService MemoryCacheService = new(ServiceProvider.GetRequiredService<IMemoryCache>());
+    public static readonly FakeEmailService FakeEmailService = new();
+
+    public static string GetFingerprint(string userId)
+    {
+        var rawData = $"{userId}-{UserAgent}-{IpAddress}";
+        return StringChiper.GetEncryptedSha256Hash(rawData, "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6");
+    }
+    
     public static CustomDbContext CreateInMemoryDbContext(string? dbName = null)
     {
         dbName ??= Guid.NewGuid().ToString();
@@ -44,24 +60,7 @@ public class TestHelper
         var lookupNormalizer = new UpperInvariantLookupNormalizer();
         var errors = new IdentityErrorDescriber();
 
-        var serviceProvider = new ServiceCollection()
-            .AddLogging()
-            .AddMemoryCache()
-            .BuildServiceProvider();
-
         var logger = NullLogger<CustomUserManager>.Instance;
-
-        // MemoryCacheService may require construction; fallback to mock if needed
-        MemoryCacheService memoryCacheService;
-        try
-        {
-            var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
-            memoryCacheService = new MemoryCacheService(memoryCache);
-        }
-        catch
-        {
-            memoryCacheService = new Mock<MemoryCacheService>().Object;
-        }
 
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build();
         var settings = CreateTestSettings();
@@ -74,17 +73,15 @@ public class TestHelper
             passwordValidators,
             lookupNormalizer,
             errors,
-            serviceProvider,
+            ServiceProvider,
             logger,
             db,
             configuration,
-            memoryCacheService,
+            MemoryCacheService,
             settings);
 
         return manager;
     }
-
-    public static FakeEmailService CreateEmailService() => new();
 
     public static Settings CreateTestSettings()
     {
