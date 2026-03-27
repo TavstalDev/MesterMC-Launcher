@@ -216,11 +216,11 @@ public class LoginController : CustomControllerBase
             string fingerprint = GetMachineFingerprint(userIdCookie);
             string tokenKey = $"auth:{fingerprint}:tfa:token";
             if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != sessionCookie)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session token.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
 
             string attemptKey = $"auth:{fingerprint}:tfa:attempts";
             if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session token.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
             
             if (cachedAttempts >= 3)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "To many failed attempts. Please try reauthorizing again.");
@@ -425,11 +425,11 @@ public class LoginController : CustomControllerBase
             string fingerprint = GetMachineFingerprint(request.UserId);
             string tokenKey = $"auth:{fingerprint}:tfa-launcher:token";
             if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != request.SessionToken)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session token.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
 
             string attemptKey = $"auth:{fingerprint}:tfa-launcher:attempts";
             if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session token.");
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
             
             if (cachedAttempts >= 3)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "To many failed attempts. Please try reauthorizing again.");

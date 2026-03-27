@@ -80,7 +80,7 @@ public class RecoveryController : CustomControllerBase
             string recoveryTokenKey = $"recovery:{fingerprint}:password:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:password:attempt";
             
-            if (!_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
+            if (_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
 
             string recoveryToken = TokenHelper.GenerateRecoveryToken();
@@ -142,7 +142,7 @@ public class RecoveryController : CustomControllerBase
             string recoveryAttemptKey = $"recovery:{fingerprint}:password:attempt";
             
             if (!_memoryCacheService.TryGetValue(recoveryAttemptKey, out int attempts))
-                return ReturnResponseCode(HttpStatusCode.NotFound, "Invalid or expired token.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid or expired token.");
             
             if (attempts > 3) 
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
@@ -209,7 +209,7 @@ public class RecoveryController : CustomControllerBase
             string recoveryTokenKey = $"recovery:{fingerprint}:tfa:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:tfa:attempt";
             
-            if (!_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
+            if (_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
             
             string recoveryToken = TokenHelper.GenerateRecoveryToken();
@@ -268,7 +268,7 @@ public class RecoveryController : CustomControllerBase
             string recoveryAttemptKey = $"recovery:{fingerprint}:tfa:attempt";
             
             if (!_memoryCacheService.TryGetValue(recoveryAttemptKey, out int attempts))
-                return ReturnResponseCode(HttpStatusCode.NotFound, "Invalid or expired token.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid or expired token.");
             
             if (attempts > 3) 
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
@@ -277,7 +277,7 @@ public class RecoveryController : CustomControllerBase
                 string.IsNullOrEmpty(cachedToken) || cachedToken != request.RecoveryToken)
             {
                 _memoryCacheService.SetValue(recoveryAttemptKey, attempts + 1);
-                return ReturnResponseCode(HttpStatusCode.NotFound, "Invalid or expired token.");
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid or expired token.");
             }
             
             if (!user.TwoFactorEnabled)
