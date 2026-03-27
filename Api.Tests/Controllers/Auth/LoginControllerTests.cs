@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using System.Globalization;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +9,6 @@ using Newtonsoft.Json.Linq;
 using OtpNet;
 using Tavstal.MesterMC.Api.Controllers.Auth;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
-using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
@@ -36,18 +34,19 @@ public class LoginControllerTests
         var loggerMock = new Mock<ILogger<LoginController>>();
         _dbContext = TestHelper.CreateInMemoryDbContext();
         var userManager = TestHelper.CreateCustomUserManager(_dbContext);
-        var emailService = TestHelper.CreateEmailService();
+        var emailService = TestHelper.FakeEmailService;
         var settings = TestHelper.CreateTestSettings();
-        _controller = new LoginController(loggerMock.Object, _dbContext, userManager, emailService, settings);
+        var memoryCache = TestHelper.MemoryCacheService;
+        _controller = new LoginController(loggerMock.Object, _dbContext, userManager, emailService, memoryCache, settings);
         _controllerHttpContext = new DefaultHttpContext
         {
             Connection =
             {
-                RemoteIpAddress = IPAddress.Parse("127.0.0.1")
+                RemoteIpAddress = IPAddress.Parse(TestHelper.IpAddress)
             }
         };
         // Set User-Agent header
-        _controllerHttpContext.Request.Headers.UserAgent = "UnitTestAgent/1.0";
+        _controllerHttpContext.Request.Headers.UserAgent = TestHelper.UserAgent;
         _controllerHttpContext.Request.Host = new HostString("localhost", 5000);
         _controller.ControllerContext = new ControllerContext
         {
@@ -77,17 +76,19 @@ public class LoginControllerTests
         [Fact(DisplayName = "Success: Login with valid credentials")]
         public async Task ReturnsOk()
         {
-            string? result = await AddMockUserAndLoginAsync();
-            result.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + result);
+            var result = await AddMockUserAndLoginAsync();
+            var content = result.content;
+            content.Should().NotBeNull();
+            _testOutputHelper.WriteLine("Result: " + content);
         }
         
         [Fact(DisplayName = "Redirect: TFA enabled")]
         public async Task ReturnsRedirect()
         {
-            string? result = await AddMockUserAndLoginAsync(true);
-            result.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + result);
+            var result = await AddMockUserAndLoginAsync(true);
+            var content = result.content;
+            content.Should().NotBeNull();
+            _testOutputHelper.WriteLine("Result: " + content);
         }
 
         [Fact(DisplayName = "Failure: Non-existent user")]
@@ -128,8 +129,8 @@ public class LoginControllerTests
             _userMock.LockoutEnabled = true;
             _userMock.LockoutEnd = DateTime.UtcNow.AddDays(30);
             _userMock.LockoutReason = "Too many failed login attempts";
-            string? result = await AddMockUserAndLoginAsync();
-            _testOutputHelper.WriteLine("Result: " + result);
+            var result = await AddMockUserAndLoginAsync();
+            _testOutputHelper.WriteLine("Result: " + result.content);
         }
     }
 
@@ -141,8 +142,9 @@ public class LoginControllerTests
         public async Task ReturnsOk()
         {
             await AddMockUserAndLoginAsync(true);
-            var setCookieHeader = _controllerHttpContext.Response.Headers.SetCookie.ToString();
-            setCookieHeader.Should().Contain("mmc-twofactor-session=");
+            var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
+            setCookie.Should().Contain("mmc-twofactor-session=");
+            setCookie.Should().Contain("mmc-userId=");
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
             byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret);
@@ -196,31 +198,16 @@ public class LoginControllerTests
         [Fact(DisplayName = "Failure: Expired TFA session")]
         public async Task ReturnsForbidden_ForExpiredSession()
         {
-            await AddMockUserAndLoginAsync(true);
+            var loginResult = await AddMockUserAndLoginAsync(true);
             var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
             setCookie.Should().Contain("mmc-twofactor-session=");
+            setCookie.Should().Contain("mmc-userId=");
 
-            if (!string.IsNullOrEmpty(setCookie))
-            {
-                var cookiePair = setCookie.Split(';', 2)[0].Trim();
-                _controllerHttpContext.Request.Headers.Cookie = cookiePair;
-                var cookieValue = cookiePair.Split('=', 2)[1];
-                
-                var sessionClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorSessionToken && x.ClaimValue == cookieValue);
-                sessionClaim.Should().NotBeNull();
-
-                var expiryClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorSessionExpiration && x.UserId == sessionClaim.UserId);
-                expiryClaim.Should().NotBeNull();
-
-                await _dbContext.RemoveUserClaimAsync(expiryClaim);
-                await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                {
-                    UserId = sessionClaim.UserId,
-                    ClaimType = CustomClaimTypes.TwoFactorSessionExpiration,
-                    ClaimValue = DateTimeOffset.UtcNow.AddMinutes(-10).ToString(CultureInfo.InvariantCulture)
-                });
-                await _dbContext.SaveChangesAsync();
-            }
+            var memoryCacheService = TestHelper.MemoryCacheService;
+            string fingerprint = TestHelper.GetFingerprint(loginResult.userId);
+            string tokenKey = $"auth:{fingerprint}:tfa:token";
+            if (memoryCacheService.TryGetValue(tokenKey, out string? _))
+                memoryCacheService.RemoveValue(tokenKey);
             
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
             {
@@ -229,7 +216,7 @@ public class LoginControllerTests
 
             result.Should().BeOfType<ObjectResult>();
             var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(403);
+            obj!.StatusCode.Should().Be(401);
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
     }
@@ -242,17 +229,19 @@ public class LoginControllerTests
         [Fact(DisplayName = "Success: Launcher login with valid credentials")]
         public async Task ReturnsOk()
         { 
-            string? result = await AddMockUserAndLoginLauncherAsync();
-            result.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + result);
+            var result = await AddMockUserAndLoginLauncherAsync();
+            var content = result.content;
+            content.Should().NotBeNull();
+            _testOutputHelper.WriteLine("Result: " + content);
         }
         
         [Fact(DisplayName = "Redirect: Launcher login with TFA")]
         public async Task ReturnsRedirect_WhenTwoFactorEnabled()
         {
-            string? result = await AddMockUserAndLoginLauncherAsync(true);
-            result.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + result);
+            var result = await AddMockUserAndLoginLauncherAsync(true);
+            var content = result.content;
+            content.Should().NotBeNull();
+            _testOutputHelper.WriteLine("Result: " + content);
         }
 
         [Fact(DisplayName = "Failure: Incorrect password")]
@@ -263,26 +252,6 @@ public class LoginControllerTests
             {
                 Username = _userMock.UserName,
                 Password = "wrong-password"
-            });
-            
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
-        }
-
-        [Fact(DisplayName = "Failure: Invalid code returns unauthorized")]
-        public async Task ReturnsUnauthorized_ForInvalidTwoFactorCode()
-        {
-            _userMock.TwoFactorEnabled = true;
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _dbContext.AddUserAsync(_userMock, true);
-            
-            IActionResult result = await _controller.LoginLauncherAsync(new LauncherLoginRequestBody
-            {
-                Username = _userMock.UserName,
-                Password = _passwordMock,
-                TwoFactorCode = "000000"
             });
             
             result.Should().BeOfType<ObjectResult>();
@@ -301,13 +270,14 @@ public class LoginControllerTests
         [Fact(DisplayName = "Success: Launcher 2FA flow (redirect then confirm)")]
         public async Task ReturnsOk()
         {
-            string? result = await AddMockUserAndLoginLauncherAsync(true);
-            result.Should().NotBeNullOrEmpty();
-            JObject json = JObject.Parse(result);
+            var loginResult = await AddMockUserAndLoginLauncherAsync(true);
+            var content = loginResult.content;
+            content.Should().NotBeNullOrEmpty();
+            JObject json = JObject.Parse(content);
             string sessionToken = json["token"]?.ToString()!;
             sessionToken.Should().NotBeNullOrEmpty();
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
-            
+
             byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret);
             var totpGenerator = new Totp(secretBytes);
             string expectedCode = totpGenerator.ComputeTotp();
@@ -315,10 +285,11 @@ public class LoginControllerTests
             IActionResult secondResult = await _controller.LoginLauncherTwoFactorAsync(
                 new LauncherLoginTFASessionRequestBody
                 {
+                    UserId = loginResult.userId,
                     SessionToken = sessionToken,
                     TwoFactorCode = expectedCode
                 });
-            
+
             secondResult.Should().BeOfType<ContentResult>();
             var secondContent = (secondResult as ContentResult)!.Content;
             secondContent.Should().Contain("Login successful");
@@ -328,13 +299,14 @@ public class LoginControllerTests
         [Fact(DisplayName = "Failure: Missing/invalid session token")]
         public async Task ReturnsUnauthorized_ForMissingToken()
         {
-            await AddMockUserAndLoginLauncherAsync(true, false);
+            var loginResult = await AddMockUserAndLoginLauncherAsync(true, false);
             IActionResult result = await _controller.LoginLauncherTwoFactorAsync(new LauncherLoginTFASessionRequestBody
             {
+                UserId = loginResult.userId,
                 SessionToken = "invalid-token",
                 TwoFactorCode = "000000"
             });
-            
+
             result.Should().BeOfType<ObjectResult>();
             var objectResult = result as ObjectResult;
             objectResult!.StatusCode.Should().Be(401);
@@ -344,18 +316,20 @@ public class LoginControllerTests
         [Fact(DisplayName = "Failure: Invalid two-factor code")]
         public async Task ReturnsUnauthorized_ForInvalidCode()
         {
-            string? result = await AddMockUserAndLoginLauncherAsync(true);
-            result.Should().NotBeNullOrEmpty();
-            JObject json = JObject.Parse(result);
+            var loginResult = await AddMockUserAndLoginLauncherAsync(true);
+            var content = loginResult.content;
+            content.Should().NotBeNullOrEmpty();
+            JObject json = JObject.Parse(content);
             string sessionToken = json["token"]?.ToString()!;
-            
+
             IActionResult secondResult = await _controller.LoginLauncherTwoFactorAsync(
                 new LauncherLoginTFASessionRequestBody
                 {
+                    UserId = loginResult.userId,
                     SessionToken = sessionToken,
                     TwoFactorCode = "000000"
                 });
-            
+
             secondResult.Should().BeOfType<ObjectResult>();
             var objectResult = secondResult as ObjectResult;
             objectResult!.StatusCode.Should().Be(401);
@@ -365,36 +339,29 @@ public class LoginControllerTests
         [Fact(DisplayName = "Failure: Expired session token")]
         public async Task ReturnsForbidden_ForExpiredLauncherSession()
         {
-            string? result = await AddMockUserAndLoginLauncherAsync(true);
-            result.Should().NotBeNullOrEmpty();
-            JObject json = JObject.Parse(result);
+            var loginResult = await AddMockUserAndLoginLauncherAsync(true);
+            var content = loginResult.content;
+            content.Should().NotBeNullOrEmpty();
+            JObject json = JObject.Parse(content);
             string sessionToken = json["token"]?.ToString()!;
-            
-            var sessionClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionToken && x.ClaimValue == sessionToken);
-            sessionClaim.Should().NotBeNull();
 
-            var expiryClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionExpiration && x.UserId == sessionClaim.UserId);
-            expiryClaim.Should().NotBeNull();
+            var memoryCacheService = TestHelper.MemoryCacheService;
+            string fingerprint = TestHelper.GetFingerprint(loginResult.userId);
+            string tokenKey = $"auth:{fingerprint}:tfa-launcher:token";
+            if (memoryCacheService.TryGetValue(tokenKey, out string? _))
+                memoryCacheService.RemoveValue(tokenKey);
 
-            await _dbContext.RemoveUserClaimAsync(expiryClaim);
-            await _dbContext.SetUserClaimAsync(new CustomUserClaim
-            {
-                UserId = sessionClaim.UserId,
-                ClaimType = CustomClaimTypes.TwoFactorLauncherSessionExpiration,
-                ClaimValue = DateTimeOffset.UtcNow.AddMinutes(-10).ToString(CultureInfo.InvariantCulture)
-            });
-            await _dbContext.SaveChangesAsync();
-            
             IActionResult secondResult = await _controller.LoginLauncherTwoFactorAsync(
                 new LauncherLoginTFASessionRequestBody
                 {
+                    UserId = loginResult.userId,
                     SessionToken = sessionToken,
                     TwoFactorCode = "000000"
                 });
-            
+
             secondResult.Should().BeOfType<ObjectResult>();
             var objectResult = secondResult as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
+            objectResult!.StatusCode.Should().Be(401);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
     }
@@ -436,16 +403,16 @@ public class LoginControllerTests
         }
     }
     
-    private async Task<string?> AddMockUserAndLoginAsync(bool enableTwoFactor = false, bool performLogin = true)
+    private async Task<(string userId, string? content)> AddMockUserAndLoginAsync(bool enableTwoFactor = false, bool performLogin = true)
     {
         _userMock.TwoFactorEnabled = enableTwoFactor;
         if (enableTwoFactor)
             _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
         
-        await _dbContext.AddUserAsync(_userMock, true);
+        var user = await _dbContext.AddUserAsync(_userMock, true);
 
         if (!performLogin)
-            return null;
+            return (user.Id, null);
         
         IActionResult result = await _controller.LoginAsync(new LoginRequestBody
         {
@@ -457,25 +424,26 @@ public class LoginControllerTests
         var contentResult = result as ContentResult;
         contentResult.Should().NotBeNull();
         
-        var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
-        if (!string.IsNullOrEmpty(setCookie))
+        var setCookies = _controllerHttpContext.Response.Headers.SetCookie;
+        if (setCookies.Count > 0)
         {
-            var cookiePair = setCookie.Split(';', 2)[0].Trim();
-            _controllerHttpContext.Request.Headers.Cookie = cookiePair;
+            var cookiePairs = setCookies
+                .Select(c => c?.Split(';')[0].Trim());
+            _controllerHttpContext.Request.Headers.Cookie = string.Join("; ", cookiePairs);
         }
-        return contentResult.Content;
+        return (user.Id, contentResult.Content);
     }
     
-    private async Task<string?> AddMockUserAndLoginLauncherAsync(bool enableTwoFactor = false, bool performLogin = true)
+    private async Task<(string userId, string? content)> AddMockUserAndLoginLauncherAsync(bool enableTwoFactor = false, bool performLogin = true)
     {
         _userMock.TwoFactorEnabled = enableTwoFactor;
         if (enableTwoFactor)
             _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
         
-        await _dbContext.AddUserAsync(_userMock, true);
+        var user = await _dbContext.AddUserAsync(_userMock, true);
 
         if (!performLogin)
-            return null;
+            return (user.Id, null); 
         
         IActionResult result = await _controller.LoginLauncherAsync(new LauncherLoginRequestBody
         {
@@ -487,12 +455,13 @@ public class LoginControllerTests
         var contentResult = result as ContentResult;
         contentResult.Should().NotBeNull();
         
-        var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
-        if (!string.IsNullOrEmpty(setCookie))
+        var setCookies = _controllerHttpContext.Response.Headers.SetCookie;
+        if (setCookies.Count > 0)
         {
-            var cookiePair = setCookie.Split(';', 2)[0].Trim();
-            _controllerHttpContext.Request.Headers.Cookie = cookiePair;
+            var cookiePairs = setCookies
+                .Select(c => c?.Split(';')[0].Trim());
+            _controllerHttpContext.Request.Headers.Cookie = string.Join("; ", cookiePairs);
         }
-        return contentResult.Content;
+        return (user.Id, contentResult.Content);
     }
 }
