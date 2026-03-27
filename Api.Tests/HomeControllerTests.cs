@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.MesterMC.Api.Controllers;
+using Tavstal.MesterMC.Api.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -37,7 +38,7 @@ public class HomeControllerTests
     public void Index_ReturnsOkWithMessage()
     {
         var loggerMock = new Mock<ILogger<HomeController>>();
-        var controller = new HomeController(loggerMock.Object);
+        var controller = new HomeController(loggerMock.Object, TestHelper.CreateTestSettings());
         
         IActionResult result = controller.Index();
         

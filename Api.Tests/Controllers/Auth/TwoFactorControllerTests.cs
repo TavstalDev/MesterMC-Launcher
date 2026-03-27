@@ -33,7 +33,7 @@ public class TwoFactorControllerTests
         var loggerMock = new Mock<ILogger<TwoFactorController>>();
         _dbContext = TestHelper.CreateInMemoryDbContext();
         var userManager = TestHelper.CreateCustomUserManager(_dbContext);
-        var emailService = TestHelper.CreateEmailService();
+        var emailService = TestHelper.FakeEmailService;
         var settings = TestHelper.CreateTestSettings();
         _controller = new TwoFactorController(loggerMock.Object, userManager, _dbContext, emailService, settings);
 
@@ -41,10 +41,10 @@ public class TwoFactorControllerTests
         {
             Connection =
             {
-                RemoteIpAddress = IPAddress.Parse("127.0.0.1")
+                RemoteIpAddress = IPAddress.Parse(TestHelper.IpAddress)
             }
         };
-        _controllerHttpContext.Request.Headers.UserAgent = "UnitTestAgent/1.0";
+        _controllerHttpContext.Request.Headers.UserAgent = TestHelper.UserAgent;
         _controllerHttpContext.Request.Host = new HostString("localhost", 5000);
         _controller.ControllerContext = new ControllerContext
         {
