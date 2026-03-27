@@ -39,7 +39,7 @@ public class RegisterController : CustomControllerBase
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, IEmailService emailService, Settings settings) : base(logger)
+    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, IEmailService emailService, Settings settings) : base(logger, settings)
     {
         _dbContext = dbContext;
         _userManager = userManager;

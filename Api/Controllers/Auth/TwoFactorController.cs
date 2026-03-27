@@ -34,7 +34,7 @@ public class TwoFactorController : CustomControllerBase {
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger)
+    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;
@@ -121,7 +121,7 @@ public class TwoFactorController : CustomControllerBase {
             if (!user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
             
-            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
+            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret!));
             if (!totp.VerifyTotp(twoFactorCode, out _, new VerificationWindow(2, 2)))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
@@ -196,21 +196,19 @@ public class TwoFactorController : CustomControllerBase {
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            var recoveryCodeClaims = _dbContext.GetUserClaims(x => x.UserId == user.Id && x.ClaimType == CustomClaimTypes.TwoFactorRecoveryCode);
-            foreach (var claim in recoveryCodeClaims) 
-                _dbContext.Remove(claim);
-            var recoveryCodes = new List<string>();
+            var recoveryCodes = await _dbContext.GetUserBackupCodeAsync(x => x.UserId == user.Id);
+            foreach (var code in recoveryCodes) 
+                await _dbContext.RemoveUserBackupCodeAsync(code);
+            var newCodes = new List<string>();
             for (int i = 0; i < 6; i++)
             {
                 var recoveryCode = TokenHelper.GenerateRecoveryCode();
-                var claim = new CustomUserClaim
+                await _dbContext.AddUserBackupCodeAsync(new UserBackupCode
                 {
                     UserId = user.Id,
-                    ClaimType = CustomClaimTypes.TwoFactorRecoveryCode,
-                    ClaimValue = StringChiper.GetEncryptedSha256Hash(recoveryCode, _settings.EncryptionKey)
-                };
-                recoveryCodes.Add(recoveryCode);
-                await _dbContext.AddUserClaimAsync(claim);
+                    HashedCode = StringChiper.GetEncryptedSha256Hash(recoveryCode, _settings.EncryptionKey),
+                    CreateAt = DateTime.UtcNow
+                });
             }
             
             await _dbContext.SaveChangesAsync();
@@ -220,7 +218,7 @@ public class TwoFactorController : CustomControllerBase {
                 statusCode = HttpStatusCode.OK,
                 userId = user.Id,
                 email = user.Email,
-                recoveryCodes
+                recoveryCodes = newCodes
             });
         }
         catch (Exception ex)

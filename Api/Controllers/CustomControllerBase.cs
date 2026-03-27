@@ -5,8 +5,10 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers;
 
@@ -21,12 +23,19 @@ public abstract class CustomControllerBase : Controller
     protected readonly ILogger Logger;
 
     /// <summary>
+    /// Application settings instance available to derived controllers.
+    /// </summary>
+    protected readonly Settings Settings;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CustomControllerBase"/> class.
     /// </summary>
     /// <param name="logger">The logger instance to be used by the controller.</param>
-    protected CustomControllerBase(ILogger logger)
+    /// <param name="settings">The <see cref="Settings"/> instance containing application configuration used by controllers.</param>
+    protected CustomControllerBase(ILogger logger, Settings settings)
     {
         Logger = logger;
+        Settings = settings;
     }
     
     /// <summary>
@@ -122,5 +131,22 @@ public abstract class CustomControllerBase : Controller
         var bytes = Encoding.UTF8.GetBytes(json);
         var hash = sha1.ComputeHash(bytes);
         return "\"" + Convert.ToBase64String(hash) + "\"";
+    }
+    
+    /// <summary>
+    /// Computes a machine fingerprint for the specified user by combining traits from the current HTTP request
+    /// (User-Agent and remote IP) with the user's identifier, then hashing the combined string using the
+    /// application's encryption key.
+    /// </summary>
+    /// <param name="userId">The user's id is used as part of the fingerprint.</param>
+    /// <returns>A string containing the hashed fingerprint.</returns>
+    protected string GetMachineFingerprint(string userId)
+    {
+        var userAgent = Request.Headers.UserAgent.ToString();
+        var ipAddress = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
+    
+        // Combine traits and hash them
+        var rawData = $"{userId}-{userAgent}-{ipAddress}";
+        return StringChiper.GetEncryptedSha256Hash(rawData, Settings.EncryptionKey);
     }
 }

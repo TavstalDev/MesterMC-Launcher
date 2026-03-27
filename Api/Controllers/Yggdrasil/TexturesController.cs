@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
@@ -25,7 +26,8 @@ public class TexturesController : CustomControllerBase
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="dbContext">The database context for accessing texture data.</param>
     /// <param name="memoryCache">The memory cache service for caching texture data.</param>
-    public TexturesController(ILogger<TexturesController> logger, CustomDbContext dbContext, MemoryCacheService memoryCache) : base(logger)
+    /// <param name="settings">Application settings.</param>
+    public TexturesController(ILogger<TexturesController> logger, CustomDbContext dbContext, MemoryCacheService memoryCache, Settings settings) : base(logger, settings)
     {
         _dbContext = dbContext;
         _memoryCache = memoryCache;

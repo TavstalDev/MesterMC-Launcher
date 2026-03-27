@@ -35,7 +35,8 @@ public class AvatarController : CustomControllerBase
     /// <param name="userManager">Service for managing users.</param>
     /// <param name="dbContext">Database context for accessing data.</param>
     /// <param name="cacheService">Service for caching data in memory.</param>
-    public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService cacheService) : base(logger)
+    /// <param name="settings">Application settings.</param>
+    public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService cacheService, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;

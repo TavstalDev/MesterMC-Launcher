@@ -29,7 +29,7 @@ public class StatusController : CustomControllerBase
     /// <param name="settings">The application settings.</param>
     /// <param name="userManager">Service for managing users.</param>
     /// <param name="dbContext">Database context for accessing data.</param>
-    public StatusController(CustomDbContext dbContext, CustomUserManager userManager, MemoryCacheService cacheService, ILogger<StatusController> logger, Settings settings) : base(logger)
+    public StatusController(CustomDbContext dbContext, CustomUserManager userManager, MemoryCacheService cacheService, ILogger<StatusController> logger, Settings settings) : base(logger, settings)
     {
         _dbContext = dbContext;
         _userManager = userManager;

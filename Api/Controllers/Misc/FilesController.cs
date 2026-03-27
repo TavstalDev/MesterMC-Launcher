@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Services;
@@ -25,7 +26,8 @@ public class FilesController : CustomControllerBase
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="dbContext">Database context for accessing file data.</param>
     /// <param name="memoryCache">Service for caching file data.</param>
-    public FilesController(ILogger<FilesController> logger, CustomDbContext dbContext, MemoryCacheService memoryCache) : base(logger)
+    /// <param name="settings">Application settings.</param>
+    public FilesController(ILogger<FilesController> logger, CustomDbContext dbContext, MemoryCacheService memoryCache, Settings settings) : base(logger, settings)
     {
         _dbContext = dbContext;
         _memoryCache = memoryCache;

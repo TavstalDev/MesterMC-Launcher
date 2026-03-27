@@ -28,7 +28,7 @@ public class PublicUserController : CustomControllerBase
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="dbContext">The database context.</param>
     /// <param name="settings">The application settings.</param>
-    public PublicUserController(ILogger<PublicUserController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger)
+    public PublicUserController(ILogger<PublicUserController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger, settings)
     {
         _settings = settings;
         _userManager = userManager;

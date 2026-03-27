@@ -36,7 +36,8 @@ public class LauncherController : CustomControllerBase
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="dbContext">Database context for accessing launcher data.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
-    public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService memoryCacheService) : base(logger)
+    /// <param name="settings">Application settings.</param>
+    public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;

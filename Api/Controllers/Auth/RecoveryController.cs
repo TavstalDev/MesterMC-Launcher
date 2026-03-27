@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -6,7 +5,6 @@ using Microsoft.AspNetCore.RateLimiting;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
-using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
@@ -25,6 +23,7 @@ public class RecoveryController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly IEmailService _emailService;
+    private readonly MemoryCacheService _memoryCacheService;
     private readonly Settings _settings;
     
     /// <summary>
@@ -35,11 +34,12 @@ public class RecoveryController : CustomControllerBase
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger)
+    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;
         _emailService = emailService;
+        _memoryCacheService = memoryCacheService;
         _settings = settings;
     }
     
@@ -52,7 +52,7 @@ public class RecoveryController : CustomControllerBase
     /// <response code="403">Forbidden. Email is not confirmed or recovery request is too frequent.</response>
     /// <response code="404">Not found. User does not exist.</response>
     /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
-    [HttpPost("request")]
+    [HttpPost("password/request")]
     [EnableRateLimiting(RateLimits.AUTH_RESET)]
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
@@ -76,31 +76,16 @@ public class RecoveryController : CustomControllerBase
             if (!user.EmailConfirmed)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Email is not confirmed.");
 
-            var userClaim = _dbContext.FindUserClaim(x =>
-                x.UserId == user.Id && x.ClaimType == CustomClaimTypes.EmailRecoveryExpiration);
-            if (userClaim != null)
-            {
-                DateTime delayDate = DateTime.Parse(userClaim.ClaimValue!);
-                if (delayDate > DateTimeOffset.UtcNow)
-                    return ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
-            }
-
-            await _dbContext.SetUserClaimAsync(new CustomUserClaim
-            {
-                UserId = user.Id,
-                ClaimType = CustomClaimTypes.EmailRecoveryExpiration,
-                ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture)
-            });
-
-            var recoveryToken = DatabaseHelper.GenerateRecoveryToken(_dbContext);
-            await _dbContext.SetUserClaimAsync(new CustomUserClaim
-            {
-                UserId = user.Id,
-                ClaimType = CustomClaimTypes.EmailRecoveryToken,
-                ClaimValue = recoveryToken
-            });
+            string fingerprint = GetMachineFingerprint(user.Id);
+            string recoveryTokenKey = $"recovery:{fingerprint}:password:token";
+            string recoveryAttemptKey = $"recovery:{fingerprint}:password:attempt";
             
-            await _dbContext.SaveChangesAsync();
+            if (!_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
+
+            string recoveryToken = TokenHelper.GenerateRecoveryToken();
+            _memoryCacheService.SetValue(recoveryTokenKey, recoveryToken, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue(recoveryAttemptKey, 0, TimeSpan.FromMinutes(15));
             
             string recoveryLink = $"{_settings.WebsiteUrl}/reset-password?recoveryToken={recoveryToken}";
             await _emailService.SendEmailAsync(user.Email, user.UserName, "Account Recovery", 
@@ -149,86 +134,97 @@ public class RecoveryController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
             
-            #region Bruteforce protection
-            var recoveryAttemptExpirationClaim = _dbContext.FindUserClaim(x =>
-                x.UserId == user.Id && x.ClaimType == CustomClaimTypes.EmailRecoveryExpiration);
-            if (recoveryAttemptExpirationClaim != null && DateTime.TryParse(recoveryAttemptExpirationClaim.ClaimValue, out DateTime recoveryAttemptExpiration))
-            {
-                // Reset the attempts
-                if (recoveryAttemptExpiration < DateTimeOffset.UtcNow)
-                {
-                    recoveryAttemptExpirationClaim.ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture);
-                    await _dbContext.UpdateUserClaimAsync(recoveryAttemptExpirationClaim);
-                    await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                    {
-                        UserId = user.Id,
-                        ClaimType = CustomClaimTypes.EmailRecoveryAttempt,
-                        ClaimValue = "0"
-                    });
-                }
-            }
-            else
-            {
-                await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                {
-                    UserId = user.Id,
-                    ClaimType = CustomClaimTypes.EmailRecoveryAttemptExpiration,
-                    ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture)
-                });
-            }
+            if (!user.EmailConfirmed)
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Email is not confirmed.");
             
+            string fingerprint = GetMachineFingerprint(user.Id);
+            string recoveryTokenKey = $"recovery:{fingerprint}:password:token";
+            string recoveryAttemptKey = $"recovery:{fingerprint}:password:attempt";
             
-            var attemptClaim = _dbContext.FindUserClaim(x =>
-                x.UserId == user.Id && x.ClaimType == CustomClaimTypes.EmailRecoveryAttempt);
-            if (attemptClaim == null)
-            {
-                attemptClaim = await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                {
-                    UserId = user.Id,
-                    ClaimType = CustomClaimTypes.EmailRecoveryAttempt,
-                    ClaimValue = "0"
-                });
-            }
-
-            if (!int.TryParse(attemptClaim?.ClaimValue, out int attempts))
-                attempts = 0;
-
-           
+            if (!_memoryCacheService.TryGetValue(recoveryAttemptKey, out int attempts))
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Invalid or expired token.");
+            
             if (attempts > 3) 
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later."); 
-                
-            await _dbContext.SetUserClaimAsync(new CustomUserClaim
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
+
+            if (!_memoryCacheService.TryGetValue(recoveryTokenKey, out string? cachedToken) ||
+                string.IsNullOrEmpty(cachedToken) || cachedToken != request.RecoveryToken)
             {
-                UserId = user.Id,
-                ClaimType = CustomClaimTypes.EmailRecoveryAttempt,
-                ClaimValue = (attempts + 1).ToString()
-            });
-            await _dbContext.SaveChangesAsync();
-            #endregion
-            
-            var recoveryTokenClaim = _dbContext.FindUserClaim(x => x.UserId == user.Id && x.ClaimType == CustomClaimTypes.EmailRecoveryToken && x.ClaimValue == request.RecoveryToken);
-            if ( recoveryTokenClaim == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid recovery token.");
-            
-            var expirationClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.EmailRecoveryExpiration && x.UserId == user.Id);
-            if (expirationClaim == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "Failed to find expiration claim.");
-            
-            DateTime expirationDate = DateTime.Parse(expirationClaim.ClaimValue!);
-            if (expirationDate < DateTimeOffset.UtcNow)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Recovery token has expired.");
+                _memoryCacheService.SetValue(recoveryAttemptKey, attempts + 1);
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Invalid or expired token.");
+            }
             
             user.PasswordHash = StringChiper.GetEncryptedSha256Hash(request.NewPassword, _settings.EncryptionKey);
             await _dbContext.UpdateUserAsync(user);
 
-            await _dbContext.RemoveUserClaimAsync(recoveryTokenClaim);
-            await _dbContext.RemoveUserClaimAsync(expirationClaim);
+            _memoryCacheService.RemoveValue(recoveryTokenKey);
+            _memoryCacheService.RemoveValue(recoveryAttemptKey);
 
             if (request.LogoutEverywhere)
                 await _dbContext.ClearUserLoginsAsync(user.Id);
             
             await _dbContext.SaveChangesAsync();
             return ReturnResponseCode(HttpStatusCode.OK, "Password reset successful.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, ex.Message);
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+        }
+    }
+    
+    /// <summary>
+    /// Starts a two-factor-auth (2FA) recovery flow by sending a recovery email to the user.
+    /// </summary>
+    /// <param name="email">The email address of the user requesting 2FA recovery. This value is required.</param>
+    /// <response code="201">Recovery email sent successfully.</response>
+    /// <response code="403">Forbidden. Email is not confirmed or recovery request is too frequent.</response>
+    /// <response code="404">Not found. User does not exist.</response>
+    /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
+    [HttpPost("2fa/request")]
+    [EnableRateLimiting(RateLimits.AUTH_RESET)]
+    [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
+     TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RequestTFARecoveryAsync([BindRequired] string email)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+            }
+            
+            CustomUser? user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+            
+            if (!user.EmailConfirmed)
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Email is not confirmed.");
+
+            string fingerprint = GetMachineFingerprint(user.Id);
+            string recoveryTokenKey = $"recovery:{fingerprint}:tfa:token";
+            string recoveryAttemptKey = $"recovery:{fingerprint}:tfa:attempt";
+            
+            if (!_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
+            
+            string recoveryToken = TokenHelper.GenerateRecoveryToken();
+            _memoryCacheService.SetValue(recoveryTokenKey, recoveryToken, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue(recoveryAttemptKey, 0, TimeSpan.FromMinutes(15));
+            
+            string recoveryLink = $"{_settings.WebsiteUrl}/reset-password?recoveryToken={recoveryToken}";
+            await _emailService.SendEmailAsync(user.Email, user.UserName, "Account Recovery", 
+                $"Click the button below or copy and paste the following link into your browser to recover your account: {recoveryLink}" +
+                "<br><br>The link is valid for 15 minutes." +
+                "<br><br>If you did not request this recovery email, you can ignore it.", 
+                recoveryLink, 
+                "Recover Account");
+            
+            return ReturnResponseCode(HttpStatusCode.Created, "Recovery email sent successfully.");
         }
         catch (Exception ex)
         {
@@ -267,76 +263,49 @@ public class RecoveryController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
             
-            if (!user.EmailConfirmed)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Email is not confirmed.");
+            string fingerprint = GetMachineFingerprint(user.Id);
+            string recoveryTokenKey = $"recovery:{fingerprint}:tfa:token";
+            string recoveryAttemptKey = $"recovery:{fingerprint}:tfa:attempt";
             
-            #region Bruteforce protection
-            var recoveryAttemptExpirationClaim = _dbContext.FindUserClaim(x =>
-                x.UserId == user.Id && x.ClaimType == CustomClaimTypes.TwoFactorRecoveryAttemptExpiry);
-            if (recoveryAttemptExpirationClaim != null && DateTime.TryParse(recoveryAttemptExpirationClaim.ClaimValue, out DateTime recoveryAttemptExpiration))
-            {
-                // Reset the attempts
-                if (recoveryAttemptExpiration < DateTimeOffset.UtcNow)
-                {
-                    recoveryAttemptExpirationClaim.ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture);
-                    await _dbContext.UpdateUserClaimAsync(recoveryAttemptExpirationClaim);
-                    await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                    {
-                        UserId = user.Id,
-                        ClaimType = CustomClaimTypes.TwoFactorRecoveryAttemptCount,
-                        ClaimValue = "0"
-                    });
-                }
-            }
-            else
-            {
-                await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                {
-                    UserId = user.Id,
-                    ClaimType = CustomClaimTypes.TwoFactorRecoveryAttemptExpiry,
-                    ClaimValue = DateTimeOffset.UtcNow.AddMinutes(15).ToString(CultureInfo.InvariantCulture)
-                });
-            }
+            if (!_memoryCacheService.TryGetValue(recoveryAttemptKey, out int attempts))
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Invalid or expired token.");
             
-            
-            var attemptClaim = _dbContext.FindUserClaim(x =>
-                x.UserId == user.Id && x.ClaimType == CustomClaimTypes.TwoFactorRecoveryAttemptCount) ?? await _dbContext.SetUserClaimAsync(new CustomUserClaim
-            {
-                UserId = user.Id,
-                ClaimType = CustomClaimTypes.TwoFactorRecoveryAttemptCount,
-                ClaimValue = "0"
-            });
-
-            if (!int.TryParse(attemptClaim?.ClaimValue, out int attempts))
-                attempts = 0;
-
-           
             if (attempts > 3) 
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later."); 
-                
-            await _dbContext.SetUserClaimAsync(new CustomUserClaim
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
+
+            if (!_memoryCacheService.TryGetValue(recoveryTokenKey, out string? cachedToken) ||
+                string.IsNullOrEmpty(cachedToken) || cachedToken != request.RecoveryToken)
             {
-                UserId = user.Id,
-                ClaimType = CustomClaimTypes.TwoFactorRecoveryAttemptCount,
-                ClaimValue = (attempts + 1).ToString()
-            });
-            await _dbContext.SaveChangesAsync();
-            #endregion
+                _memoryCacheService.SetValue(recoveryAttemptKey, attempts + 1);
+                return ReturnResponseCode(HttpStatusCode.NotFound, "Invalid or expired token.");
+            }
             
-            var backupCodeClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorRecoveryCode && x.ClaimValue == request.BackupCode && x.UserId == user.Id);
-            if (backupCodeClaim == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid backup code.");
+            if (!user.TwoFactorEnabled)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Two-factor authentication is not enabled.");
+            
+            string hashedCode = StringChiper.GetEncryptedSha256Hash(request.BackupCode, _settings.EncryptionKey);
+            var backupCode = await _dbContext.FindUserBackupCodeAsync(x => x.UserId == user.Id && x.HashedCode == hashedCode);
+            if (backupCode == null)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Backup code is invalid.");
+            
+            if (backupCode.UsedAt != null)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Backup code has already been used.");
 
             user.TwoFactorEnabled = false;
             user.TwoFactorSecret = null;
             await _dbContext.UpdateUserAsync(user);
 
-            await _dbContext.RemoveUserClaimAsync(backupCodeClaim);
+            backupCode.UsedAt = DateTime.UtcNow;
+            await _dbContext.UpdateUserBackupCodeAsync(backupCode);
             
             if (request.LogoutEverywhere)
                 await _dbContext.ClearUserLoginsAsync(user.Id);
             
             await _dbContext.SaveChangesAsync();
+            
+            _memoryCacheService.RemoveValue(recoveryTokenKey);
+            _memoryCacheService.RemoveValue(recoveryAttemptKey);
+            
             return ReturnResponseCode(HttpStatusCode.OK, "2FA reset successful.");
         }
         catch (Exception ex)

@@ -41,7 +41,7 @@ public class SessionServerController : CustomControllerBase
     /// <param name="dbContext">The database context for accessing data.</param>
     /// <param name="settings">The application settings.</param>
     /// <param name="cacheService">The memory cache service for caching data.</param>
-    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings, MemoryCacheService cacheService) : base(logger)
+    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings, MemoryCacheService cacheService) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;

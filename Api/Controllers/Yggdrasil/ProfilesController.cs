@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
@@ -21,7 +22,8 @@ public class ProfilesController : CustomControllerBase
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="dbContext">The database context for accessing user data.</param>
-    public ProfilesController(ILogger<ProfilesController> logger, CustomDbContext dbContext) : base(logger)
+    /// <param name="settings">Application settings.</param>
+    public ProfilesController(ILogger<ProfilesController> logger, CustomDbContext dbContext, Settings settings) : base(logger, settings)
     {
         _dbContext = dbContext;
     }

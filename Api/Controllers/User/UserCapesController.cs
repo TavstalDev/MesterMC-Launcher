@@ -28,7 +28,8 @@ public class UserCapesController : CustomControllerBase
     /// <param name="logger">The logger instance.</param>
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="dbContext">The database context.</param>
-    public UserCapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext) : base(logger)
+    /// <param name="settings">Application settings.</param>
+    public UserCapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;

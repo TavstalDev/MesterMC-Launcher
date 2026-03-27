@@ -7,7 +7,6 @@ using OtpNet;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
-using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
@@ -26,7 +25,7 @@ public class LoginController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly IEmailService _emailService;
-    private readonly Settings _settings;
+    private readonly MemoryCacheService _memoryCacheService;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="LoginController"/> class.
@@ -37,12 +36,12 @@ public class LoginController : CustomControllerBase
     /// <param name="emailService">The email service for sending emails.</param>
     /// <param name="settings">The application settings.</param>
     public LoginController(ILogger<LoginController> logger, CustomDbContext dbContext,
-        CustomUserManager userManager, IEmailService emailService, Settings settings) : base(logger)
+        CustomUserManager userManager, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
     {
         _dbContext = dbContext;
         _userManager = userManager;
         _emailService = emailService;
-        _settings = settings;
+        _memoryCacheService = memoryCacheService;
     }
     
     /// <summary>
@@ -99,54 +98,40 @@ public class LoginController : CustomControllerBase
             }
             
             // Check password
-            if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, _settings.EncryptionKey))
+            if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, Settings.EncryptionKey))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
 
             // Check two-factor authentication
             if (user.TwoFactorEnabled)
             {
-                if (request.TwoFactorCode == null)
+                string sessionToken = TokenHelper.GenerateTwoFactorSessionToken();
+                string fingerprint = GetMachineFingerprint(user.Id);
+                _memoryCacheService.SetValue($"auth:{fingerprint}:tfa:token", sessionToken, TimeSpan.FromMinutes(5));
+                _memoryCacheService.SetValue($"auth:{fingerprint}:tfa:attempts", 0, TimeSpan.FromMinutes(5));
+
+                var expiry = DateTimeOffset.UtcNow.AddMinutes(5);
+                Response.Cookies.Append("mmc-userId", user.Id, new CookieOptions
                 {
-                    string sessionSecret = TokenHelper.GenerateTwoFactorSessionToken();
-                    DateTimeOffset expiry = DateTimeOffset.UtcNow.AddMinutes(5);
-
-                    await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                    {
-                        UserId = user.Id,
-                        ClaimType = CustomClaimTypes.TwoFactorSessionToken,
-                        ClaimValue = sessionSecret
-                    });
+                    HttpOnly = true,
+                    Secure = true, // only over HTTPS
+                    SameSite = SameSiteMode.None, // required for cross-origin
+                    Expires = expiry
+                });
+                Response.Cookies.Append("mmc-twofactor-session", sessionToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true, // only over HTTPS
+                    SameSite = SameSiteMode.None, // required for cross-origin
+                    Expires = expiry
+                });
                     
-                    await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                    {
-                        UserId = user.Id,
-                        ClaimType = CustomClaimTypes.TwoFactorSessionExpiration,
-                        ClaimValue = expiry.ToString(CultureInfo.InvariantCulture)
-                    });
-
-                    await _dbContext.SaveChangesAsync();
-                    
-                    Response.Cookies.Append("mmc-twofactor-session", sessionSecret, new CookieOptions
-                    {
-                        HttpOnly = true,
-                        Secure = true, // only over HTTPS
-                        SameSite = SameSiteMode.None, // required for cross-origin
-                        Expires = expiry
-                    });
-                    
-                    return ReturnJson(new
-                    {
-                        statusCode = HttpStatusCode.Redirect,
-                        message = "Redirect to 2FA page",
-                        email = user.Email,
-                        url = $"{_settings.WebsiteUrl}/2fa?rememberMe={request.RememberMe}"
-                    });
-                }
-
-
-                var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
-                if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
-                    return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                return ReturnJson(new
+                {
+                    statusCode = HttpStatusCode.Redirect,
+                    message = "Redirect to 2FA page",
+                    email = user.Email,
+                    url = $"{Settings.WebsiteUrl}/2fa?rememberMe={request.RememberMe}"
+                });
             }
 
             string ipv4 = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
@@ -161,7 +146,7 @@ public class LoginController : CustomControllerBase
                 new CustomUserToken(
                     user.Id, 
                     "AccessToken", 
-                    TokenHelper.GenerateJwtToken(_settings.EncryptionKey, _settings.Issuer, _settings.Audience, expireDate), 
+                    TokenHelper.GenerateJwtToken(Settings.EncryptionKey, Settings.Issuer, Settings.Audience, expireDate), 
                     "MesterMC", 
                     DateTimeOffset.UtcNow), 
                 true);
@@ -222,21 +207,25 @@ public class LoginController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            if (!Request.Cookies.TryGetValue("mmc-twofactor-session", out var cookieValue) || string.IsNullOrEmpty(cookieValue))
+            if (!Request.Cookies.TryGetValue("mmc-twofactor-session", out var sessionCookie)  || string.IsNullOrEmpty(sessionCookie))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
             
-            var sessionClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorSessionToken && x.ClaimValue == cookieValue);
-            if (sessionClaim == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret.");
+            if (!Request.Cookies.TryGetValue("mmc-userId", out var userIdCookie) || string.IsNullOrEmpty(userIdCookie))
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or missing userId cookie.");
             
-            var expiryClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorSessionExpiration && x.UserId == sessionClaim.UserId);
-            if (expiryClaim == null || !DateTimeOffset.TryParse(expiryClaim.ClaimValue, out DateTimeOffset expiry))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret expiry.");
+            string fingerprint = GetMachineFingerprint(userIdCookie);
+            string tokenKey = $"auth:{fingerprint}:tfa:token";
+            if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != sessionCookie)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session token.");
+
+            string attemptKey = $"auth:{fingerprint}:tfa:attempts";
+            if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session token.");
             
-            if (DateTimeOffset.UtcNow > expiry)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Session token expired.");
+            if (cachedAttempts >= 3)
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "To many failed attempts. Please try reauthorizing again.");
             
-            CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == sessionClaim.UserId);
+            CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == userIdCookie);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
@@ -258,28 +247,11 @@ public class LoginController : CustomControllerBase
             
             if (!user.TwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecret))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled for this user.");
-                
-            var sessionAttemptClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorSessionAttempt && x.UserId == user.Id);
-            int sessionAttempt = 0;
-            if (sessionAttemptClaim != null)
-            {
-                sessionAttempt = int.Parse(sessionAttemptClaim.ClaimValue!);
-                if (sessionAttempt >= 3)
-                    return ReturnResponseCode(HttpStatusCode.Forbidden,
-                        "To many failed attempts. Please try reauthorizing again.");
-            }
 
             var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
             if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
             {
-                sessionAttempt += 1;
-                await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                {
-                    ClaimType = CustomClaimTypes.TwoFactorSessionAttempt,
-                    ClaimValue = sessionAttempt.ToString(),
-                    UserId = user.Id
-                });
-                await _dbContext.SaveChangesAsync();
+                _memoryCacheService.SetValue(attemptKey, cachedAttempts + 1);
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             }
 
@@ -294,21 +266,18 @@ public class LoginController : CustomControllerBase
             var userToken = await _dbContext.AddUserTokenAsync(new CustomUserToken(
                 user.Id, 
                 "AccessToken", 
-                TokenHelper.GenerateJwtToken(_settings.EncryptionKey, _settings.Issuer, _settings.Audience, expireDate), 
+                TokenHelper.GenerateJwtToken(Settings.EncryptionKey, Settings.Issuer, Settings.Audience, expireDate), 
                 "MesterMC", 
                 DateTimeOffset.UtcNow), 
                 true);
             
             var userLogin = await _dbContext.AddUserLoginAsync(new CustomUserLogin(user.Id,  userToken.Id, "MesterMC", 
                 "MesterMC", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate));
-
-            await _dbContext.RemoveUserClaimAsync(sessionClaim);
-            await _dbContext.RemoveUserClaimAsync(expiryClaim);
-            if (sessionAttemptClaim != null)
-                await _dbContext.RemoveUserClaimAsync(sessionAttemptClaim);
             
             await _dbContext.SaveChangesAsync();
             
+            _memoryCacheService.RemoveValue(tokenKey);
+            _memoryCacheService.RemoveValue(attemptKey);
             return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
@@ -377,47 +346,25 @@ public class LoginController : CustomControllerBase
             }
             
             // Check password
-            if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, _settings.EncryptionKey))
+            if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, Settings.EncryptionKey))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
 
             // Check two-factor authentication
             if (user.TwoFactorEnabled)
             {
-                if (string.IsNullOrEmpty(request.TwoFactorCode))
+                string sessionToken = TokenHelper.GenerateTwoFactorSessionToken();
+                string fingerprint = GetMachineFingerprint(user.Id);
+                _memoryCacheService.SetValue($"auth:{fingerprint}:tfa-launcher:token", sessionToken, TimeSpan.FromMinutes(5));
+                _memoryCacheService.SetValue($"auth:{fingerprint}:tfa-launcher:attempts", 0, TimeSpan.FromMinutes(5));
+                    
+                return ReturnJson(new
                 {
-                    string sessionSecret = TokenHelper.GenerateTwoFactorSessionToken();
-                    DateTimeOffset expiry = DateTimeOffset.UtcNow.AddMinutes(5);
-
-                    await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                    {
-                        UserId = user.Id,
-                        ClaimType = CustomClaimTypes.TwoFactorLauncherSessionToken,
-                        ClaimValue = sessionSecret
-                    });
-                    
-                    await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                    {
-                        UserId = user.Id,
-                        ClaimType = CustomClaimTypes.TwoFactorLauncherSessionExpiration,
-                        ClaimValue = expiry.ToString(CultureInfo.InvariantCulture)
-                    });
-
-                    await _dbContext.SaveChangesAsync();
-                    
-                    return ReturnJson(new
-                    {
-                        statusCode = HttpStatusCode.Redirect,
-                        message = "Redirect to 2FA",
-                        userId = user.Id,
-                        token = sessionSecret,
-                        url = $"{_settings.ApiUrl}/login/launcher/2fa"
-                    });
-                }
-
-
-                var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret!));
-                if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
-                    return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                    statusCode = HttpStatusCode.Redirect,
+                    message = "Redirect to 2FA",
+                    userId = user.Id,
+                    token = sessionToken,
+                    url = $"{Settings.ApiUrl}/login/launcher/2fa"
+                });
             }
 
             string host = HttpContext.Request.Host.Host;
@@ -475,18 +422,19 @@ public class LoginController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            var sessionClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionToken && x.ClaimValue == request.SessionToken);
-            if (sessionClaim == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret.");
+            string fingerprint = GetMachineFingerprint(request.UserId);
+            string tokenKey = $"auth:{fingerprint}:tfa-launcher:token";
+            if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != request.SessionToken)
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session token.");
+
+            string attemptKey = $"auth:{fingerprint}:tfa-launcher:attempts";
+            if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session token.");
             
-            var expiryClaim = _dbContext.FindUserClaim(x=> x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionExpiration && x.UserId == sessionClaim.UserId);
-            if (expiryClaim == null || !DateTimeOffset.TryParse(expiryClaim.ClaimValue, out DateTimeOffset expiry))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid session secret expiry.");
+            if (cachedAttempts >= 3)
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "To many failed attempts. Please try reauthorizing again.");
             
-            if (DateTimeOffset.UtcNow > expiry)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Session token expired.");
-            
-            CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == sessionClaim.UserId);
+            CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == request.UserId);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
@@ -508,37 +456,16 @@ public class LoginController : CustomControllerBase
             
             if (!user.TwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecret))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled for this user.");
-            
-            var sessionAttemptClaim = _dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.TwoFactorLauncherSessionAttempt && x.UserId == user.Id);
-            int sessionAttempt = 0;
-            if (sessionAttemptClaim != null)
-            {
-                sessionAttempt = int.Parse(sessionAttemptClaim.ClaimValue!);
-                if (sessionAttempt >= 3)
-                    return ReturnResponseCode(HttpStatusCode.Forbidden,
-                        "To many failed attempts. Please try reauthorizing again.");
-            }
 
             var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
             if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
             {
-                sessionAttempt += 1;
-                await _dbContext.SetUserClaimAsync(new CustomUserClaim
-                {
-                    ClaimType = CustomClaimTypes.TwoFactorLauncherSessionAttempt,
-                    ClaimValue = sessionAttempt.ToString(),
-                    UserId = user.Id
-                });
-                await _dbContext.SaveChangesAsync();
+                _memoryCacheService.SetValue(attemptKey, cachedAttempts + 1);
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             }
             
-            await _dbContext.RemoveUserClaimAsync(sessionClaim);
-            await _dbContext.RemoveUserClaimAsync(expiryClaim);
-            if (sessionAttemptClaim != null)
-                await _dbContext.RemoveUserClaimAsync(sessionAttemptClaim);
-            
-            await _dbContext.SaveChangesAsync();
+            _memoryCacheService.RemoveValue(tokenKey);
+            _memoryCacheService.RemoveValue(attemptKey);
             
             string host = HttpContext.Request.Host.Host;
             var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
