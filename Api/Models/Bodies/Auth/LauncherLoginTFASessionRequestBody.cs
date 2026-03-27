@@ -8,6 +8,12 @@ namespace Tavstal.MesterMC.Api.Models.Bodies.Auth;
 public class LauncherLoginTFASessionRequestBody
 {
     /// <summary>
+    /// Gets or sets the identifier of the user associated with the launcher TFA session.
+    /// </summary>
+    [Required]
+    public required string UserId { get; set; }
+    
+    /// <summary>
     /// Gets or initializes the session token for the login session.
     /// This token is required to authenticate the session.
     /// </summary>

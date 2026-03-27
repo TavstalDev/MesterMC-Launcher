@@ -18,10 +18,4 @@ public class LauncherLoginRequestBody
     /// </summary>
     [Required]
     public required string Password { get; init; }
-    
-    /// <summary>
-    /// Gets or initializes the two-factor authentication code, if applicable.
-    /// This property is optional.
-    /// </summary>
-    public string? TwoFactorCode { get; init; }
 }

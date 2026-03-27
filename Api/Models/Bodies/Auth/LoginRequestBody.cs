@@ -22,18 +22,6 @@ public class LoginRequestBody
     public required string Password { get; init; }
     
     /// <summary>
-    /// Gets or initializes the two-factor authentication code, if applicable.
-    /// This field is optional.
-    /// </summary>
-    public string? TwoFactorCode { get; init; }
-    
-    /// <summary>
-    /// Gets or initializes the two-factor recovery code, if applicable.
-    /// This field is optional.
-    /// </summary>
-    public string? TwoFactorRecoveryCode { get; init; }
-    
-    /// <summary>
     /// Gets or initializes a value indicating whether the user should remain logged in.
     /// This field is optional and defaults to false.
     /// </summary>

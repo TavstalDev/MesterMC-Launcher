@@ -15,6 +15,13 @@ public class RecoverTwoFactorRequestBody
     public required string Email { get; set; }
     
     /// <summary>
+    /// Gets or sets the recovery token that was issued to the user (for example via email).
+    /// This token is required and is validated to ensure the recovery request is authorized.
+    /// </summary>
+    [Required]
+    public required string RecoveryToken { get; set; }
+    
+    /// <summary>
     /// Gets or sets the backup code used to recover the two-factor authentication session.
     /// This field is required.
     /// </summary>
