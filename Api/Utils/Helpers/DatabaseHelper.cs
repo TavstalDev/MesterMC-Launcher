@@ -1,31 +1,18 @@
 ﻿using System.Globalization;
 using Newtonsoft.Json;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
+using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Utils.Helpers;
 
 /// <summary>
-/// Provides helper methods for database-related operations, such as generating recovery tokens
-/// and retrieving IP information.
+/// Provides helper methods for database-related operations
 /// </summary>
 public static class DatabaseHelper
 {
-    /// <summary>
-    /// Generates a unique recovery token that does not already exist in the database.
-    /// </summary>
-    /// <param name="dbContext">The database context used to check for existing tokens.</param>
-    /// <returns>A unique recovery token as a string.</returns>
-    public static string GenerateRecoveryToken(CustomDbContext dbContext)
-    {
-        string key = TokenHelper.GenerateRecoveryToken();
-        if (dbContext.FindUserClaim(x => x.ClaimType == CustomClaimTypes.EmailRecoveryToken  && x.ClaimValue == key) != null)
-            return GenerateRecoveryToken(dbContext);
-
-        return key;
-    }
-    
     /// <summary>
     /// Retrieves information about an IP address, such as country, region, and city.
     /// If the information cannot be retrieved, returns default values.
