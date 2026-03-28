@@ -1,15 +1,10 @@
-using System.Net;
-using System.Security.Claims;
 using System.Text;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OtpNet;
 using Tavstal.MesterMC.Api.Controllers.Auth;
-using Tavstal.MesterMC.Api.Models.Common;
-using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Tests.Helpers;
 using Tavstal.MesterMC.Api.Utils.Helpers;
@@ -18,66 +13,48 @@ using Xunit.Abstractions;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.Auth;
 
-public class TwoFactorControllerTests
+/// <summary>
+/// Unit tests for <see cref="TwoFactorController"/> covering enabling/disabling 2FA,
+/// generation of codes and regenerating recovery codes. Tests use an in-memory DB
+/// and a fake email service provided by <see cref="TestHelper"/>.
+/// </summary>
+public class TwoFactorControllerTests : ControllerTestBase
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-    private readonly CustomDbContext _dbContext;
+    private readonly Mock<ILogger<TwoFactorController>> _loggerMock = new();
     private readonly TwoFactorController _controller;
-    private readonly DefaultHttpContext _controllerHttpContext;
-    private readonly CustomUser _userMock;
-    private const string _passwordMock = "This%Valid_And#Pass%mock-2026";
-
-    public TwoFactorControllerTests(ITestOutputHelper testOutputHelper)
+        
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TwoFactorControllerTests"/> test class.
+    /// </summary>
+    /// <param name="testOutputHelper">
+    /// xUnit's <see cref="Xunit.Abstractions.ITestOutputHelper"/> provided by the test runner.
+    /// This is forwarded to the base test class (via <c>base(testOutputHelper)</c>) to enable logging in the shared fixture.
+    /// </param>
+    public TwoFactorControllerTests(ITestOutputHelper testOutputHelper) :  base(testOutputHelper)
     {
-        _testOutputHelper = testOutputHelper;
-        var loggerMock = new Mock<ILogger<TwoFactorController>>();
-        _dbContext = TestHelper.CreateInMemoryDbContext();
-        var userManager = TestHelper.CreateCustomUserManager(_dbContext);
-        var emailService = TestHelper.FakeEmailService;
-        var settings = TestHelper.CreateTestSettings();
-        _controller = new TwoFactorController(loggerMock.Object, userManager, _dbContext, emailService, settings);
-
-        _controllerHttpContext = new DefaultHttpContext
-        {
-            Connection =
-            {
-                RemoteIpAddress = IPAddress.Parse(TestHelper.IpAddress)
-            }
-        };
-        _controllerHttpContext.Request.Headers.UserAgent = TestHelper.UserAgent;
-        _controllerHttpContext.Request.Host = new HostString("localhost", 5000);
+        _controller = new TwoFactorController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, TestHelper.FakeEmailService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
         };
-
-        _userMock = new CustomUser
-        {
-            Email = "testuser@gmail.com",
-            EmailConfirmed = true,
-            NormalizedEmail = "testuser@gmail.com".Normalize(),
-            UserName = "testuser",
-            NormalizedUserName = "testuser".Normalize(),
-            PasswordHash = StringChiper.GetEncryptedSha256Hash(_passwordMock, settings.EncryptionKey),
-            CreateDate = DateTimeOffset.UtcNow,
-            LastLogin = DateTimeOffset.UtcNow,
-            LastUpdate = DateTimeOffset.UtcNow,
-            SkinModel = ESkinType.WIDE
-        };
     }
 
+    /// <summary>
+    /// Tests for enabling two-factor authentication.
+    /// </summary>
     public class EnableTwoFactorTests : TwoFactorControllerTests
     {
-        public EnableTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
-        {
-        }
+        public EnableTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Success case: when the user supplies a correct TOTP code for the secret stored on the user,
+        /// the controller should enable 2FA and return HTTP 200.
+        /// </summary>
         [Fact(DisplayName = "Success: Enable 2FA")]
         public async Task ReturnsOk()
         {
             _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _dbContext.AddUserAsync(_userMock, true);
-            await AuthenticateAsUserAsync(_userMock);
+            await CreateUserAsync(_controller, _userMock);
 
             byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret);
             var totp = new Totp(secretBytes);
@@ -91,12 +68,14 @@ public class TwoFactorControllerTests
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
 
+        /// <summary>
+        /// Failure case: when the provided TOTP code is invalid, the controller should return HTTP 401 Unauthorized.
+        /// </summary>
         [Fact(DisplayName = "Failure: Invalid code")]
         public async Task ReturnsUnauthorized_ForInvalidCode()
         {
             _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _dbContext.AddUserAsync(_userMock, true);
-            await AuthenticateAsUserAsync(_userMock);
+            await CreateUserAsync(_controller, _userMock);
 
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
             
@@ -106,6 +85,10 @@ public class TwoFactorControllerTests
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
 
+        /// <summary>
+        /// Failure case: unauthenticated requests to enable 2FA should be rejected with HTTP 401.
+        /// This test does not set an authenticated user on the HttpContext.
+        /// </summary>
         [Fact(DisplayName = "Failure: Unauthenticated user")]
         public async Task ReturnsUnauthorized_WhenUnauthenticated()
         {
@@ -116,13 +99,15 @@ public class TwoFactorControllerTests
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
         
+        /// <summary>
+        /// Failure case: attempting to enable 2FA when it is already enabled should return HTTP 403 Forbidden.
+        /// </summary>
         [Fact(DisplayName = "Failure: TFA already enabled")]
         public async Task ReturnsForbidden()
         {
             _userMock.TwoFactorEnabled = true;
             _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _dbContext.AddUserAsync(_userMock, true);
-            await AuthenticateAsUserAsync(_userMock);
+            await CreateUserAsync(_controller, _userMock);
 
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
             
@@ -133,17 +118,22 @@ public class TwoFactorControllerTests
         }
     }
 
+    /// <summary>
+    /// Tests for disabling two-factor authentication.
+    /// </summary>
     public class DisableTwoFactorTests : TwoFactorControllerTests
     {
         public DisableTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: user with 2FA enabled supplies a valid TOTP code and the controller disables 2FA, returning HTTP 200.
+        /// </summary>
         [Fact(DisplayName = "Success: Disable 2FA with valid code")]
         public async Task ReturnsOk()
         {
             _userMock.TwoFactorEnabled = true;
             _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _dbContext.AddUserAsync(_userMock, true);
-            await AuthenticateAsUserAsync(_userMock);
+            await CreateUserAsync(_controller, _userMock);
 
             byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret);
             var totp = new Totp(secretBytes);
@@ -157,13 +147,15 @@ public class TwoFactorControllerTests
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
 
+        /// <summary>
+        /// Failure case: invalid code when attempting to disable 2FA should return HTTP 401 Unauthorized.
+        /// </summary>
         [Fact(DisplayName = "Failure: Invalid code")]
         public async Task ReturnsUnauthorized_ForInvalidCode()
         {
             _userMock.TwoFactorEnabled = true;
             _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _dbContext.AddUserAsync(_userMock, true);
-            await AuthenticateAsUserAsync(_userMock);
+            await CreateUserAsync(_controller, _userMock);
             
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
 
@@ -173,6 +165,9 @@ public class TwoFactorControllerTests
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
         
+        /// <summary>
+        /// Failure case: unauthenticated requests to disable 2FA should be rejected with HTTP 401.
+        /// </summary>
         [Fact(DisplayName = "Failure: Unauthenticated user")]
         public async Task ReturnsUnauthorized_WhenUnauthenticated()
         {
@@ -183,13 +178,15 @@ public class TwoFactorControllerTests
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
         
+        /// <summary>
+        /// Failure case: attempting to disable 2FA when it is not enabled should return HTTP 403 Forbidden.
+        /// </summary>
         [Fact(DisplayName = "Failure: TFA not enabled")]
         public async Task ReturnsForbidden()
         {
             _userMock.TwoFactorEnabled = false;
             _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _dbContext.AddUserAsync(_userMock, true);
-            await AuthenticateAsUserAsync(_userMock);
+            await CreateUserAsync(_controller, _userMock);
             
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
 
@@ -200,15 +197,21 @@ public class TwoFactorControllerTests
         }
     }
     
+    /// <summary>
+    /// Tests for generating a new two-factor secret/code for the user.
+    /// </summary>
     public class GenerateCodeTests : TwoFactorControllerTests
     {
         public GenerateCodeTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: authenticated user requests a new 2FA secret and receives content with the secret/QR info.
+        /// Expected: <see cref="ContentResult"/>.
+        /// </summary>
         [Fact(DisplayName = "Success: Generates new 2FA secret")]
         public async Task ReturnsOk()
         {
-            await _dbContext.AddUserAsync(_userMock, true);
-            await AuthenticateAsUserAsync(_userMock);
+            await CreateUserAsync(_controller, _userMock);
             
             IActionResult result = await _controller.GenerateCodeAsync();
             
@@ -217,6 +220,9 @@ public class TwoFactorControllerTests
             _testOutputHelper.WriteLine("Result: " + content);
         }
 
+        /// <summary>
+        /// Failure case: unauthenticated user requesting a new 2FA secret should get HTTP 401 Unauthorized.
+        /// </summary>
         [Fact(DisplayName = "Failure: Unauthorized user")]
         public async Task ReturnsUnauthorized()
         {
@@ -227,13 +233,15 @@ public class TwoFactorControllerTests
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
         
+        /// <summary>
+        /// Failure case: authenticated user who already has 2FA enabled should receive HTTP 403 Forbidden.
+        /// </summary>
         [Fact(DisplayName = "Failure: TFA already enabled")]
         public async Task ReturnsForbidden()
         {
             _userMock.TwoFactorEnabled = true;
             _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _dbContext.AddUserAsync(_userMock, true);
-            await AuthenticateAsUserAsync(_userMock);
+            await CreateUserAsync(_controller, _userMock);
             
             IActionResult result = await _controller.GenerateCodeAsync();
             result.Should().BeOfType<ObjectResult>();
@@ -243,15 +251,20 @@ public class TwoFactorControllerTests
         }
     }
 
+    /// <summary>
+    /// Tests for regenerating recovery codes for two-factor authentication.
+    /// </summary>
     public class RegenerateRecoveryCodesTests : TwoFactorControllerTests
     {
         public RegenerateRecoveryCodesTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: authenticated user regenerates recovery codes and receives a <see cref="ContentResult"/>.
+        /// </summary>
         [Fact(DisplayName = "Success: Regenerate recovery codes")]
         public async Task ReturnsOk()
         {
-            await _dbContext.AddUserAsync(_userMock, true);
-            await AuthenticateAsUserAsync(_userMock);
+            await CreateUserAsync(_controller, _userMock);
             
             IActionResult result = await _controller.RegenerateRecoveryCodesAsync();
             
@@ -261,6 +274,9 @@ public class TwoFactorControllerTests
             _testOutputHelper.WriteLine("Result: " + obj.Content);
         }
 
+        /// <summary>
+        /// Failure case: unauthenticated users attempting to regenerate recovery codes should receive HTTP 401.
+        /// </summary>
         [Fact(DisplayName = "Failure: Unauthenticated user")]
         public async Task ReturnsUnauthorized_WhenUnauthenticated()
         {
@@ -271,27 +287,5 @@ public class TwoFactorControllerTests
             obj!.StatusCode.Should().Be(401);
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
-    }
-    
-    private async Task AuthenticateAsUserAsync(CustomUser user, bool isAdmin = false)
-    {
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.UserName)
-        };
-        _controllerHttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
-        _controller.ControllerContext.HttpContext = _controllerHttpContext;
-        
-        if (!isAdmin)
-            return;
-        
-        var adminRole = _dbContext.FindRole(x => x.NormalizedName == "ADMIN");
-        adminRole.Should().NotBeNull("Admin role should exist in the database");
-        await _dbContext.AddUserRoleAsync(new CustomUserRole
-        {
-            UserId = user.Id,
-            RoleId = adminRole.Id
-        }, true);
     }
 }

@@ -7,7 +7,7 @@ using Tavstal.MesterMC.Api.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Tavstal.MesterMC.Api.Tests;
+namespace Tavstal.MesterMC.Api.Tests.Controllers;
 
 /// <summary>
 /// Unit tests for <see cref="HomeController"/>.

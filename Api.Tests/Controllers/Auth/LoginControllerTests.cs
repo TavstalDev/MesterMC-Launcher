@@ -19,6 +19,12 @@ using Xunit.Abstractions;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.Auth;
 
+/// <summary>
+/// Unit tests for <see cref="LoginController"/> covering standard login flows,
+/// two-factor flows, launcher-specific login flows and logout behavior.
+/// The class sets up an in-memory DB, a test <see cref="LoginController"/> instance and
+/// a preconfigured test <see cref="DefaultHttpContext"/> used across tests.
+/// </summary>
 public class LoginControllerTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
@@ -28,6 +34,15 @@ public class LoginControllerTests
     private readonly CustomUser _userMock;
     private const string _passwordMock = "This%Valid_And#Pass%mock-2026";
 
+    /// <summary>
+    /// Initializes shared fixtures:
+    /// <br/>- creates in-memory DB context,
+    /// <br/>- builds a test UserManager,
+    /// <br/>- constructs the <see cref="LoginController"/> with fake dependencies,
+    /// <br/>- prepares a default <see cref="DefaultHttpContext"/> (IP address, User-Agent, Host),
+    /// <br/>- prepares a default <see cref="CustomUser"/> object used by tests.
+    /// </summary>
+    /// <param name="testOutputHelper">XUnit-provided output helper for test logging.</param>
     public LoginControllerTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
@@ -69,10 +84,17 @@ public class LoginControllerTests
         };
     }
 
+    /// <summary>
+    /// Tests for standard web login endpoints
+    /// </summary>
     public class LoginTests : LoginControllerTests
     {
         public LoginTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Success case: login with valid credentials returns a non-null content result.
+        /// Expected: ContentResult with login payload.
+        /// </summary>
         [Fact(DisplayName = "Success: Login with valid credentials")]
         public async Task ReturnsOk()
         {
@@ -82,6 +104,10 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + content);
         }
         
+        /// <summary>
+        /// Redirect case: login when the user has 2FA enabled should return a redirect/2FA payload.
+        /// Expected: ContentResult containing redirect/2FA session info.
+        /// </summary>
         [Fact(DisplayName = "Redirect: TFA enabled")]
         public async Task ReturnsRedirect()
         {
@@ -91,6 +117,9 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + content);
         }
 
+        /// <summary>
+        /// Failure case: attempting to login for a non-existent user returns 404 NotFound.
+        /// </summary>
         [Fact(DisplayName = "Failure: Non-existent user")]
         public async Task ReturnsNotFound()
         {
@@ -107,6 +136,9 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + contentResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: existing user with incorrect password should return 401 Unauthorized.
+        /// </summary>
         [Fact(DisplayName = "Failure: Incorrect password")]
         public async Task ReturnsUnauthorized()
         {
@@ -123,6 +155,10 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + contentResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: locked out user attempt — verifies controller handles lockout state.
+        /// Expected behaviour: login returns a ContentResult (controller may return lockout-specific response).
+        /// </summary>
         [Fact(DisplayName = "Failure: Locked out user")]
         public async Task ReturnsLocked()
         {
@@ -134,10 +170,18 @@ public class LoginControllerTests
         }
     }
 
+    /// <summary>
+    /// Tests for web two-factor login flow (TFA session cookie + code verification).
+    /// Covers successful TFA confirmation, missing session cookie, invalid/expired session.
+    /// </summary>
     public class LoginTwoFactorTests : LoginControllerTests
     {
         public LoginTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: after the initial login redirect, the TFA cookies are present and submitting the correct TOTP returns success.
+        /// Expected: ContentResult with final login payload.
+        /// </summary>
         [Fact(DisplayName = "Success: Login with valid credentials")]
         public async Task ReturnsOk()
         {
@@ -162,6 +206,10 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
 
+        /// <summary>
+        /// Failure case: missing TFA session cookie should result in unauthorized response (401).
+        /// The test clears Request.Headers.Cookie to simulate a missing cookie.
+        /// </summary>
         [Fact(DisplayName = "Failure: Missing TFA session cookie")]
         public async Task ReturnsUnauthorized_ForMissingCookie()
         {
@@ -179,6 +227,9 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: submitting an invalid TFA code returns 401 Unauthorized.
+        /// </summary>
         [Fact(DisplayName = "Failure: Invalid TFA code")]
         public async Task ReturnsUnauthorized_ForInvalidCode()
         {
@@ -195,6 +246,10 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: expired TFA session (token removed from cache) should return 401 or 403 depending on controller behavior.
+        /// This test explicitly removes the stored token to simulate expiration.
+        /// </summary>
         [Fact(DisplayName = "Failure: Expired TFA session")]
         public async Task ReturnsForbidden_ForExpiredSession()
         {
@@ -220,12 +275,19 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + obj.Value);
         }
     }
-
+    
+    /// <summary>
+    /// Tests for the launcher-specific login endpoints and launcher TFA flow.
+    /// The launcher flows use a different endpoint/payload format and session token handling.
+    /// </summary>
     public class LoginLauncherTests : LoginControllerTests
     {
         public LoginLauncherTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
-        
+        /// <summary>
+        /// Success case: launcher login with valid credentials returns a non-null content payload.
+        /// Expected: ContentResult containing launcher-specific token/payload.
+        /// </summary>
         [Fact(DisplayName = "Success: Launcher login with valid credentials")]
         public async Task ReturnsOk()
         { 
@@ -235,6 +297,10 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + content);
         }
         
+        /// <summary>
+        /// Redirect case: launcher login when 2FA is enabled returns a redirect/session token.
+        /// Expected: ContentResult containing session token used for launcher TFA confirmation.
+        /// </summary>
         [Fact(DisplayName = "Redirect: Launcher login with TFA")]
         public async Task ReturnsRedirect_WhenTwoFactorEnabled()
         {
@@ -244,6 +310,9 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + content);
         }
 
+        /// <summary>
+        /// Failure case: launcher login with incorrect password returns 401 Unauthorized.
+        /// </summary>
         [Fact(DisplayName = "Failure: Incorrect password")]
         public async Task ReturnsUnauthorized()
         {
@@ -261,12 +330,19 @@ public class LoginControllerTests
         }
     }
 
+    /// <summary>
+    /// Tests for the launcher two-factor confirmation endpoint.
+    /// Covers success, missing/invalid token and expired token cases.
+    /// </summary>
     public class LoginTwoFactorLauncherTests : LoginControllerTests
     {
-        public LoginTwoFactorLauncherTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
-        {
-        }
+        public LoginTwoFactorLauncherTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Success case: full launcher 2FA flow — first stage returns a session token,
+        /// second stage confirms TOTP and returns final success message.
+        /// Expected: second call returns ContentResult containing "Login successful".
+        /// </summary>
         [Fact(DisplayName = "Success: Launcher 2FA flow (redirect then confirm)")]
         public async Task ReturnsOk()
         {
@@ -296,6 +372,10 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + secondContent);
         }
 
+        /// <summary>
+        /// Failure case: missing or invalid session token for the launcher flow returns 401 Unauthorized.
+        /// The test simulates the missing token by not performing the initial login stage.
+        /// </summary>
         [Fact(DisplayName = "Failure: Missing/invalid session token")]
         public async Task ReturnsUnauthorized_ForMissingToken()
         {
@@ -313,6 +393,9 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: invalid two-factor code for launcher confirmation returns 401 Unauthorized.
+        /// </summary>
         [Fact(DisplayName = "Failure: Invalid two-factor code")]
         public async Task ReturnsUnauthorized_ForInvalidCode()
         {
@@ -336,6 +419,10 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: expired launcher session token: the test removes the cached token to simulate expiration.
+        /// Expected: the controller should return 401 (or 403 depending on implementation); test asserts 401.
+        /// </summary>
         [Fact(DisplayName = "Failure: Expired session token")]
         public async Task ReturnsForbidden_ForExpiredLauncherSession()
         {
@@ -366,10 +453,16 @@ public class LoginControllerTests
         }
     }
 
+    /// <summary>
+    /// Tests for the Logout endpoint verifying both sign-out and invalid token behaviours.
+    /// </summary>
     public class LogoutTests : LoginControllerTests
     {
         public LogoutTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: Logout without explicit token parameter returns a SignOutResult.
+        /// </summary>
         [Fact(DisplayName = "Success: Returns sign-out result")]
         public async Task ReturnsSignOut()
         {
@@ -379,6 +472,10 @@ public class LoginControllerTests
             _testOutputHelper.WriteLine("Result: " + logoutResult.GetType().Name);
         }
         
+        /// <summary>
+        /// Success case: Logout with token parameter present in query should also return SignOutResult.
+        /// The test extracts the token from cookies set during login and passes it to the Logout endpoint.
+        /// </summary>
         [Fact(DisplayName = "Success: Logout when token provided as parameter")]
         public async Task ReturnsSignOut_WhenTokenProvided()
         {
@@ -392,6 +489,9 @@ public class LoginControllerTests
             logoutResult.Should().BeOfType<SignOutResult>();
         }
 
+        /// <summary>
+        /// Failure case: invalid token parameter for logout should return a bad request (400).
+        /// </summary>
         [Fact(DisplayName = "Failure: Invalid token returns bad request")]
         public async Task ReturnsBadRequest_ForInvalidToken()
         {
@@ -403,6 +503,13 @@ public class LoginControllerTests
         }
     }
     
+    /// <summary>
+    /// Helper that creates the user in DB and performs a web login (standard LoginAsync).
+    /// It optionally enables 2FA and optionally performs the login stage (performLogin).
+    /// </summary>
+    /// <param name="enableTwoFactor">If true the user will have TwoFactorEnabled and a generated TwoFactorSecret.</param>
+    /// <param name="performLogin">If false this method only adds the user and returns the user id without performing login.</param>
+    /// <returns>Tuple of created user's id and login content (or null if not logged in).</returns>
     private async Task<(string userId, string? content)> AddMockUserAndLoginAsync(bool enableTwoFactor = false, bool performLogin = true)
     {
         _userMock.TwoFactorEnabled = enableTwoFactor;
@@ -434,6 +541,13 @@ public class LoginControllerTests
         return (user.Id, contentResult.Content);
     }
     
+    /// <summary>
+    /// Helper that creates the user in DB and performs a launcher login (LoginLauncherAsync).
+    /// It optionally enables 2FA and optionally performs the login stage (performLogin).
+    /// </summary>
+    /// <param name="enableTwoFactor">If true the user will have TwoFactorEnabled and a generated TwoFactorSecret.</param>
+    /// <param name="performLogin">If false this method only adds the user and returns the user id without performing login.</param>
+    /// <returns>Tuple of created user's id and login content (or null if not logged in).</returns>
     private async Task<(string userId, string? content)> AddMockUserAndLoginLauncherAsync(bool enableTwoFactor = false, bool performLogin = true)
     {
         _userMock.TwoFactorEnabled = enableTwoFactor;

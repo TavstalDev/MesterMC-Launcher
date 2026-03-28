@@ -18,62 +18,45 @@ using Xunit.Abstractions;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.Auth;
 
-public class RecoveryControllerTests
+/// <summary>
+/// Tests for <see cref="RecoveryController"/> covering password and two-factor recovery flows.
+/// </summary>
+public class RecoveryControllerTests : ControllerTestBase
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-    private readonly CustomDbContext _dbContext;
-    private readonly UserManager<CustomUser> _userManager;
+    private readonly Mock<ILogger<RecoveryController>> _loggerMock = new();
     private readonly RecoveryController _controller;
-    private readonly DefaultHttpContext _controllerHttpContext;
-    private readonly Settings _settings;
-    private readonly CustomUser _userMock;
-    private const string _passwordMock = "This%Valid_And#Pass%mock-2026";
 
-    public RecoveryControllerTests(ITestOutputHelper testOutputHelper)
+    /// <summary>
+    /// Initializes shared test fixtures:
+    /// <br/>- creates in-memory DB context,
+    /// <br/>- creates a test UserManager,
+    /// <br/>- prepares a fake email service and memory cache service,
+    /// <br/>- constructs a <see cref="RecoveryController"/> instance,
+    /// <br/>- sets up a default <see cref="DefaultHttpContext"/> (IP, User-Agent, Host),
+    /// <br/>- prepares a default <see cref="CustomUser"/> object used by tests.
+    /// </summary>
+    /// <param name="testOutputHelper">XUnit output helper passed by the test framework.</param>
+    public RecoveryControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _testOutputHelper = testOutputHelper;
-        var loggerMock = new Mock<ILogger<RecoveryController>>();
-        _dbContext = TestHelper.CreateInMemoryDbContext();
-        var userManager = TestHelper.CreateCustomUserManager(_dbContext);
-        _userManager = userManager;
-        var emailService = TestHelper.FakeEmailService;
-        _settings = TestHelper.CreateTestSettings();
-        var memoryService = TestHelper.MemoryCacheService;
-        _controller = new RecoveryController(loggerMock.Object, userManager, _dbContext, emailService, memoryService, _settings);
-
-        _controllerHttpContext = new DefaultHttpContext
-        {
-            Connection =
-            {
-                RemoteIpAddress = IPAddress.Parse(TestHelper.IpAddress)
-            }
-        };
-        _controllerHttpContext.Request.Headers.UserAgent = TestHelper.UserAgent;
-        _controllerHttpContext.Request.Host = new HostString("localhost", 5000);
+        _controller = new RecoveryController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, TestHelper.FakeEmailService, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
         };
-
-        _userMock = new CustomUser
-        {
-            Email = "testuser@gmail.com",
-            EmailConfirmed = true,
-            NormalizedEmail = "testuser@gmail.com".Normalize(),
-            UserName = "testuser",
-            NormalizedUserName = "testuser".Normalize(),
-            PasswordHash = StringChiper.GetEncryptedSha256Hash(_passwordMock, _settings.EncryptionKey),
-            CreateDate = DateTimeOffset.UtcNow,
-            LastLogin = DateTimeOffset.UtcNow,
-            LastUpdate = DateTimeOffset.UtcNow,
-            SkinModel = ESkinType.WIDE
-        };
     }
 
+    /// <summary>
+    /// Tests for the recovery request endpoint (password recovery request).
+    /// These verify successful email sending, missing user, unconfirmed email and rate-limit checks.
+    /// </summary>
     public class RequestRecoveryTests : RecoveryControllerTests
     {
         public RequestRecoveryTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Success case: when the user exists and email is confirmed, a recovery email should be enqueued/sent.
+        /// Expected result: <see cref="ObjectResult"/> with HTTP status 201 Created.
+        /// </summary>
         [Fact(DisplayName = "Success: Send recovery email")]
         public async Task ReturnsOk()
         {
@@ -87,6 +70,10 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: requesting recovery for a non-existent email returns NotFound.
+        /// Expected result: <see cref="ObjectResult"/> with HTTP status 404 Not Found.
+        /// </summary>
         [Fact(DisplayName = "Failure: User not found")]
         public async Task ReturnsNotFound_WhenUserMissing()
         {
@@ -97,6 +84,10 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: the user exists but their email is not confirmed — recovery should be forbidden.
+        /// Expected result: <see cref="ObjectResult"/> with HTTP status 403 Forbidden.
+        /// </summary>
         [Fact(DisplayName = "Failure: Email not confirmed")]
         public async Task ReturnsForbidden_WhenEmailNotConfirmed()
         {
@@ -110,6 +101,11 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: user has requested recovery recently and is rate-limited.
+        /// The memory cache is prepopulated to simulate a recent request, which should cause a 403.
+        /// Expected result: <see cref="ObjectResult"/> with HTTP status 403 Forbidden.
+        /// </summary>
         [Fact(DisplayName = "Failure: Already requested recovery recently")]
         public async Task ReturnsForbidden_WhenRequestTooFrequent()
         {
@@ -128,10 +124,18 @@ public class RecoveryControllerTests
         }
     }
 
+    /// <summary>
+    /// Tests for the password recovery execution endpoint.
+    /// These cover a successful password reset, invalid token, expired token, and attempts limit.
+    /// </summary>
     public class RecoverPasswordTests : RecoveryControllerTests
     {
         public RecoverPasswordTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Success case: valid recovery token present in cache and attempts under limit should reset the password.
+        /// Expected result: <see cref="ObjectResult"/> with HTTP status 200 OK.
+        /// </summary>
         [Fact(DisplayName = "Success: Reset password")]
         public async Task ReturnsOk()
         {
@@ -155,6 +159,10 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: provided recovery token is invalid for the user.
+        /// Expected result: <see cref="ObjectResult"/> with HTTP status 404 Not Found (token/user mismatch).
+        /// </summary>
         [Fact(DisplayName = "Failure: Invalid recovery token")]
         public async Task ReturnsUnauthorized_ForInvalidToken()
         {
@@ -173,6 +181,10 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: recovery token has expired (not present in cache or expired).
+        /// Expected result: <see cref="ObjectResult"/> with HTTP status 400 Bad Request.
+        /// </summary>
         [Fact(DisplayName = "Failure: Expired recovery token")]
         public async Task ReturnsBadRequest_WhenTokenExpired()
         {
@@ -193,6 +205,11 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: too many recovery attempts were made for this fingerprint; the endpoint should return forbidden.
+        /// The test pre-populates the attempts counter in the cache to simulate this.
+        /// Expected result: <see cref="ObjectResult"/> with HTTP status 403 Forbidden.
+        /// </summary>
         [Fact(DisplayName = "Failure: Too many attempts")]
         public async Task ReturnsForbidden_WhenTooManyAttempts()
         {
@@ -217,10 +234,18 @@ public class RecoveryControllerTests
         }
     }
 
+    /// <summary>
+    /// Tests for requesting two-factor authentication recovery (TFA backup codes / email flow).
+    /// Ensures email sending, missing user and rate-limit behavior.
+    /// </summary>
     public class RequestTwoFactorTests : RecoveryControllerTests
     {
         public RequestTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) {}
         
+        /// <summary>
+        /// Success case: when user exists and email is confirmed, a TFA recovery email should be sent.
+        /// Expected: <see cref="ObjectResult"/> with HTTP 201 Created.
+        /// </summary>
         [Fact(DisplayName = "Success: Send recovery email")]
         public async Task ReturnsOk()
         {
@@ -233,7 +258,10 @@ public class RecoveryControllerTests
             objectResult!.StatusCode.Should().Be(201);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
-
+        
+        /// <summary>
+        /// Failure case: requesting TFA recovery for an unknown email returns 404 Not Found.
+        /// </summary>
         [Fact(DisplayName = "Failure: User not found")]
         public async Task ReturnsNotFound_WhenUserMissing()
         {
@@ -244,6 +272,10 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: user's email not confirmed — TFA recovery should be forbidden.
+        /// Expected: HTTP 403 Forbidden.
+        /// </summary>
         [Fact(DisplayName = "Failure: Email not confirmed")]
         public async Task ReturnsForbidden_WhenEmailNotConfirmed()
         {
@@ -257,6 +289,10 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: TFA recovery was requested recently and is rate-limited.
+        /// Simulates the cache containing an existing token, expecting HTTP 403.
+        /// </summary>
         [Fact(DisplayName = "Failure: Already requested recovery recently")]
         public async Task ReturnsForbidden_WhenRequestTooFrequent()
         {
@@ -275,10 +311,18 @@ public class RecoveryControllerTests
         }
     }
     
+    /// <summary>
+    /// Tests covering performing two-factor recovery (using backup codes or token-based flows).
+    /// Verifies valid backup code flow, invalid code, too many attempts and user-not-found.
+    /// </summary>
     public class RecoverTwoFactorTests : RecoveryControllerTests
     {
         public RecoverTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Success case: user has 2FA enabled and a valid backup code stored in DB.
+        /// The test places the expected recovery token into cache and ensures the call returns 200 OK.
+        /// </summary>
         [Fact(DisplayName = "Success: Recover 2FA with valid backup code")]
         public async Task ReturnsOk_WhenValidBackupCode()
         {
@@ -312,6 +356,9 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: backup code provided by user is invalid — expect HTTP 400 Bad Request.
+        /// </summary>
         [Fact(DisplayName = "Failure: Invalid backup code")]
         public async Task ReturnsUnauthorized_ForInvalidBackupCode()
         {
@@ -338,6 +385,10 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: too many attempts have been made for TFA recovery and endpoint returns forbidden.
+        /// The test simulates this by pre-populating the attempts counter in cache.
+        /// </summary>
         [Fact(DisplayName = "Failure: Too many recovery attempts")]
         public async Task ReturnsForbidden_WhenTooManyAttempts()
         {
@@ -364,6 +415,10 @@ public class RecoveryControllerTests
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: attempting TFA recovery for a non-existing user results in NotFound.
+        /// Expected result: <see cref="ObjectResult"/> with HTTP status 404 Not Found.
+        /// </summary>
         [Fact(DisplayName = "Failure: User not found")]
         public async Task ReturnsNotFound_WhenUserMissing()
         {
