@@ -90,8 +90,8 @@ public static class OSHelper
     /// </summary>
     /// <returns>
     /// A tuple containing:
-    /// - A string representing the GPU type ("nvidia", "amd", "intel", or "apple") if detected.
-    /// - A string representing the GPU description.
+    /// <br/>- A string representing the GPU type ("nvidia", "amd", "intel", or "apple") if detected.
+    /// <br/>- A string representing the GPU description.
     /// Returns <c>null</c> if no dedicated GPU is detected.
     /// </returns>
     public static (string, string)? GetDedicatedGpuType()

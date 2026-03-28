@@ -1,6 +1,3 @@
-using Org.BouncyCastle.Asn1.Ocsp;
-using Tavstal.MesterMC.Api.Models.Database.User;
-
 namespace Tavstal.MesterMC.Api.Utils.Helpers;
 
 /// <summary>

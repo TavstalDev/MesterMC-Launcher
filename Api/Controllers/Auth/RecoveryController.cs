@@ -33,6 +33,7 @@ public class RecoveryController : CustomControllerBase
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="emailService">Service for sending emails.</param>
+    /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="settings">Application settings.</param>
     public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
     {

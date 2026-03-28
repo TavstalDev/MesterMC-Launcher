@@ -340,8 +340,8 @@ public class MinecraftInstance
     /// <param name="modVersion">Optional mod loader version (e.g. forge/fabric) used when resolving placeholders.</param>
     /// <returns>
     /// A tuple containing:
-    /// - Item1: the JVM argument string (may be null if placeholder replacement failed),
-    /// - Item2: the game argument string (may be null if placeholder replacement failed).
+    /// <br/>- Item1: the JVM argument string (may be null if placeholder replacement failed),
+    /// <br/>- Item2: the game argument string (may be null if placeholder replacement failed).
     /// </returns>
     private (string?, string?) BuildArguments(string gameDir, string mainClass, string nativesDir, string? modVersion = null)
     {

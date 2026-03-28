@@ -24,9 +24,9 @@ public static class AuthHelper
     /// <param name="password">The password of the user attempting to log in.</param>
     /// <returns>
     /// A tuple containing:
-    /// - The authentication token if login is successful.
-    /// - A boolean indicating whether two-factor authentication (TFA) is required.
-    /// - The user ID if login is successful and TFA is not required.
+    /// <br/>- The authentication token if login is successful.
+    /// <br/>- A boolean indicating whether two-factor authentication (TFA) is required.
+    /// <br/>- The user ID if login is successful and TFA is not required.
     /// Returns null if the login fails.
     /// </returns>
     [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]
@@ -108,8 +108,8 @@ public static class AuthHelper
     /// <param name="code">The TFA code provided by the user.</param>
     /// <returns>
     /// A tuple containing:
-    /// - The access token if TFA verification is successful.
-    /// - The user ID associated with the account.
+    /// <br/>- The access token if TFA verification is successful.
+    /// <br/>- The user ID associated with the account.
     /// Returns null if the TFA verification fails.
     /// </returns>
     [RequiresUnreferencedCode("This method uses code that may be removed during trimming.")]

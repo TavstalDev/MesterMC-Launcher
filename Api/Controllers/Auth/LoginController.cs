@@ -34,6 +34,7 @@ public class LoginController : CustomControllerBase
     /// <param name="dbContext">The database context for accessing user-related data.</param>
     /// <param name="userManager">The user manager for managing user authentication and roles.</param>
     /// <param name="emailService">The email service for sending emails.</param>
+    /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="settings">The application settings.</param>
     public LoginController(ILogger<LoginController> logger, CustomDbContext dbContext,
         CustomUserManager userManager, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)

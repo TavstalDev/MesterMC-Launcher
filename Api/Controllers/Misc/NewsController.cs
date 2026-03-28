@@ -35,9 +35,9 @@ public class NewsController : CustomControllerBase
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="dbContext">Database context for accessing news data.</param>
-    /// <param name="settings">Application settings.</param>
     /// <param name="cacheService">Service for caching news data.</param>
-    public NewsController(ILogger<NewsController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings, MemoryCacheService cacheService) : base(logger, settings)
+    /// <param name="settings">Application settings.</param>
+    public NewsController(ILogger<NewsController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService cacheService, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;
