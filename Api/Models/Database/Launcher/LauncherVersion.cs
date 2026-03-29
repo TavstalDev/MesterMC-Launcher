@@ -42,5 +42,5 @@ public class LauncherVersion
     /// <summary>
     /// Gets or sets the timestamp indicating when the launcher version was last updated.
     /// </summary>
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 }

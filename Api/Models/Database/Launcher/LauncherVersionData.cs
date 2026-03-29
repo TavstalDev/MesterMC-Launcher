@@ -38,7 +38,7 @@ public class LauncherVersionData
     /// <summary>
     /// Gets or sets the timestamp indicating when this launcher version data was last updated.
     /// </summary>
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
     
     /* ######################################################################
      *                         NAVIGATION PROPERTIES
