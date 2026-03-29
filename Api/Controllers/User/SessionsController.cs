@@ -52,7 +52,7 @@ public class SessionsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Sessions))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             var userLogins = _dbContext.GetUserLogins(x => x.UserId == user.Id);
             return ReturnJson(userLogins);
@@ -95,7 +95,7 @@ public class SessionsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Session))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             var userLogin = _dbContext.FindUserLogin(x => x.Id == sessionId && x.UserId == user.Id);
             if (userLogin == null)
@@ -130,7 +130,7 @@ public class SessionsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Sessions))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             await _dbContext.ClearUserLoginsAsync(user.Id, true);
             return ReturnResponseCode(HttpStatusCode.OK, "All sessions revoked successfully.");
@@ -174,7 +174,7 @@ public class SessionsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.View.SessionsOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
@@ -225,7 +225,7 @@ public class SessionsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.SessionOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
@@ -279,7 +279,7 @@ public class SessionsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.SessionsOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)

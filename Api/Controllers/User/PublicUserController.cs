@@ -111,7 +111,7 @@ public class PublicUserController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Avatar))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingAvatar =
                 await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);

@@ -218,7 +218,7 @@ public class LauncherController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Launcher.CreateVersion))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? existingVersion =
                 await _dbContext.FindLauncherVersionAsync(x => x.Version == request.Version);
@@ -278,7 +278,7 @@ public class LauncherController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Launcher.UpdateVersion))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
             if (version == null)
@@ -342,7 +342,7 @@ public class LauncherController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Launcher.DeleteVersion))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
             if (version == null)
@@ -393,7 +393,7 @@ public class LauncherController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Launcher.CreateVersion))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
             if (version == null)
@@ -477,7 +477,7 @@ public class LauncherController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Launcher.DeleteVersion))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersionData? versionData =
                 await _dbContext.FindLauncherVersionDataAsync(x => x.Id == dataId && x.VersionId == versionId);

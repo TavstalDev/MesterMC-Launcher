@@ -67,7 +67,7 @@ public class AvatarController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Avatar))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             string cacheKey = $"avatar:{user.Id}";
             if (!_memoryCache.TryGetValue(cacheKey, out (byte[], string, string) cachedAvatar))
@@ -138,7 +138,7 @@ public class AvatarController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.Create.Avatar))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 512) // 500 KB limit
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
@@ -221,7 +221,7 @@ public class AvatarController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.Avatar))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingAvatar =
                 await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
@@ -283,7 +283,7 @@ public class AvatarController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.Create.AvatarOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
@@ -384,7 +384,7 @@ public class AvatarController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Account.Delete.AvatarOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)

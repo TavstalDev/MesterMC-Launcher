@@ -57,7 +57,7 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Skins.View))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? skin =
                 await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
@@ -112,7 +112,7 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Skins.Upload))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 512) // 500 KB limit
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
@@ -198,7 +198,7 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Skins.Delete))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingSkin =
                 await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
@@ -250,7 +250,7 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Skins.ViewOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
@@ -314,7 +314,7 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Skins.UploadOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
@@ -418,7 +418,7 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Skins.DeleteOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)

@@ -70,7 +70,7 @@ public class CapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Capes.Create))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 512) // 500 KB limit
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
@@ -180,7 +180,7 @@ public class CapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Capes.Delete))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             Cape? cape = await _dbContext.FindCapeAsync(x => x.Id == capeId);
             if (cape == null)

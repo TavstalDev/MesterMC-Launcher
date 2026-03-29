@@ -70,7 +70,7 @@ public class UserCapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Capes.Select))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? cape = await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.CapeId == capeId);
             if (cape == null)
@@ -120,7 +120,7 @@ public class UserCapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Capes.Unselect))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? currentlySelectedCape =
                 await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.IsSelected);
@@ -176,7 +176,7 @@ public class UserCapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Capes.SelectOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
@@ -245,7 +245,7 @@ public class UserCapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!_userManager.HasPermission(user, CustomPermissions.Capes.UnselectOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
+                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
