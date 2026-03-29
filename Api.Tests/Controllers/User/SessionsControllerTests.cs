@@ -1,13 +1,23 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Tavstal.MesterMC.Api.Controllers.User;
+using Tavstal.MesterMC.Api.Services.Database;
 using Xunit.Abstractions;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.User;
 
-public class SessionsControllerTests
+public class SessionsControllerTests : ControllerTestBase
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-
-    public SessionsControllerTests(ITestOutputHelper testOutputHelper)
+    private readonly Mock<ILogger<SessionsController>> _loggerMock = new();
+    private readonly SessionsController _controller;
+    
+    public SessionsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _testOutputHelper = testOutputHelper;
+        _controller = new SessionsController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _settings);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = _controllerHttpContext
+        };
     }
 }
