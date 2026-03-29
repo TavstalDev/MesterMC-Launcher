@@ -10,14 +10,23 @@ using Tavstal.MesterMC.Api.Models.Database.Launcher;
 using Tavstal.MesterMC.Api.Services.Database;
 using Xunit;
 using Xunit.Abstractions;
+using Microsoft.AspNetCore.Http;
+using Tavstal.MesterMC.Api.Models.Bodies.Launcher;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.Launcher;
 
+/// <summary>
+/// Unit tests for the LauncherController.
+/// </summary>
 public class LauncherControllerTests : ControllerTestBase
 {
     private readonly Mock<ILogger<LauncherController>> _loggerMock = new();
     private readonly LauncherController _controller;
 
+    /// <summary>
+    /// Initializes a new instance of the LauncherControllerTests class.
+    /// </summary>
+    /// <param name="testOutputHelper">Helper for test output.</param>
     public LauncherControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _controller = new LauncherController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _memoryCacheService, _settings);
@@ -27,10 +36,16 @@ public class LauncherControllerTests : ControllerTestBase
         };
     }
 
+    /// <summary>
+    /// Tests for the GetLauncherVersion endpoint.
+    /// </summary>
     public class GetLauncherVersionTests : LauncherControllerTests
     {
         public GetLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Verifies that the endpoint returns a list of versions successfully.
+        /// </summary>
         [Fact(DisplayName = "Success: Returns a list of versions")]
         public async Task ReturnsOk()
         {
@@ -49,6 +64,9 @@ public class LauncherControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
 
+        /// <summary>
+        /// Verifies that the endpoint returns 404 when no versions exist.
+        /// </summary>
         [Fact(DisplayName = "Failure: No version exists")]
         public async Task ReturnsNotFound()
         {
@@ -60,10 +78,16 @@ public class LauncherControllerTests : ControllerTestBase
         }
     }
 
+    /// <summary>
+    /// Tests for the GetLatestLauncherVersion endpoint.
+    /// </summary>
     public class GetLatestLauncherVersionTests : LauncherControllerTests
     {
         public GetLatestLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Verifies that the endpoint returns the latest version successfully.
+        /// </summary>
         [Fact(DisplayName = "Success: Returns the latest version")]
         public async Task ReturnsOk()
         {
@@ -82,6 +106,9 @@ public class LauncherControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
 
+        /// <summary>
+        /// Verifies that the endpoint returns 404 when no versions exist.
+        /// </summary>
         [Fact(DisplayName = "Failure: No version exists")]
         public async Task ReturnsNotFound()
         {
@@ -93,10 +120,16 @@ public class LauncherControllerTests : ControllerTestBase
         }
     }
 
+    /// <summary>
+    /// Tests for the GetLauncherVersionDetails endpoint.
+    /// </summary>
     public class GetLauncherVersionDetailsTests : LauncherControllerTests
     {
         public GetLauncherVersionDetailsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Verifies that the endpoint returns version details successfully.
+        /// </summary>
         [Fact(DisplayName = "Success: Returns version details")]
         public async Task ReturnsOk()
         {
@@ -139,6 +172,9 @@ public class LauncherControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
         
+        /// <summary>
+        /// Verifies that the endpoint returns 404 when the version does not exist.
+        /// </summary>
         [Fact(DisplayName = "Failure: No version exists")]
         public async Task ReturnsNotFound()
         {
@@ -150,10 +186,16 @@ public class LauncherControllerTests : ControllerTestBase
         }
     }
 
+    /// <summary>
+    /// Unit tests for the DownloadLauncherVersion functionality in the LauncherController.
+    /// </summary>
     public class DownloadLauncherVersionTests : LauncherControllerTests
     {
         public DownloadLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Verifies that the endpoint successfully returns a file for a valid launcher version.
+        /// </summary>
         [Fact(DisplayName = "Success: Returns file")]
         public async Task ReturnsOk()
         {
@@ -198,6 +240,9 @@ public class LauncherControllerTests : ControllerTestBase
             fd.DeleteFile();
         }
 
+        /// <summary>
+        /// Verifies that the endpoint returns a 404 status when the launcher version does not exist.
+        /// </summary>
         [Fact(DisplayName = "Failure: No version exists")]
         public async Task ReturnsNotFound_WhenVersionDoesNotExist()
         {
@@ -205,6 +250,568 @@ public class LauncherControllerTests : ControllerTestBase
             result.Should().BeOfType<ObjectResult>();
             var objectResult = result as ObjectResult;
             objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        /// <summary>
+        /// Verifies that the endpoint returns a 404 status when the launcher version file does not exist.
+        /// </summary>
+        [Fact(DisplayName = "Failure: No version file exists")]
+        public async Task ReturnsNotFound_WhenVersionDataDoesNotExist()
+        {
+            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "1.0.0",
+                Changelog = "Initial release",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            }, true);
+            
+            byte[] bytes = "Hello world"u8.ToArray();
+            using var stream = new MemoryStream(bytes);
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            
+            
+            var fd = await _dbContext.AddFileDataAsync(new FileData
+            {
+                Hash = fileHash,
+                FileName = "test.zip",
+                ContentType = "application/zip",
+                Type = EFileDataType.LAUNCHER,
+            }, true);
+            await _dbContext.AddLauncherVersionDataAsync(new LauncherVersionData
+            {
+                VersionId = version.Id,
+                FileId = fd.Id,
+                Os = ELauncherOs.WINDOWS,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            }, true);
+            
+            var result = await _controller.DownloadLauncherVersion(version.Id, ELauncherOs.WINDOWS);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+    }
+
+    /// <summary>
+    /// Unit tests for the CreateLauncherVersion functionality in the LauncherController.
+    /// </summary>
+    public class CreateLauncherVersionTests : LauncherControllerTests
+    {
+        public CreateLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+
+        /// <summary>
+        /// Verifies that the endpoint successfully creates a launcher version.
+        /// </summary>
+        [Fact(DisplayName = "Success: Create launcher version")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+            var result = await _controller.CreateLauncherVersion(new CreateLauncherVersionRequest
+            {
+                Version = "1.0.0",
+                VersionType = EVersionType.RELEASE,
+                Changelog = "Release 1.0"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(200);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+
+        /// <summary>
+        /// Verifies that the endpoint returns a 400 status when a duplicate launcher version is created.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Duplicate launcher version")]
+        public async Task ReturnsBadRequest_WhenDuplicate()
+        {
+            await CreateUserAsync(_controller);
+
+            await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "1.0.0",
+                Changelog = "Initial",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+
+            var result = await _controller.CreateLauncherVersion(new CreateLauncherVersionRequest
+            {
+                Version = "1.0.0",
+                VersionType = EVersionType.RELEASE,
+                Changelog = "Duplicate"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(400);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+
+        /// <summary>
+        /// Verifies that the endpoint returns a 401 status when no user is authenticated.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Unauthorized")]
+        public async Task ReturnsUnauthorized_WhenNoUser()
+        {
+            var result = await _controller.CreateLauncherVersion(new CreateLauncherVersionRequest
+            {
+                Version = "1.0.0",
+                VersionType = EVersionType.RELEASE,
+                Changelog = "Initial"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(401);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        /// <summary>
+        /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Not enough permissions")]
+        public async Task ReturnsForbidden_WhenInsufficientPermissions()
+        {
+            await CreateUserAsync(_controller, givePermissions: false);
+            var result = await _controller.CreateLauncherVersion(new CreateLauncherVersionRequest
+            {
+                Version = "1.0.0",
+                VersionType = EVersionType.RELEASE,
+                Changelog = "Initial"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(403);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+    }
+
+    /// <summary>
+    /// Unit tests for the UpdateLauncherVersion functionality in the LauncherController.
+    /// </summary>
+    public class UpdateLauncherVersionTests : LauncherControllerTests
+    {
+        public UpdateLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+
+        /// <summary>
+        /// Verifies that the endpoint successfully updates a launcher version.
+        /// </summary>
+        [Fact(DisplayName = "Success: Update launcher version")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+
+            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "1.0.0",
+                Changelog = "Initial",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+
+            var result = await _controller.UpdateLauncherVersion(version.Id, new UpdateLauncherVersionRequest
+            {
+                Version = "1.0.1",
+                Changelog = "Patch"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(200);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+
+        /// <summary>
+        /// Verifies that the endpoint returns a 404 status when the launcher version is not found.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Version not found")]
+        public async Task ReturnsNotFound_WhenMissing()
+        {
+            await CreateUserAsync(_controller);
+
+            var result = await _controller.UpdateLauncherVersion(1, new UpdateLauncherVersionRequest
+            {
+                Version = "1.0.1",
+                Changelog = "Patch"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+
+        /// <summary>
+        /// Verifies that the endpoint returns a 400 status when attempting to update to a duplicate version.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Duplicate version on update")]
+        public async Task ReturnsBadRequest_WhenDuplicate()
+        {
+            await CreateUserAsync(_controller);
+
+            var v1 = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "1.0.0",
+                Changelog = "v1",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+
+            var v2 = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "1.0.1",
+                Changelog = "Patch",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+
+            var result = await _controller.UpdateLauncherVersion(v1.Id, new UpdateLauncherVersionRequest
+            {
+                Version = "1.0.1"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(400);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        /// <summary>
+        /// Verifies that the endpoint returns a 401 status when no user is authenticated.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Unauthorized")]
+        public async Task ReturnsUnauthorized_WhenNoUser()
+        {
+            var v1 = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "1.0.0",
+                Changelog = "v1",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+            
+            var result = await _controller.UpdateLauncherVersion(v1.Id, new UpdateLauncherVersionRequest
+            {
+                Version = "1.0.1"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(401);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        /// <summary>
+        /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Not enough permissions")]
+        public async Task ReturnsForbidden_WhenInsufficientPermissions()
+        {
+            await CreateUserAsync(_controller, givePermissions: false);
+
+            var v1 = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "1.0.0",
+                Changelog = "v1",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+            
+            var result = await _controller.UpdateLauncherVersion(v1.Id, new UpdateLauncherVersionRequest
+            {
+                Version = "1.0.1"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(403);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+    }
+
+    /// <summary>
+    /// Unit tests for the DeleteLauncherVersion functionality in the LauncherController.
+    /// </summary>
+    public class DeleteLauncherVersionTests : LauncherControllerTests
+    {
+        public DeleteLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+
+        /// <summary>
+        /// Verifies that the endpoint successfully deletes an existing launcher version.
+        /// </summary>
+        [Fact(DisplayName = "Success: Delete launcher version")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+
+            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "8.0.0",
+                Changelog = "to delete",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+
+            var result = await _controller.DeleteLauncherVersion(version.Id);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(200);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+
+        /// <summary>
+        /// Verifies that the endpoint returns a 404 status when attempting to delete a non-existing launcher version.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Delete non-existing version")]
+        public async Task ReturnsNotFound_WhenMissing()
+        {
+            await CreateUserAsync(_controller);
+
+            var result = await _controller.DeleteLauncherVersion(1);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        /// <summary>
+        /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions to delete a launcher version.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Not enough permissions")]
+        public async Task ReturnsForbidden_WhenInsufficientPermissions()
+        {
+            await CreateUserAsync(_controller, givePermissions: false);
+
+            var result = await _controller.DeleteLauncherVersion(1);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(403);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+    }
+
+    /// <summary>
+    /// Unit tests for the AddLauncherVersionData functionality in the LauncherController.
+    /// </summary>
+    public class AddLauncherVersionDataTests : LauncherControllerTests
+    {
+        public AddLauncherVersionDataTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+
+        /// <summary>
+        /// Verifies that the endpoint successfully adds launcher version data.
+        /// </summary>
+        [Fact(DisplayName = "Success: Add launcher version data")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+
+            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "9.0.0",
+                Changelog = "with data",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+
+            byte[] bytes = "Hello world"u8.ToArray();
+            using var stream = new MemoryStream(bytes);
+            var formFile = new FormFile(stream, 0, stream.Length, "File", "test.zip")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/zip"
+            };
+
+            var request = new CreateLauncherVersionDataRequest
+            {
+                Os = ELauncherOs.WINDOWS,
+                File = formFile
+            };
+
+            var result = await _controller.AddLauncherVersionData(version.Id, request);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(200);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+
+        /// <summary>
+        /// Verifies that the endpoint returns a 404 status when the launcher version does not exist.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Add data to missing version")]
+        public async Task ReturnsNotFound_WhenVersionMissing()
+        {
+            await CreateUserAsync(_controller);
+
+            byte[] bytes = "Hello world"u8.ToArray();
+            using var stream = new MemoryStream(bytes);
+            var formFile = new FormFile(stream, 0, stream.Length, "File", "test.zip")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/zip"
+            };
+
+            var request = new CreateLauncherVersionDataRequest
+            {
+                Os = ELauncherOs.WINDOWS,
+                File = formFile
+            };
+
+            var result = await _controller.AddLauncherVersionData(1, request);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        /// <summary>
+        /// Verifies that the endpoint returns a 401 status when no user is authenticated.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Unauthorized")]
+        public async Task ReturnsUnauthorized_WhenNoUser()
+        {
+            byte[] bytes = "Hello world"u8.ToArray();
+            using var stream = new MemoryStream(bytes);
+            var formFile = new FormFile(stream, 0, stream.Length, "File", "test.zip")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/zip"
+            };
+            
+            var result = await _controller.AddLauncherVersionData(1, new CreateLauncherVersionDataRequest
+            {
+                Os = ELauncherOs.WINDOWS,
+                File = formFile
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(401);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        /// <summary>
+        /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Not enough permissions")]
+        public async Task ReturnsForbidden_WhenInsufficientPermissions()
+        {
+            await CreateUserAsync(_controller, givePermissions: false);
+
+            byte[] bytes = "Hello world"u8.ToArray();
+            using var stream = new MemoryStream(bytes);
+            var formFile = new FormFile(stream, 0, stream.Length, "File", "test.zip")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/zip"
+            };
+            
+            var result = await _controller.AddLauncherVersionData(1, new CreateLauncherVersionDataRequest
+            {
+                Os = ELauncherOs.WINDOWS,
+                File = formFile
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(403);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+    }
+
+    /// <summary>
+    /// Unit tests for the DeleteLauncherVersionData functionality in the LauncherController.
+    /// </summary>
+    public class DeleteLauncherVersionDataTests : LauncherControllerTests
+    {
+        public DeleteLauncherVersionDataTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+
+        /// <summary>
+        /// Verifies that the endpoint successfully deletes launcher version data.
+        /// </summary>
+        [Fact(DisplayName = "Success: Delete launcher version data")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+
+            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            {
+                Version = "10.0.0",
+                Changelog = "to delete data",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+
+            byte[] bytes = "Hello world"u8.ToArray();
+            using var stream = new MemoryStream(bytes);
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+
+            var fd = await _dbContext.AddFileDataAsync(new FileData
+            {
+                Hash = fileHash,
+                FileName = "test.zip",
+                ContentType = "application/zip",
+                Type = EFileDataType.LAUNCHER
+            }, true);
+            stream.Position = 0;
+            fd.SaveFile(stream);
+
+            var versionData = await _dbContext.AddLauncherVersionDataAsync(new LauncherVersionData
+            {
+                VersionId = version.Id,
+                FileId = fd.Id,
+                Os = ELauncherOs.WINDOWS,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }, true);
+
+            var result = await _controller.DeleteLauncherVersionData(version.Id, versionData.Id);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(200);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+
+            fd.DeleteFile();
+        }
+
+        /// <summary>
+        /// Verifies that the endpoint returns a 404 status when the launcher version data does not exist.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Delete missing version data")]
+        public async Task ReturnsNotFound_WhenMissing()
+        {
+            await CreateUserAsync(_controller);
+
+            var result = await _controller.DeleteLauncherVersionData(1, 1);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        /// <summary>
+        /// Verifies that the endpoint returns a 401 status when no user is authenticated.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Unauthorized")]
+        public async Task ReturnsUnauthorized_WhenNoUser()
+        {
+            var result = await _controller.DeleteLauncherVersionData(1, 1);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(401);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        /// <summary>
+        /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Not enough permissions")]
+        public async Task ReturnsForbidden_WhenInsufficientPermissions()
+        {
+            await CreateUserAsync(_controller, givePermissions: false);
+
+            var result = await _controller.DeleteLauncherVersionData(1, 1);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(403);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
     }
