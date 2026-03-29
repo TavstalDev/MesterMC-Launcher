@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -16,11 +17,19 @@ using Xunit.Abstractions;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.Misc;
 
+/// <summary>
+/// Tests for <see cref="NewsController"/> instance methods.
+/// </summary>
 public class NewsControllerTests : ControllerTestBase
 {
     private readonly Mock<ILogger<NewsController>> _loggerMock = new();
     private readonly NewsController _controller;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="NewsControllerTests"/>.
+    /// Sets up controller with mocks / test services provided by the base test class.
+    /// </summary>
+    /// <param name="testOutputHelper">XUnit test output helper forwarded to the base class.</param>
     public NewsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _controller = new NewsController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _memoryCacheService, _settings);
@@ -30,11 +39,20 @@ public class NewsControllerTests : ControllerTestBase
         };
     }
 
+    /// <summary>
+    /// Tests for the GetNews() endpoint which returns all news entries.
+    /// </summary>
     public class GetNewsTests : NewsControllerTests
     {
         public GetNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
-        [Fact(DisplayName = "GetNews: Returns existing news with banner URL")]
+        /// <summary>
+        /// Success scenario:
+        /// Creates a user, inserts a news item with an associated banner file and asserts
+        /// that <see cref="NewsController.GetNews"/> returns a non-empty JSON content result
+        /// that can be deserialized into a list of <see cref="NewsResponseBody"/>.
+        /// </summary>
+        [Fact(DisplayName = "Success: Returns existing news with banner URL")]
         public async Task ReturnsOk()
         {
             await CreateUserAsync(_controller);
@@ -65,7 +83,8 @@ public class NewsControllerTests : ControllerTestBase
             var result = await _controller.GetNews();
             
             result.Should().BeOfType<ContentResult>();
-            var contentResult = (ContentResult)result;
+            var contentResult = result as ContentResult;
+            contentResult!.Content.Should().NotBeNull();
             var list = JsonConvert.DeserializeObject<List<NewsResponseBody>>(contentResult.Content);
             list.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
@@ -74,43 +93,494 @@ public class NewsControllerTests : ControllerTestBase
             foreach (var f in files)
                 f.DeleteFile();
         }
+        
+        /// <summary>
+        /// Success scenario:
+        /// Ensures that when there are no news entries the endpoint still returns a valid,
+        /// empty JSON list and a content result.
+        /// </summary>
+        [Fact(DisplayName = "Success: Returns empty list when no news exists")]
+        public async Task ReturnsOk_WithEmptyList()
+        {
+            await CreateUserAsync(_controller);
+            
+            var result = await _controller.GetNews();
+            
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult!.Content.Should().NotBeNull();
+            var list = JsonConvert.DeserializeObject<List<NewsResponseBody>>(contentResult.Content);
+            list.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
+        }
     }
 
+    /// <summary>
+    /// Tests for the GetLatestNews() endpoint which returns the most recent news items.
+    /// </summary>
     public class GetLatestNewsTests : NewsControllerTests
     {
         public GetLatestNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success scenario:
+        /// Inserts a news item with a banner and asserts the controller returns JSON content
+        /// containing the news as <see cref="NewsResponseBody"/> list.
+        /// </summary>
+        [Fact(DisplayName = "Success: Returns existing news with banner URL")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+
+            using var stream = CreateTestImage(600, 100);
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            stream.Position = 0;
+
+            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            {
+                Hash = fileHash,
+                FileName = $"{Guid.NewGuid():N}.png",
+                ContentType = "image/png",
+                Type = EFileDataType.NEWS_BANNER
+            }, true);
+            fd.SaveFile(stream);
+
+            await _dbContext.AddNewsAsync(new News
+            {
+                Title = "Test Title",
+                Content = "Test Content",
+                BannerId = fd.Id,
+                CreatedAt = DateTimeOffset.UtcNow
+            }, true);
+            
+            var result = await _controller.GetLatestNews();
+            
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult!.Content.Should().NotBeNull();
+            var list = JsonConvert.DeserializeObject<List<NewsResponseBody>>(contentResult.Content);
+            list.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
+            
+            var files = await _dbContext.GetFileDatasAsync();
+            foreach (var f in files)
+                f.DeleteFile();
+        }
         
+        /// <summary>
+        /// Success scenario:
+        /// Validates that the endpoint returns an empty but valid JSON array when there are no news items.
+        /// </summary>
+        [Fact(DisplayName = "Success: Returns empty list when no news exists")]
+        public async Task ReturnsOk_WithEmptyList()
+        {
+            await CreateUserAsync(_controller);
+            
+            var result = await _controller.GetLatestNews();
+            
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult!.Content.Should().NotBeNull();
+            var list = JsonConvert.DeserializeObject<List<NewsResponseBody>>(contentResult.Content);
+            list.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
+        }
     }
 
+    /// <summary>
+    /// Tests for the GetNewsById(int id) endpoint which returns a single news item by id.
+    /// </summary>
     public class GetNewsByIdTests : NewsControllerTests
     {
         public GetNewsByIdTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success scenario:
+        /// Adds a news entry with a banner file then calls GetNewsById and asserts that a
+        /// <see cref="NewsResponseBody"/> JSON object is returned inside a <see cref="ContentResult"/>.
+        /// </summary>
+        [Fact(DisplayName = "Success: Returns existing news with banner URL")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+
+            using var stream = CreateTestImage(600, 100);
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            stream.Position = 0;
+
+            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            {
+                Hash = fileHash,
+                FileName = $"{Guid.NewGuid():N}.png",
+                ContentType = "image/png",
+                Type = EFileDataType.NEWS_BANNER
+            }, true);
+            fd.SaveFile(stream);
+
+            var news = await _dbContext.AddNewsAsync(new News
+            {
+                Title = "Test Title",
+                Content = "Test Content",
+                BannerId = fd.Id,
+                CreatedAt = DateTimeOffset.UtcNow
+            }, true);
+            
+            var result = await _controller.GetNewsById(news.Id);
+            
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult!.Content.Should().NotBeNull();
+            var list = JsonConvert.DeserializeObject<NewsResponseBody>(contentResult.Content);
+            list.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
+            
+            var files = await _dbContext.GetFileDatasAsync();
+            foreach (var f in files)
+                f.DeleteFile();
+        }
         
+        /// <summary>
+        /// Failure scenario:
+        /// When there is no news item for the provided id, the controller should return a 404 NotFound
+        /// wrapped in an <see cref="ObjectResult"/>.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Returns NotFound when news does not exist")]
+        public async Task ReturnsNotFound_WhenNewsDoesNotExist()
+        {
+            await CreateUserAsync(_controller);
+            
+            var result = await _controller.GetNewsById(5);
+            
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+        }
     }
 
+    /// <summary>
+    /// Tests for creating news via CreateNews(NewsCreateRequestBody).
+    /// Covers success path and common failure cases (permissions and invalid file type).
+    /// </summary>
     public class CreateNewsTests : NewsControllerTests
     {
         public CreateNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
-        
+
+        /// <summary>
+        /// Success scenario:
+        /// Creates a user with permissions, provides a valid PNG banner file, calls CreateNews
+        /// and asserts a 201 Created response in an <see cref="ObjectResult"/>.
+        /// </summary>
+        [Fact(DisplayName = "Success: Creates news with banner")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+            
+            using var stream = CreateTestImage(600, 100);
+            IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "image/png"
+            };
+            
+            var result = await _controller.CreateNews(new NewsCreateRequestBody
+            {
+                Title = "Test News",
+                Content = "This is a test news item.",
+                Banner = file
+            });
+            
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(201);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            
+            // Clean-up
+            var files = await _dbContext.GetFileDatasAsync();
+            foreach (var f in files)
+                f.DeleteFile();
+        }
+
+        /// <summary>
+        /// Failure scenario:
+        /// When the current user lacks the required permissions to create news, the call should return 403 Forbidden.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Not enough permissions")]
+        public async Task ReturnsForbidden_WhenUserLacksPermissions()
+        {
+            await CreateUserAsync(_controller, givePermissions: false);
+
+            using var stream = CreateTestImage(600, 100);
+            IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "image/png"
+            };
+
+            var result = await _controller.CreateNews(new NewsCreateRequestBody
+            {
+                Title = "Test News",
+                Content = "This is a test news item.",
+                Banner = file
+            });
+
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(403);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+        }
+
+        /// <summary>
+        /// Failure scenario:
+        /// When an invalid banner file type (non-PNG) is provided the controller should respond with 400 Bad Request.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Invalid banner file type")]
+        public async Task ReturnsBadRequest_WhenBannerFileTypeIsInvalid()
+        {
+            await CreateUserAsync(_controller);
+
+            using var stream = CreateTestImage(600, 100);
+            IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.jpg")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "image/jpg"
+            };
+
+            var result = await _controller.CreateNews(new NewsCreateRequestBody
+            {
+                Title = "Test News",
+                Content = "This is a test news item.",
+                Banner = file
+            });
+
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(400);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+        }
     }
     
+    /// <summary>
+    /// Tests for the UpdateNews(int id, NewsUpdateRequestBody) endpoint which updates existing news entries.
+    /// </summary>
     public class UpdateNewsTests : NewsControllerTests
     {
         public UpdateNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
-        
+
+        /// <summary>
+        /// Success scenario:
+        /// Prepares an existing news item and asserts that updating the title returns HTTP 200 OK.
+        /// </summary>
+        [Fact(DisplayName = "Success: Updates news with new title")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+
+            using var stream = CreateTestImage(600, 100);
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            {
+                Hash = fileHash,
+                FileName = $"{Guid.NewGuid():N}.png",
+                ContentType = "image/png",
+                Type = EFileDataType.NEWS_BANNER
+            }, true);
+            fd.SaveFile(stream);
+
+            var news = await _dbContext.AddNewsAsync(new News
+            {
+                Title = "Test title",
+                Content = "This is a test news item.",
+                BannerId = fd.Id,
+                CreatedAt = DateTimeOffset.UtcNow
+            }, true);
+            
+            var result = await _controller.UpdateNews(news.Id, new NewsUpdateRequestBody
+            {
+                Title = "Updated Title"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(200);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            
+            fd.DeleteFile();
+        }
+
+        /// <summary>
+        /// Failure scenario:
+        /// Asserts that an unauthorized user (no permissions) cannot update a news item and receives 403 Forbidden.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Not enough permissions")]
+        public async Task ReturnsForbidden_WhenUserLacksPermissions()
+        {
+            await CreateUserAsync(_controller, givePermissions: false);
+
+            using var stream = CreateTestImage(600, 100);
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            {
+                Hash = fileHash,
+                FileName = $"{Guid.NewGuid():N}.png",
+                ContentType = "image/png",
+                Type = EFileDataType.NEWS_BANNER
+            }, true);
+            fd.SaveFile(stream);
+
+            var news = await _dbContext.AddNewsAsync(new News
+            {
+                Title = "Test title",
+                Content = "This is a test news item.",
+                BannerId = fd.Id,
+                CreatedAt = DateTimeOffset.UtcNow
+            }, true);
+            
+            var result = await _controller.UpdateNews(news.Id, new NewsUpdateRequestBody
+            {
+                Title = "Updated Title"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(403);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            
+            fd.DeleteFile();
+        }
+
+        /// <summary>
+        /// Failure scenario:
+        /// When the requested news id does not exist the controller should return 404 NotFound.
+        /// </summary>
+        [Fact(DisplayName = "Failure: News not found")]
+        public async Task ReturnsNotFound_WhenNewsDoesNotExist()
+        {
+            await CreateUserAsync(_controller);
+            
+            var result = await _controller.UpdateNews(1, new NewsUpdateRequestBody
+            {
+                Title = "Updated Title"
+            });
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+        }
     }
     
+    /// <summary>
+    /// Tests for deleting news via DeleteNews(int id).
+    /// </summary>
     public class DeleteNewsTests : NewsControllerTests
     {
         public DeleteNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
-        
+
+        /// <summary>
+        /// Success scenario:
+        /// Asserts deleting existing news returns HTTP 200 OK.
+        /// </summary>
+        [Fact(DisplayName = "Success: Deletes existing news")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+
+            using var stream = CreateTestImage(600, 100);
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            {
+                Hash = fileHash,
+                FileName = $"{Guid.NewGuid():N}.png",
+                ContentType = "image/png",
+                Type = EFileDataType.NEWS_BANNER
+            }, true);
+            fd.SaveFile(stream);
+
+            var news = await _dbContext.AddNewsAsync(new News
+            {
+                Title = "Test title",
+                Content = "This is a test news item.",
+                BannerId = fd.Id,
+                CreatedAt = DateTimeOffset.UtcNow
+            }, true);
+            
+            var result = await _controller.DeleteNews(news.Id);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(200);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+        }
+
+        /// <summary>
+        /// Failure scenario:
+        /// When the current user lacks the delete permission, the call should return 403 Forbidden.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Not enough permissions")]
+        public async Task ReturnsForbidden_WhenUserLacksPermissions()
+        {
+            await CreateUserAsync(_controller, givePermissions: false);
+
+            using var stream = CreateTestImage(600, 100);
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            {
+                Hash = fileHash,
+                FileName = $"{Guid.NewGuid():N}.png",
+                ContentType = "image/png",
+                Type = EFileDataType.NEWS_BANNER
+            }, true);
+            fd.SaveFile(stream);
+
+            var news = await _dbContext.AddNewsAsync(new News
+            {
+                Title = "Test title",
+                Content = "This is a test news item.",
+                BannerId = fd.Id,
+                CreatedAt = DateTimeOffset.UtcNow
+            }, true);
+            
+            var result = await _controller.DeleteNews(news.Id);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(403);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            
+            fd.DeleteFile();
+        }
+
+        /// <summary>
+        /// Failure scenario:
+        /// When the news id does not exist, DeleteNews should return a 404 NotFound.
+        /// </summary>
+        [Fact(DisplayName = "Failure: News not found")]
+        public async Task ReturnsNotFound_WhenNewsDoesNotExist()
+        {
+            await CreateUserAsync(_controller);
+            
+            var result = await _controller.DeleteNews(1);
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+        }
     }
     
+    /// <summary>
+    /// Helper method used by tests to create an in-memory PNG image stream.
+    /// </summary>
+    /// <param name="width">Width of the generated image in pixels.</param>
+    /// <param name="height">Height of the generated image in pixels.</param>
+    /// <returns>A <see cref="MemoryStream"/> containing a PNG image. The stream's position is reset to 0.</returns>
     private MemoryStream CreateTestImage(int width, int height)
     {
         var stream = new MemoryStream();
