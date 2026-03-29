@@ -240,7 +240,7 @@ public class NewsController : CustomControllerBase
             if (!_userManager.HasPermission(user, CustomPermissions.News.Create))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have enough permissions.");
 
-            if (requestBody.Banner.Length > 1024 * 512) // 500 KB limit
+            if (requestBody.Banner.Length > 1024 * 500) // 500 KB limit
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!requestBody.Banner.FileName.EndsWith(".png"))
@@ -343,7 +343,7 @@ public class NewsController : CustomControllerBase
 
             if (requestBody.Banner != null)
             {
-                if (requestBody.Banner.Length > 1024 * 512) // 500 KB limit
+                if (requestBody.Banner.Length > 1024 * 500) // 500 KB limit
                     return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
                 if (!requestBody.Banner.FileName.EndsWith(".png"))
