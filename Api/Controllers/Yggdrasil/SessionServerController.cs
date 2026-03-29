@@ -39,9 +39,9 @@ public class SessionServerController : CustomControllerBase
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="userManager">The user manager for handling user-related operations.</param>
     /// <param name="dbContext">The database context for accessing data.</param>
-    /// <param name="settings">The application settings.</param>
     /// <param name="cacheService">The memory cache service for caching data.</param>
-    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings, MemoryCacheService cacheService) : base(logger, settings)
+    /// <param name="settings">The application settings.</param>
+    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService cacheService, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;

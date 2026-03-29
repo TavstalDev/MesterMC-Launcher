@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
-using Tavstal.MesterMC.Api.Controllers.Misc;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Claims;
@@ -29,7 +28,7 @@ public class UserCapesController : CustomControllerBase
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="dbContext">The database context.</param>
     /// <param name="settings">Application settings.</param>
-    public UserCapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger, settings)
+    public UserCapesController(ILogger<UserCapesController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;
