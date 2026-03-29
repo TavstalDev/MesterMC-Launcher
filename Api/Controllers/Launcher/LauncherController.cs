@@ -117,7 +117,9 @@ public class LauncherController : CustomControllerBase
             var version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
             if (version == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version not found.");
-            return ReturnJson(version);
+            
+            var versionDetails = await _dbContext.GetLauncherVersionDatasAsync(x => x.VersionId == version.Id);
+            return ReturnJson(versionDetails);
         }
         catch (Exception ex)
         {
@@ -137,7 +139,7 @@ public class LauncherController : CustomControllerBase
     [HttpGet("version/{id}/download")]
     [EnableRateLimiting(RateLimits.DOWNLOAD)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetLauncherVersionDownloadLink([BindRequired, FromRoute] ulong id, [BindRequired, FromQuery] ELauncherOs os)
+    public async Task<IActionResult> DownloadLauncherVersion([BindRequired, FromRoute] ulong id, [BindRequired, FromQuery] ELauncherOs os)
     {
         try
         {
