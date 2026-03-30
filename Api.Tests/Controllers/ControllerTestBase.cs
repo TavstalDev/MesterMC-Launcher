@@ -61,7 +61,8 @@ public abstract class ControllerTestBase
             CreateDate = DateTimeOffset.UtcNow,
             LastLogin = DateTimeOffset.UtcNow,
             LastUpdate = DateTimeOffset.UtcNow,
-            SkinModel = ESkinType.WIDE
+            SkinModel = ESkinType.WIDE,
+            LockoutEnabled = false,
         };
         _userMock2 = new CustomUser
         {
@@ -74,14 +75,15 @@ public abstract class ControllerTestBase
             CreateDate = DateTimeOffset.UtcNow,
             LastLogin = DateTimeOffset.UtcNow,
             LastUpdate = DateTimeOffset.UtcNow,
-            SkinModel = ESkinType.WIDE
+            SkinModel = ESkinType.WIDE,
+            LockoutEnabled = false,
         };
     }
     
     protected async Task CreateUserAsync(Controller controller, CustomUser? user = null, bool givePermissions = true)
     {
         user ??= _userMock;
-        await _userManager.CreateAsync(user);
+        await _userManager.CreateAsync(user, _passwordMock);
         if (givePermissions)
         {
             var adminRole = await _dbContext.AddRoleAsync(new CustomRole(3, "admin", "ADMIN"), true);
