@@ -25,6 +25,7 @@ public abstract class ControllerTestBase
     protected readonly MemoryCacheService _memoryCacheService;
     protected readonly Settings _settings;
     protected readonly CustomUser _userMock;
+    protected readonly CustomUser _userMock2;
     protected const string _passwordMock = "This%Valid_And#Pass%mock-2026";
 
     protected ControllerTestBase(ITestOutputHelper testOutputHelper)
@@ -56,6 +57,19 @@ public abstract class ControllerTestBase
             NormalizedEmail = "testuser@gmail.com".Normalize(),
             UserName = "testuser",
             NormalizedUserName = "testuser".Normalize(),
+            PasswordHash = StringChiper.GetEncryptedSha256Hash(_passwordMock, _settings.EncryptionKey),
+            CreateDate = DateTimeOffset.UtcNow,
+            LastLogin = DateTimeOffset.UtcNow,
+            LastUpdate = DateTimeOffset.UtcNow,
+            SkinModel = ESkinType.WIDE
+        };
+        _userMock2 = new CustomUser
+        {
+            Email = "testuser2@gmail.com",
+            EmailConfirmed = true,
+            NormalizedEmail = "testuser2@gmail.com".Normalize(),
+            UserName = "testuser2",
+            NormalizedUserName = "testuser2".Normalize(),
             PasswordHash = StringChiper.GetEncryptedSha256Hash(_passwordMock, _settings.EncryptionKey),
             CreateDate = DateTimeOffset.UtcNow,
             LastLogin = DateTimeOffset.UtcNow,
