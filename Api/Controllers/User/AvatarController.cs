@@ -76,7 +76,7 @@ public class AvatarController : CustomControllerBase
                     await _dbContext.FindFileDataAsync(x =>
                         x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
                 if (existingAvatar == null)
-                    return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found to delete.");
+                    return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found.");
                 byte[]? bytes = existingAvatar.GetFileData();
                 if (bytes == null)
                     return ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to retrieve avatar data.");
@@ -140,7 +140,7 @@ public class AvatarController : CustomControllerBase
             if (!_userManager.HasPermission(user, CustomPermissions.Account.Create.Avatar))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            if (file.Length > 1024 * 512) // 500 KB limit
+            if (file.Length > 1024 * 500) // 500 KB limit
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
@@ -230,7 +230,7 @@ public class AvatarController : CustomControllerBase
 
             existingAvatar.DeleteFile();
             await _dbContext.RemoveFileDataAsync(existingAvatar, true);
-            _memoryCache.RemoveValue("avatar:" + user.Id);
+            _memoryCache.RemoveValue($"avatar:{user.Id}");
             return ReturnResponseCode(HttpStatusCode.OK, "Avatar deleted successfully.");
         }
         catch (Exception ex)
@@ -292,7 +292,7 @@ public class AvatarController : CustomControllerBase
             if (!_userManager.HasHigherRoleThan(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
-            if (file.Length > 1024 * 512) // 500 KB limit
+            if (file.Length > 1024 * 500) // 500 KB limit
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
@@ -400,7 +400,7 @@ public class AvatarController : CustomControllerBase
 
             existingAvatar.DeleteFile();
             await _dbContext.RemoveFileDataAsync(existingAvatar, true);
-            _memoryCache.RemoveValue("avatar:" + user.Id);
+            _memoryCache.RemoveValue($"avatar:{user.Id}");
             return ReturnResponseCode(HttpStatusCode.OK, "Avatar deleted successfully.");
         }
         catch (Exception ex)
