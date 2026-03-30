@@ -131,7 +131,7 @@ public class CapesControllerTests : ControllerTestBase
         public async Task ReturnsBadRequest_ForFileSizeExceedsLimit()
         {
             await CreateUserAsync(_controller);
-            using var stream = new MemoryStream(new byte[1024 * 512 + 1]); // 500 KB + 1 byte
+            using var stream = new MemoryStream(new byte[1024 * 512]);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
             {
                 Headers = new HeaderDictionary(),

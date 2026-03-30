@@ -459,7 +459,7 @@ public class LauncherControllerTests : ControllerTestBase
                 UpdatedAt = DateTime.UtcNow
             }, true);
 
-            var v2 = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            await _dbContext.AddLauncherVersionAsync(new LauncherVersion
             {
                 Version = "1.0.1",
                 Changelog = "Patch",
