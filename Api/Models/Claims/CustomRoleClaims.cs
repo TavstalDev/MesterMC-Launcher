@@ -15,6 +15,7 @@ public static class CustomRoleClaims
                 new(CustomPermissions.Account.Delete.Session, "true"),
                 new(CustomPermissions.Account.Delete.Sessions, "true"),
                 new(CustomPermissions.Account.View.Sessions, "true"),
+                new (CustomPermissions.Account.View.Avatar, "true"),
 
                 new(CustomPermissions.Capes.Select, "true"),
                 new(CustomPermissions.Capes.Unselect, "true"),
