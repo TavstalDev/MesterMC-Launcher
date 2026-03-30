@@ -114,7 +114,7 @@ public class SkinsController : CustomControllerBase
             if (!_userManager.HasPermission(user, CustomPermissions.Skins.Upload))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            if (file.Length > 1024 * 512) // 500 KB limit
+            if (file.Length > 1024 * 500) // 500 KB limit
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
@@ -323,7 +323,7 @@ public class SkinsController : CustomControllerBase
             if (!_userManager.HasHigherRoleThan(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
-            if (file.Length > 1024 * 512) // 500 KB limit
+            if (file.Length > 1024 * 500) // 500 KB limit
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
