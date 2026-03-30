@@ -62,10 +62,14 @@ public class PublicUserController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
+            string avatarUrl = string.Empty;
+            if (user.Avatar != null && !string.IsNullOrEmpty(_settings.ApiUrl))
+                avatarUrl = user.Avatar.GetUrl(_settings.ApiUrl);
+            
             return ReturnJson(new
             {
                 user.Id,
-                AvatarUrl = user.Avatar?.GetUrl(_settings.ApiUrl),
+                AvatarUrl = avatarUrl,
                 user.DiscordId,
                 user.UserName,
                 user.CreateDate,
@@ -110,13 +114,10 @@ public class PublicUserController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Account.View.Avatar))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
-
             FileData? existingAvatar =
                 await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found to delete.");
+                return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found.");
 
             string etag = $"\"{existingAvatar.Hash}\"";
             if (Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) &&
