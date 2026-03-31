@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Tavstal.MesterMC.Api.Controllers.Launcher;
 using Tavstal.MesterMC.Api.Controllers.User;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
@@ -16,11 +15,19 @@ using Xunit.Abstractions;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.User;
 
+/// <summary>
+/// Tests for <see cref="UserCapesController"/>.
+/// </summary>
 public class UserCapesControllerTests : ControllerTestBase
 {
     private readonly Mock<ILogger<UserCapesController>> _loggerMock = new();
     private readonly UserCapesController _controller;
     
+    /// <summary>
+    /// Initializes a new instance of <see cref="UserCapesControllerTests"/>.
+    /// Creates a controller with a mock logger, the test user manager, test database and settings, and assigns a test HttpContext.
+    /// </summary>
+    /// <param name="testOutputHelper">XUnit test output helper forwarded to base class for logging test output.</param>
     public UserCapesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _controller = new UserCapesController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _settings);
@@ -30,10 +37,17 @@ public class UserCapesControllerTests : ControllerTestBase
         };
     }
 
+    /// <summary>
+    /// Tests for selecting a cape for the current authenticated user.
+    /// Validates success, duplicate-selection and failure cases (not found / unauthorized).
+    /// </summary>
     public class SelectSkinTests : UserCapesControllerTests
     {
         public SelectSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Success case: an authenticated user selects an existing cape.
+        /// </summary>
         [Fact(DisplayName = "Success: Select cape")]
         public async Task ReturnsOk()
         {
@@ -48,6 +62,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: attempting to select a cape that is already selected by the user.
+        /// </summary>
         [Fact(DisplayName = "Failure: Cape already selected")]
         public async Task ReturnsBadRequest()
         {
@@ -63,6 +80,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: selecting a non-existent cape id.
+        /// </summary>
         [Fact(DisplayName = "Failure: Cape not found")]
         public async Task ReturnsNotFound()
         {
@@ -75,6 +95,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: user not authenticated when attempting to select a cape.
+        /// </summary>
         [Fact(DisplayName = "Failure: Unauthorized")]
         public async Task ReturnsUnauthorized()
         {
@@ -87,10 +110,16 @@ public class UserCapesControllerTests : ControllerTestBase
         }
     }
     
+    /// <summary>
+    /// Tests for clearing the currently selected cape for the authenticated user.
+    /// </summary>
     public class ClearSelectedSkinTests : UserCapesControllerTests
     {
         public ClearSelectedSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: clears the currently selected cape for the authenticated user.
+        /// </summary>
         [Fact(DisplayName = "Success: Clear selected cape")]
         public async Task ReturnsOk()
         {
@@ -107,6 +136,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: no cape is currently selected for the user.
+        /// </summary>
         [Fact(DisplayName = "Failure: No cape selected")]
         public async Task ReturnsBadRequest()
         {
@@ -121,6 +153,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: unauthenticated request to clear selected cape.
+        /// </summary>
         [Fact(DisplayName = "Failure: Unauthorized")]
         public async Task ReturnsUnauthorized()
         {
@@ -133,10 +168,16 @@ public class UserCapesControllerTests : ControllerTestBase
         }
     }
     
+    /// <summary>
+    /// Admin tests for selecting a cape for another user via admin endpoint.
+    /// </summary>
     public class SelectSkinAdminTests : UserCapesControllerTests
     {
         public SelectSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: admin selects an existing cape for another user.
+        /// </summary>
         [Fact(DisplayName = "Success: Select cape")]
         public async Task ReturnsOk()
         {
@@ -152,6 +193,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: admin attempts to select a cape that is already selected for that user.
+        /// </summary>
         [Fact(DisplayName = "Failure: Cape already selected")]
         public async Task ReturnsBadRequest()
         {
@@ -168,6 +212,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: admin selects a non-existent cape id for the target user.
+        /// </summary>
         [Fact(DisplayName = "Failure: Cape not found")]
         public async Task ReturnsNotFound()
         {
@@ -182,6 +229,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: caller does not have sufficient admin permissions to perform the action.
+        /// </summary>
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
@@ -197,10 +247,16 @@ public class UserCapesControllerTests : ControllerTestBase
         }
     }
     
+    /// <summary>
+    /// Admin tests for clearing the selected cape for another user via admin endpoint.
+    /// </summary>
     public class ClearSelectedSkinAdminTests : UserCapesControllerTests
     {
         public ClearSelectedSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+      
+        /// <summary>
+        /// Success case: admin clears the selected cape for another user.
+        /// </summary>
         [Fact(DisplayName = "Success: Clear selected cape")]
         public async Task ReturnsOk()
         {
@@ -218,6 +274,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: target user has no cape selected.
+        /// </summary>
         [Fact(DisplayName = "Failure: No cape selected")]
         public async Task ReturnsBadRequest()
         {
@@ -233,6 +292,9 @@ public class UserCapesControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: admin lacks sufficient permissions to clear another user's selected cape.
+        /// </summary>
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
@@ -248,6 +310,17 @@ public class UserCapesControllerTests : ControllerTestBase
         }
     }
 
+    /// <summary>
+    /// Helper used by tests to create a file/cape and user-cape relation in the test database.
+    /// It saves an in-memory generated image as FileData, creates a Cape referencing that file and associates it with the specified user.
+    /// </summary>
+    /// <param name="userId">Id of the user to whom the created cape/userCape should belong.</param>
+    /// <returns>
+    /// A tuple containing:
+    /// <br/>- <see cref="FileData"/> representing the saved image file record,
+    /// <br/>- <see cref="Cape"/> the created cape record,
+    /// <br/>- <see cref="UserCape"/> the user-cape association.
+    /// </returns>
     private async Task<(FileData fileData, Cape cape, UserCape userCape)> FillDatabase(string userId)
     {
         using var stream = CreateTestImage(64, 64);

@@ -15,11 +15,20 @@ using Xunit.Abstractions;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.User;
 
+/// <summary>
+/// Tests for <see cref="SkinsController"/>.
+/// </summary>
 public class SkinsControllerTests : ControllerTestBase
 {
     private readonly Mock<ILogger<SkinsController>> _loggerMock = new();
     private readonly SkinsController _controller;
     
+    /// <summary>
+    /// Initializes a new instance of <see cref="SkinsControllerTests"/>.
+    /// Sets up the controller instance with a mock logger, the custom user manager from the base test class,
+    /// the test database context and settings. Also configures a ControllerContext with an HttpContext prepared by the base.
+    /// </summary>
+    /// <param name="testOutputHelper">XUnit test output helper used by the base class.</param>
     public SkinsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _controller = new SkinsController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _settings);
@@ -29,10 +38,17 @@ public class SkinsControllerTests : ControllerTestBase
         };
     }
     
+    /// <summary>
+    /// Tests for getting the current authenticated user's skin.
+    /// </summary>
     public class GetSkinTests : SkinsControllerTests
     {
         public GetSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
+        /// <summary>
+        /// Success case: verifies that when an authenticated user has a skin file saved in the DB and filesystem,
+        /// <see cref="SkinsController.GetSkin"/> returns a <see cref="FileStreamResult"/> with the image content type.
+        /// </summary>
         [Fact(DisplayName = "Success: Get existing skin")]
         public async Task ReturnsOk()
         {
@@ -62,6 +78,9 @@ public class SkinsControllerTests : ControllerTestBase
             fd.DeleteFile();
         }
         
+        /// <summary>
+        /// Failure case: when no user is authenticated, <see cref="SkinsController.GetSkin"/> should return an unauthorized result.
+        /// </summary>
         [Fact(DisplayName = "Failure: Unauthorized")]
         public async Task ReturnsUnauthorized()
         {
@@ -72,6 +91,9 @@ public class SkinsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: when an authenticated user has no skin, <see cref="SkinsController.GetSkin"/> should return NotFound (404).
+        /// </summary>
         [Fact(DisplayName = "Failure: No skin found")]
         public async Task ReturnsNotFound()
         {
@@ -84,10 +106,16 @@ public class SkinsControllerTests : ControllerTestBase
         }
     }
     
+    /// <summary>
+    /// Tests for uploading a skin for the current authenticated user.
+    /// </summary>
     public class UploadSkinTests : SkinsControllerTests
     {
         public UploadSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: verifies that uploading a valid PNG skin for an authenticated user returns 200 OK.
+        /// </summary>
         [Fact(DisplayName = "Success: Upload skin")]
         public async Task ReturnsOk()
         {
@@ -111,6 +139,9 @@ public class SkinsControllerTests : ControllerTestBase
                 f.DeleteFile();
         }
         
+        /// <summary>
+        /// Failure case: when not authenticated, an upload attempt returns 401 Unauthorized.
+        /// </summary>
         [Fact(DisplayName = "Failure: Unauthorized")]
         public async Task ReturnsUnauthorized()
         {
@@ -127,6 +158,9 @@ public class SkinsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: when the uploaded file exceeds allowed size, the controller should return 400 Bad Request.
+        /// </summary>
         [Fact(DisplayName = "Failure: File too large")]
         public async Task ReturnsBadRequest_WhenFileTooLarge()
         {
@@ -144,6 +178,10 @@ public class SkinsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: when uploaded image dimensions are invalid for a skin (e.g. non-square or wrong height),
+        /// the controller should return 400 Bad Request.
+        /// </summary>
         [Fact(DisplayName = "Failure: Invalid dimensions")]
         public async Task ReturnsBadRequest_WhenInvalidDimensions()
         {
@@ -162,10 +200,16 @@ public class SkinsControllerTests : ControllerTestBase
         }
     }
     
+    /// <summary>
+    /// Tests for deleting the current authenticated user's skin.
+    /// </summary>
     public class DeleteSkinTests : SkinsControllerTests
     {
         public DeleteSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: when a user has a skin, DeleteSkin should remove it and return 200 OK.
+        /// </summary>
         [Fact(DisplayName = "Success: Delete skin")]
         public async Task ReturnsOk()
         {
@@ -195,6 +239,9 @@ public class SkinsControllerTests : ControllerTestBase
             fd.DeleteFile();
         }
         
+        /// <summary>
+        /// Failure case: unauthenticated delete attempts should return 401 Unauthorized.
+        /// </summary>
         [Fact(DisplayName = "Failure: Unauthorized")]
         public async Task ReturnsUnauthorized()
         {
@@ -205,6 +252,9 @@ public class SkinsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: when the user has no skin, delete should return 404 Not Found.
+        /// </summary>
         [Fact(DisplayName = "Failure: No skin found")]
         public async Task ReturnsNotFound()
         {
@@ -217,10 +267,16 @@ public class SkinsControllerTests : ControllerTestBase
         }
     }
     
+    /// <summary>
+    /// Admin tests for retrieving another user's skin (admin route).
+    /// </summary>
     public class GetSkinAdminTests : SkinsControllerTests
     {
         public GetSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: admin with appropriate permissions can retrieve another user's skin and receives a FileStreamResult.
+        /// </summary>
         [Fact(DisplayName = "Success: Get existing skin")]
         public async Task ReturnsOk()
         {
@@ -251,6 +307,9 @@ public class SkinsControllerTests : ControllerTestBase
             fd.DeleteFile();
         }
         
+        /// <summary>
+        /// Failure case: if the caller lacks admin permissions, GetSkinAdmin should return 403 Forbidden.
+        /// </summary>
         [Fact(DisplayName = "Failure: No permissions")]
         public async Task ReturnsUnauthorized()
         {
@@ -264,6 +323,9 @@ public class SkinsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: when the target user has no skin, GetSkinAdmin should return 404 Not Found.
+        /// </summary>
         [Fact(DisplayName = "Failure: No skin found")]
         public async Task ReturnsNotFound()
         {
@@ -278,10 +340,16 @@ public class SkinsControllerTests : ControllerTestBase
         }
     }
     
+    /// <summary>
+    /// Admin tests for uploading a skin for another user (admin route).
+    /// </summary>
     public class UploadSkinAdminTests : SkinsControllerTests
     {
         public UploadSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: admin with permissions uploads a skin for another user and receives 200 OK.
+        /// </summary>
         [Fact(DisplayName = "Success: Upload skin")]
         public async Task ReturnsOk()
         {
@@ -307,6 +375,9 @@ public class SkinsControllerTests : ControllerTestBase
                 f.DeleteFile();
         }
         
+        /// <summary>
+        /// Failure case: an admin without sufficient permissions should receive 403 Forbidden when attempting to upload for another user.
+        /// </summary>
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
@@ -326,6 +397,9 @@ public class SkinsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: when uploaded file exceeds allowed size for admin upload, controller should return 400 Bad Request.
+        /// </summary>
         [Fact(DisplayName = "Failure: File too large")]
         public async Task ReturnsBadRequest_WhenFileTooLarge()
         {
@@ -345,6 +419,9 @@ public class SkinsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
         
+        /// <summary>
+        /// Failure case: when uploaded image dimensions are invalid for a skin, admin upload should return 400 Bad Request.
+        /// </summary>
         [Fact(DisplayName = "Failure: Invalid dimensions")]
         public async Task ReturnsBadRequest_WhenInvalidDimensions()
         {
@@ -365,10 +442,16 @@ public class SkinsControllerTests : ControllerTestBase
         }
     }
     
+    /// <summary>
+    /// Admin tests for deleting another user's skin.
+    /// </summary>
     public class DeleteSkinAdminTests : SkinsControllerTests
     {
         public DeleteSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
+        /// <summary>
+        /// Success case: admin deletes another user's skin and receives 200 OK.
+        /// </summary>
         [Fact(DisplayName = "Success: Delete skin")]
         public async Task ReturnsOk()
         {
@@ -399,6 +482,9 @@ public class SkinsControllerTests : ControllerTestBase
             fd.DeleteFile();
         }
         
+        /// <summary>
+        /// Failure case: when admin lacks deletion permission, return 403 Forbidden.
+        /// </summary>
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
@@ -412,6 +498,9 @@ public class SkinsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
+        /// <summary>
+        /// Failure case: when the target user has no skin, admin delete should return 404 Not Found.
+        /// </summary>
         [Fact(DisplayName = "Failure: No skin found")]
         public async Task ReturnsNotFound()
         {
