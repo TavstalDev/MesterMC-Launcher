@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 using Tavstal.MesterMC.Api.Models.Bodies.Yggdrasil;
+using Tavstal.MesterMC.Api.Models.Database.Server;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Tests.Helpers;
@@ -27,11 +28,11 @@ public class SessionServerControllerTests : ControllerTestBase
             HttpContext = _controllerHttpContext
         };
     }
-
+    
     public class BlockedServersTests : SessionServerControllerTests
     {
         public BlockedServersTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-
+        
         [Fact(DisplayName = "Success: List of blocked servers")]
         public async Task ReturnsOk()
         {
@@ -46,7 +47,7 @@ public class SessionServerControllerTests : ControllerTestBase
     public class JoinTests : SessionServerControllerTests
     {
         public JoinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-
+        
         [Fact(DisplayName = "Success: Successful join")]
         public async Task ReturnsOk()
         {
@@ -158,14 +159,156 @@ public class SessionServerControllerTests : ControllerTestBase
     public class HasJoinedTests : SessionServerControllerTests
     {
         public HasJoinedTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+
+        [Fact(DisplayName = "Success: User has joined")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+            var user = _dbContext.Users.First();
+            _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
+            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            {
+                UserId = user.Id,
+                UserIp = TestHelper.IpAddress,
+                Token = TokenHelper.GenerateToken(),
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+            }, true);
+            string serverId = Guid.NewGuid().ToString();
+            await _dbContext.AddServerJoinAsync(new ServerJoin
+            {
+                ServerId = serverId,
+                UserId = user.Id,
+                UserIp = TestHelper.IpAddress,
+                CreatedAt =  DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+            }, true);
+            
+            var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
+            
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            _testOutputHelper.WriteLine("Result: " + contentResult.Content);
+        }
         
+        [Fact(DisplayName = "Failure: Join does not exist")]
+        public async Task ReturnsNotFound_WhenJoinDoesNotExist()
+        {
+            await CreateUserAsync(_controller);
+            var user = _dbContext.Users.First();
+            _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
+            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            {
+                UserId = user.Id,
+                UserIp = TestHelper.IpAddress,
+                Token = TokenHelper.GenerateToken(),
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+            }, true);
+            string serverId = Guid.NewGuid().ToString();
+            
+            var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
+            
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
         
+        [Fact(DisplayName = "Failure: Join expired")]
+        public async Task ReturnsUnauthorized_WhenJoinExpired()
+        {
+            await CreateUserAsync(_controller);
+            var user = _dbContext.Users.First();
+            _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
+            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            {
+                UserId = user.Id,
+                UserIp = TestHelper.IpAddress,
+                Token = TokenHelper.GenerateToken(),
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+            }, true);
+            string serverId = Guid.NewGuid().ToString();
+            await _dbContext.AddServerJoinAsync(new ServerJoin
+            {
+                ServerId = serverId,
+                UserId = user.Id,
+                UserIp = TestHelper.IpAddress,
+                CreatedAt =  DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(-30),
+            }, true);
+            
+            var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
+            
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(401);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
+        
+        [Fact(DisplayName = "Failure: User id does not match")]
+        public async Task ReturnsBadRequest_WhenUserIdDoesNotMatch()
+        {
+            await CreateUserAsync(_controller, _userMock2, false);
+            var user = _dbContext.Users.First();
+            await CreateUserAsync(_controller);
+            var admin = _dbContext.Users.First(u => u.Id != user.Id);
+            _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
+            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            {
+                UserId = user.Id,
+                UserIp = TestHelper.IpAddress,
+                Token = TokenHelper.GenerateToken(),
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+            }, true);
+            string serverId = Guid.NewGuid().ToString();
+            await _dbContext.AddServerJoinAsync(new ServerJoin
+            {
+                ServerId = serverId,
+                UserId = admin.Id,
+                UserIp = TestHelper.IpAddress,
+                CreatedAt =  DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+            }, true);
+            
+            var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
+            
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(400);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
     }
     
     public class GetProfileTests : SessionServerControllerTests
     {
         public GetProfileTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+
+        [Fact(DisplayName = "Success: Get profile by uuid")]
+        public async Task ReturnsOk()
+        {
+            await CreateUserAsync(_controller);
+            var user = _dbContext.Users.First();
+            var result = await _controller.GetProfile(user.Id);
+            
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            _testOutputHelper.WriteLine("Result: " + contentResult.Content);
+        }
         
-        
+        [Fact(DisplayName = "Failure: User does not exist")]
+        public async Task ReturnsNotFound()
+        {
+            var result = await _controller.GetProfile(Guid.NewGuid().ToString());
+            
+            result.Should().BeOfType<ObjectResult>();
+            var objectResult = result as ObjectResult;
+            objectResult!.StatusCode.Should().Be(404);
+            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        }
     }
 }
