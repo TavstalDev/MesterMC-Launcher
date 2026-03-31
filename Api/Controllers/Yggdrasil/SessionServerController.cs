@@ -181,7 +181,7 @@ public class SessionServerController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "The server join has expired");
 
             if (user.Id != join.UserId)
-                return ReturnResponseCode(HttpStatusCode.Forbidden,
+                return ReturnResponseCode(HttpStatusCode.BadRequest,
                     "The provided username does not match the user associated with the server join");
 
             string json = await GetProfileResponseJsonAsync(user);
