@@ -270,6 +270,9 @@ public class Startup
                     {
                         // Allow origins specified in the CORS configuration section
                         policy.WithOrigins(corsDefault.GetSection("Sites").Get<string[]>() ?? throw new Exception("Cors sites section is not set"));
+                        policy.WithHeaders(corsDefault.GetSection("Headers").Get<string[]>() ?? []);
+                        policy.WithMethods(corsDefault.GetSection("Methods").Get<string[]>() ?? []);
+                        policy.SetPreflightMaxAge(TimeSpan.FromSeconds(corsDefault.GetValue("MaxAge", 3600)));
                         // Allow any origin if specified in the CORS configuration
                         if (corsDefault.GetValue<bool>("AllowAnyOrigin"))
                             policy.AllowAnyOrigin();
