@@ -77,6 +77,13 @@ public class TextResponseAttribute : Attribute, IApiResponseTypeMetadataProvider
     internal MediaTypeCollection? ContentTypes { get; }
 
 
+    /// <summary>
+    /// Helper that creates a <see cref="MediaTypeCollection"/> from the provided primary <paramref name="contentType"/>
+    /// and any <paramref name="additionalContentTypes"/>.
+    /// </summary>
+    /// <param name="contentType">Primary content type to include (e.g. "text/plain").</param>
+    /// <param name="additionalContentTypes">Optional additional content types to include in the collection.</param>
+    /// <returns>A <see cref="MediaTypeCollection"/> containing the merged content types.</returns>
     private static MediaTypeCollection GetContentTypes(string contentType, string[] additionalContentTypes)
     {
         var completeContentTypes = new List<string>(additionalContentTypes.Length + 1) { contentType };
@@ -91,6 +98,16 @@ public class TextResponseAttribute : Attribute, IApiResponseTypeMetadataProvider
         return contentTypes;
     }
 
+    /// <summary>
+    /// Returns the list of supported content types for the given <paramref name="objectType"/>.
+    /// </summary>
+    /// <param name="contentType">Optional incoming content type (unused by this attribute).</param>
+    /// <param name="objectType">The CLR type for which supported content types are requested.</param>
+    /// <returns>An <see cref="IReadOnlyList{String}"/> describing supported content types.</returns>
+    /// <remarks>
+    /// This implementation returns an empty list; the attribute mainly exposes <see cref="ContentTypes"/>
+    /// for API explorer consumers. The method is present to satisfy the interface contract.
+    /// </remarks>
     public IReadOnlyList<string> GetSupportedContentTypes(string? contentType, Type objectType)
     {
         // Unused, but the attribute requires it

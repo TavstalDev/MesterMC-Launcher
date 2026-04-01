@@ -20,13 +20,36 @@ using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api;
 
+/// <summary>
+/// Application startup configuration class used by the host to configure services and the HTTP request pipeline.
+/// 
+/// Responsibilities:
+/// <br/>- Initialize runtime-specific settings (e.g. upload directory).
+/// <br/>- Register application services (database context, identity, authentication, rate limiting, CORS, Swagger, etc.).
+/// <br/>- Configure the application's middleware pipeline.
+/// </summary>
 public class Startup
 {
     private static Startup _instance;
     private readonly IConfiguration _configuration;
     private readonly string _uploadDirectory;
+    /// <summary>
+    /// Gets the configured upload directory path used by the application.
+    /// This value is initialized in the <see cref="Startup(IConfiguration)"/> constructor and provides
+    /// a globally accessible path to the directory where uploaded files are stored.
+    /// </summary>
     public static string UploadDirectory => _instance._uploadDirectory;
     
+    /// <summary>
+    /// Creates a new <see cref="Startup"/> instance.
+    /// 
+    /// Behavior:
+    /// <br/>- Stores the provided <paramref name="configuration"/> for use when registering services.
+    /// <br/>- Registers CodePages encoding provider to support additional encodings.
+    /// <br/>- Initializes and ensures existence of the upload directory. The path is composed of
+    ///   the application's base directory and the optional "UploadDirectory" configuration value.
+    /// </summary>
+    /// <param name="configuration">Application configuration provided by the host.</param>
     public Startup(IConfiguration configuration)
     {
         _instance = this;
@@ -38,6 +61,20 @@ public class Startup
             Directory.CreateDirectory(_uploadDirectory);
     }
     
+    /// <summary>
+    /// Configures services for dependency injection.
+    /// 
+    /// This method registers:
+    /// <br/>- Database context (Entity Framework Core) and identity services.
+    /// <br/>- JSON serialization options and Swagger/OpenAPI generation.
+    /// <br/>- Authentication schemes (JWT Bearer, Cookie, and a custom Basic handler).
+    /// <br/>- Form options (maximum multipart body size).
+    /// <br/>- CORS policy and session configuration.
+    /// <br/>- Memory cache, rate limiting policies, hosted services, and application singletons.
+    /// 
+    /// The method is invoked by the runtime and should only be used to register services.
+    /// </summary>
+    /// <param name="services">Service collection to which services should be added.</param>
     public void ConfigureServices(IServiceCollection services)
     {
         #region Database & Identity
@@ -342,6 +379,24 @@ public class Startup
         #endregion
     }
     
+    /// <summary>
+    /// Configures the application's HTTP request pipeline.
+    /// 
+    /// This method sets up:
+    /// <br/>- Developer exception page (when in development).
+    /// <br/>- Swagger UI and JSON endpoint at /docs.
+    /// <br/>- HTTPS redirection, static files and method override.
+    /// <br/>- CORS, routing, session, authentication and authorization middleware.
+    /// <br/>- Forwarded headers (X-Forwarded-For, X-Forwarded-Proto) to support reverse proxies.
+    /// <br/>- Endpoint routing with rate limiting applied.
+    /// <br/>- Database initialization on startup (auto-creates tables if necessary).
+    /// 
+    /// Any runtime exceptions during database initialization are logged as critical.
+    /// </summary>
+    /// <param name="app">The application builder used to configure middleware.</param>
+    /// <param name="env">Hosting environment information.</param>
+    /// <param name="loggerFactory">Logger factory (unused directly here but available if required).</param>
+    /// <param name="_logger">A logger instance scoped to <see cref="Startup"/>.</param>
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, ILogger<Startup> _logger)
     {
         // Use developer exception page

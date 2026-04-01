@@ -25,5 +25,5 @@ public class YigRefreshRequest
     /// <summary>
     /// Gets or sets the selected profile for the request.
     /// </summary>
-    public YigProfileBody selectedProfile { get; set; }
+    public required YigProfileBody selectedProfile { get; set; }
 }

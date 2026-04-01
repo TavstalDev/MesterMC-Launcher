@@ -15,6 +15,7 @@ public class Settings
     /// Gets or sets the API URL.
     /// </summary>
     public string ApiUrl { get; set; }
+    
     /// <summary>
     /// Gets or sets the database username.
     /// </summary>
@@ -24,6 +25,7 @@ public class Settings
     /// Gets or sets the database password.
     /// </summary>
     public string DatabasePassword { get; set; }
+    
     /// <summary>
     /// Gets or sets the encryption key used for JWT.
     /// </summary>
@@ -121,6 +123,26 @@ public class Settings
         ImplementationVersion = configuration[Constants.ConfigurationKeys.YggdrasilImplementationVersion] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.YggdrasilImplementationVersion);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Settings"/> class with explicit values for all settings.
+    /// </summary>
+    /// <param name="websiteUrl">The public website URL for the server (e.g., "https://example.com").</param>
+    /// <param name="apiUrl">The base API URL that clients will use to access the API (e.g., "https://api.example.com").</param>
+    /// <param name="databaseUser">The username used to connect to the database.</param>
+    /// <param name="databasePassword">The password used to connect to the database.</param>
+    /// <param name="encryptionKey">The symmetric key used for JWT signing/encryption.</param>
+    /// <param name="issuer">The JWT issuer value.</param>
+    /// <param name="audience">The JWT audience value.</param>
+    /// <param name="emailProvider">The SMTP server hostname or provider identifier used for sending email.</param>
+    /// <param name="emailPort">The SMTP port used to send email (commonly 25, 465, or 587).</param>
+    /// <param name="emailAddress">The email address used as the sender for outgoing messages.</param>
+    /// <param name="emailPassword">The password or app-specific secret for the <paramref name="emailAddress"/> account.</param>
+    /// <param name="skinDomains">An array of allowed domains for serving skins (Yggdrasil skin domains).</param>
+    /// <param name="certPassword">The password protecting the PFX certificate (if any). Can be empty string if none.</param>
+    /// <param name="cert">The raw PFX certificate bytes used for TLS/Yggdrasil endpoints.</param>
+    /// <param name="serverName">The server name presented by Yggdrasil-compatible endpoints.</param>
+    /// <param name="implementationName">The name of the Yggdrasil implementation (metadata shown to clients).</param>
+    /// <param name="implementationVersion">The version string of the Yggdrasil implementation.</param>
     public Settings(string websiteUrl, string apiUrl, string databaseUser, string databasePassword, string encryptionKey, string issuer, string audience, string emailProvider, int emailPort, string emailAddress, string emailPassword, string[] skinDomains, string certPassword, byte[] cert, string serverName, string implementationName, string implementationVersion)
     {
         WebsiteUrl = websiteUrl;

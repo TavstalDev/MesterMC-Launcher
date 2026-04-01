@@ -10,6 +10,7 @@ using Tavstal.MesterMC.Api.Models.Database.User.Claims;
 using Tavstal.MesterMC.Api.Utils.Extensions;
 using Tavstal.MesterMC.Api.Utils.Helpers;
 using KeyGeneration = OtpSharp.KeyGeneration;
+#pragma warning disable CS9113 // Parameter is unread.
 
 namespace Tavstal.MesterMC.Api.Services.Database;
 
@@ -33,6 +34,7 @@ public class CustomUserManager(
     : UserManager<CustomUser>(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer,
         errors, services, logger)
 {
+    private static readonly HttpClient Client = new();
     private readonly TimeSpan CompPassTTL = TimeSpan.FromHours(1);
     
 
@@ -602,8 +604,7 @@ public class CustomUserManager(
         string cacheKey = $"pwned:{prefix}";
         if (!memoryCacheService.TryGetValue(cacheKey, out string? response))
         {
-            using var client = new HttpClient();
-            response = await client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
+            response = await Client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
             if (!string.IsNullOrEmpty(cacheKey))
                 memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
         }

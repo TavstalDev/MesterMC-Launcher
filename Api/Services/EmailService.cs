@@ -32,6 +32,18 @@ public class EmailService : IEmailService
         Task.Run(async () => await InitAsync());
     }
 
+    /// <summary>
+    /// Asynchronously loads email templates from the web root "templates" folder.
+    /// <br/><br/>
+    /// Expected files:
+    /// <br/>- {webroot}/templates/emailBlank.html
+    /// <br/>- {webroot}/templates/emailAction.html
+    /// <br/><br/>
+    /// If the templates directory or files are missing, the method logs an error and leaves
+    /// the corresponding template fields as empty strings. This method is private and invoked
+    /// by the constructor in the background.
+    /// </summary>
+    /// <returns>A task that completes when template loading has finished.</returns>
     private async Task InitAsync()
     {
         string templateDir = Path.Combine(_environment.WebRootPath, "templates");
@@ -94,6 +106,20 @@ public class EmailService : IEmailService
         await smtp.DisconnectAsync(true);
     }
 
+    /// <summary>
+    /// Sends an email using the "blank" HTML template. The template placeholders:
+    /// <br/>- {{TITLE}} will be replaced with <paramref name="subject"/>,
+    /// <br/>- {{MESSAGE_BODY}} will be replaced with <paramref name="body"/>,
+    /// <br/>- {{USERNAME}} will be replaced with <paramref name="username"/>.
+    /// <br/>
+    /// If the template was not successfully loaded, the method will still call the raw
+    /// <see cref="SendEmailAsync(string,string,string)"/> with a best-effort constructed body.
+    /// </summary>
+    /// <param name="to">Recipient email address.</param>
+    /// <param name="username">Username to insert into the template.</param>
+    /// <param name="subject">Email subject/title.</param>
+    /// <param name="body">Plain text or HTML message body to insert into the template.</param>
+    /// <returns>A task representing the asynchronous send operation.</returns>
     public async Task SendEmailAsync(string to, string username, string subject, string body)
     {
         string finalBody = _emailBlankDoc.Replace("{{TITLE}}", subject)
@@ -102,6 +128,25 @@ public class EmailService : IEmailService
         await SendEmailAsync(to, subject, finalBody);
     }
     
+    /// <summary>
+    /// Sends an email using the action-style HTML template which contains an action button.
+    /// Template placeholders:
+    /// <br/>- {{TITLE}} -> <paramref name="subject"/>,
+    /// <br/>- {{MESSAGE_BODY}} -> <paramref name="body"/>,
+    /// <br/>- {{USERNAME}} -> <paramref name="username"/>,
+    /// <br/>- {{ACTION_URL}} -> <paramref name="actionUrl"/>,
+    /// <br/>- {{BUTTON_TEXT}} -> <paramref name="buttonText"/>.
+    /// <br/>
+    /// As with the other template-based overload, if the template is not available the method will
+    /// fall back to constructing a body string (which may be empty) and call the raw send method.
+    /// </summary>
+    /// <param name="to">Recipient email address.</param>
+    /// <param name="username">Username to insert into the template.</param>
+    /// <param name="subject">Email subject/title.</param>
+    /// <param name="body">Plain text or HTML message body to insert into the template.</param>
+    /// <param name="actionUrl">URL to use for the primary action button in the template.</param>
+    /// <param name="buttonText">Text to display on the action button.</param>
+    /// <returns>A task representing the asynchronous send operation.</returns>
     public async Task SendEmailAsync(string to, string username, string subject, string body, string actionUrl,
         string buttonText)
     {

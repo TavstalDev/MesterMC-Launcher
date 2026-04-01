@@ -33,13 +33,13 @@ public sealed class CustomUserLogin : IdentityUserLogin<string>
     /// </summary>
     [StringLength(255)]
     [JsonIgnore]
-    public override string? ProviderKey { get; set; }
+    public override string ProviderKey { get; set; }
     
     /// <summary>
     /// Gets or sets the display name of the login provider.
     /// </summary>
     [StringLength(32)]
-    public override string ProviderDisplayName { get; set; }
+    public override string? ProviderDisplayName { get; set; }
     
     /// <summary>
     /// Gets or sets the login provider name.
@@ -120,7 +120,7 @@ public sealed class CustomUserLogin : IdentityUserLogin<string>
     /// <param name="browser">The browser used by the user during login.</param>
     /// <param name="createDate">The creation date of the login record.</param>
     /// <param name="expireDate">The expiration date of the login record.</param>
-    public CustomUserLogin(string userId, string? providerKey, string providerDisplayName, string loginProvider, string ipv4Address, string ipv6Address, string country, string city, string region, string operatingSystem, string browser, DateTimeOffset createDate, DateTimeOffset expireDate)
+    public CustomUserLogin(string userId, string providerKey, string providerDisplayName, string loginProvider, string ipv4Address, string ipv6Address, string country, string city, string region, string operatingSystem, string browser, DateTimeOffset createDate, DateTimeOffset expireDate)
     {
         UserId = userId;
         ProviderKey = providerKey;
@@ -151,7 +151,7 @@ public sealed class CustomUserLogin : IdentityUserLogin<string>
     /// <param name="browser">The browser used by the user during login.</param>
     /// <param name="createDate">The creation date of the login record.</param>
     /// <param name="expireDate">The expiration date of the login record.</param>
-    public CustomUserLogin(string userId, string? providerKey, string providerDisplayName, string loginProvider, string? ipv4Address, string? ipv6Address, IpInfo ipInfo, string operatingSystem, string browser, DateTimeOffset createDate, DateTimeOffset expireDate)
+    public CustomUserLogin(string userId, string providerKey, string providerDisplayName, string loginProvider, string? ipv4Address, string? ipv6Address, IpInfo ipInfo, string operatingSystem, string browser, DateTimeOffset createDate, DateTimeOffset expireDate)
     {
         UserId = userId;
         ProviderKey = providerKey;
