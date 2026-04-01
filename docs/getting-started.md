@@ -5,11 +5,13 @@ This guide will help you to get started with the project. It will cover the basi
 ## Table of Contents
 - [Essential prerequisites](#essential-prerequisites)
 - [Useful links](#useful-links)
-- [Setting up the development environment](#setting-up-the-development-environment)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Development Setup](#development-setup)
 
 ## Essential prerequisites
 
-Before you begin, make sure you have the following installed on your machine:
+Before you begin, make sure you have the following software and tools installed on your machine:
 - .NET 9 SDK
 - EF Core 9.0
 - ASP.NET Core 9.0
@@ -27,88 +29,79 @@ Before you begin, make sure you have the following installed on your machine:
 - [Building and running the project](./build-and-run.md)
 - [Packaging](./packaging.md)
 
-## Setting up the development environment
-1. Clone the repository:
+## Quick Start
+
+1. **Copy the example environment file:**
 ```bash
-git clone https://github.com/TavstalDev/MesterMC-Launcher
+cd Api
+cp .env.example .env
 ```
-2. Open the solution in your IDE.
-3. Create a .env file in the root of the `Api` project, example:
-```env 
-JWT_ENCRYPTION_KEY=replace_with_a_secure_key
 
-DB_USER=root
-DB_PASSWORD=ascent
-
-EMAIL_ADDRESS=example@localhost
-EMAIL_PASSWORD=12345678
-
-YGGDRASIL_CERT_PASSWORD=changeit
+2. **Edit `.env` with your values:**
+```bash
+nano .env  # or use your preferred editor
 ```
-4. Adjust the `appsettings.json` and the `appsettings.Development.json` files in the `Api` project to match your database configuration and other settings.
-5. Continue with the [Database setup](./database.md) guide to set up the database and run migrations.
 
-### Appsettings.json example:
-```json
-{
-  "Kestrel": {
-    "Endpoints": {
-      "Https": {
-        "Url": "https://localhost:36767",
-        "Certificate": {
-          "Path": "localhost.pfx",
-          "Password": "changeit"
-        }
-      }
-    }
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "Jwt": {
-    "Issuer": "https://api.mestermc.com",
-    "Audience": "https://api.mestermc.com",
-    "EncryptionKey": "$JWT_ENCRYPT"
-  },
-  "ConnectionStrings": {
-    "DefaultConnection": "server=127.0.0.1;port=3306;database=mmc;uid=$DB_USER;pwd=$DB_PASSWORD;"
-  },
-  "CORS": {
-    "Default": {
-      "AllowAnyOrigin": true,
-      "AllowAnyHeader": true,
-      "AllowAnyMethod": true,
-      "Sites": [
-        "https://api.mestermc.com",
-        "https://mestermc.com"
-      ]
-    }
-  },
-  "Email": {
-    "Provider": "",
-    "Port": 587
-  },
-  "Discord": {
-    "GuildId": "000000000000000000",
-    "RedirectUri": "https://mestermc.com/oauth/callback?provider=discord"
-  },
-  "Servers": {
-    "API": "https://api.mestermc.com",
-    "Website": "https://mestermc.com"
-  },
-  "UploadDir": "wwwroot/uploads",
-  "Yggdrasil": {
-    "SkinDomains": [
-      ".mestermc.com"
-    ],
-    "PublicKey": "$YGGDRASIL_PUBLIC_KEY",
-    "ServerName": "MesterMC",
-    "ImplementationName": "yggdrasil-mock-server",
-    "ImplementationVersion": "1.0.0"
-  }
-}
+3. **Set values as needed** (see Configuration section below)
+
+## Configuration
+
+### Required Variables
+
+#### `JWT_ENCRYPTION_KEY`
+- **Purpose**: Used to sign and encrypt JWT tokens for authentication
+- **Type**: String (minimum 32 characters recommended)
+- **Example**: `your-super-secret-encryption-key-here`
+- **How to generate**: You can use `openssl rand -base64 32` on Linux/Mac
+
+#### `DB_USER`
+- **Purpose**: MySQL database username
+- **Type**: String
+- **Example**: `mmc_user`
+- **Default (dev)**: `mmc`
+
+#### `DB_PASSWORD`
+- **Purpose**: MySQL database password
+- **Type**: String
+- **Example**: `your_secure_password_here`
+- **Note**: Use a strong password in production
+
+#### `EMAIL_ADDRESS`
+- **Purpose**: SMTP account email address (sender for emails)
+- **Type**: Email address
+- **Example**: `noreply@example.com`
+- **Note**: Should match your SMTP provider account
+
+#### `EMAIL_PASSWORD`
+- **Purpose**: SMTP account password
+- **Type**: String
+- **Note**: This is the password for your email provider account, not the application password
+
+#### `CERT_PASSWORD`
+- **Purpose**: Password for the localhost SSL certificate (localhost.pfx)
+- **Type**: String
+- **Default (dev)**: `changeit`
+- **Note**: Only needed for HTTPS, development certificate included in repo
+
+## Development Setup
+
+### Using Mailhog for Email Testing
+
+For local development, you can use **Mailhog** to catch and inspect emails without actually sending them.
+
+1. **Install Mailhog**:
+```bash
+# Using Docker (recommended)
+docker run -d -p 1025:1025 -p 8025:8025 mailhog/mailhog
+   
+# Or download from https://github.com/mailhog/MailHog
 ```
+
+2. **Set environment variables**:
+```
+EMAIL_PROVIDER=localhost
+EMAIL_ADDRESS=test@example.com
+EMAIL_PASSWORD=anything
+```
+
+3. **Access the web UI**: Open `http://localhost:8025` to view sent emails
