@@ -89,21 +89,27 @@ public class EmailService : IEmailService
         await smtp.ConnectAsync(_settings.EmailProvider,  _settings.EmailPort, SecureSocketOptions.None);
         try
         {
-            await smtp.AuthenticateAsync(_settings.EmailAddress, _settings.EmailPassword);
-        }
-        catch (AuthenticationException ex)
-        {
-            // SMTP server might not require authentication, log and continue
-            _logger.LogWarning(ex, "SMTP authentication failed - server may not require authentication");
-        }
-        catch (Exception ex)
-        {
-            // Unexpected error - log but continue
-            _logger.LogError(ex, "Unexpected error during SMTP authentication");
-        }
+            try
+            {
+                await smtp.AuthenticateAsync(_settings.EmailAddress, _settings.EmailPassword);
+            }
+            catch (AuthenticationException ex)
+            {
+                // SMTP server might not require authentication, log and continue
+                _logger.LogWarning(ex, "SMTP authentication failed - server may not require authentication");
+            }
+            catch (Exception ex)
+            {
+                // Unexpected error - log but continue
+                _logger.LogError(ex, "Unexpected error during SMTP authentication");
+            }
 
-        await smtp.SendAsync(email);
-        await smtp.DisconnectAsync(true);
+            await smtp.SendAsync(email);
+        }
+        finally
+        {
+            await smtp.DisconnectAsync(true);
+        }
     }
 
     /// <summary>
