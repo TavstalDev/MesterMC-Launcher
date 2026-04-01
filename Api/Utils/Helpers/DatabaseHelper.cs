@@ -26,7 +26,7 @@ public static class DatabaseHelper
             if (ipInfo != null)
                 ipInfo.Country = new RegionInfo(ipInfo.Country).EnglishName;
         }
-        catch
+        catch (Exception)
         {
             // Ignore
         }

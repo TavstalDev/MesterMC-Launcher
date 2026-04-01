@@ -28,8 +28,8 @@ public class EmailService : IEmailService
         _environment = environment;
         _logger = logger;
         _settings = settings;
-        // Async initialization
-        Task.Run(async () => await InitAsync());
+        // Load templates asynchronously in background. Email sending will use empty templates if loading fails.
+        _ = InitAsync();
     }
 
     /// <summary>
