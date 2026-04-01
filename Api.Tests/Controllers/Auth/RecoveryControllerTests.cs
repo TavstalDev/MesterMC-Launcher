@@ -34,7 +34,7 @@ public class RecoveryControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit output helper passed by the test framework.</param>
     public RecoveryControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new RecoveryController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, TestHelper.FakeEmailService, _memoryCacheService, _settings);
+        _controller = new RecoveryController(_loggerMock.Object, (CustomUserManager)_userManager, _passwordHasher, _dbContext, TestHelper.FakeEmailService, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -330,7 +330,7 @@ public class RecoveryControllerTests : ControllerTestBase
             await _dbContext.AddUserBackupCodeAsync(new UserBackupCode
             {
                 UserId = user.Id,
-                HashedCode = StringChiper.GetEncryptedSha256Hash(backup, _settings.EncryptionKey),
+                HashedCode = StringChiper.GetEncryptedHash(backup, _settings.EncryptionKey),
                 CreateAt =  DateTime.UtcNow,
             }, true);
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);

@@ -29,6 +29,8 @@ public class TestHelper
     
     public static FakeEmailService FakeEmailService { get; private set; } = new();
     
+    public static IPasswordHasher<CustomUser> PasswordHasher { get; private set; } = new PasswordHasher<CustomUser>();
+    
     public static void InitTestServices()
     {
         ServiceProvider = new ServiceCollection()
@@ -43,7 +45,7 @@ public class TestHelper
     public static string GetFingerprint(string userId)
     {
         var rawData = $"{userId}-{UserAgent}-{IpAddress}";
-        return StringChiper.GetEncryptedSha256Hash(rawData, "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6");
+        return StringChiper.GetEncryptedHash(rawData, "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6");
     }
     
     public static CustomDbContext CreateInMemoryDbContext(string? dbName = null)

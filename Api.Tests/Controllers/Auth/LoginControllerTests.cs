@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -29,6 +30,7 @@ public class LoginControllerTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly CustomDbContext _dbContext;
+    private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly LoginController _controller;
     private readonly DefaultHttpContext _controllerHttpContext;
     private readonly CustomUser _userMock;
@@ -49,10 +51,11 @@ public class LoginControllerTests
         var loggerMock = new Mock<ILogger<LoginController>>();
         _dbContext = TestHelper.CreateInMemoryDbContext();
         var userManager = TestHelper.CreateCustomUserManager(_dbContext);
+        _passwordHasher = TestHelper.PasswordHasher;
         var emailService = TestHelper.FakeEmailService;
         var settings = TestHelper.CreateTestSettings();
         var memoryCache = TestHelper.MemoryCacheService;
-        _controller = new LoginController(loggerMock.Object, _dbContext, userManager, emailService, memoryCache, settings);
+        _controller = new LoginController(loggerMock.Object, _dbContext, userManager, _passwordHasher, emailService, memoryCache, settings);
         _controllerHttpContext = new DefaultHttpContext
         {
             Connection =
@@ -76,12 +79,13 @@ public class LoginControllerTests
             NormalizedEmail = "testuser@gmail.com".Normalize(),
             UserName = "testuser",
             NormalizedUserName = "testuser".Normalize(),
-            PasswordHash = StringChiper.GetEncryptedSha256Hash(_passwordMock, settings.EncryptionKey),
+            PasswordHash = "",
             CreateDate = DateTimeOffset.UtcNow,
             LastLogin = DateTimeOffset.UtcNow,
             LastUpdate = DateTimeOffset.UtcNow,
             SkinModel = ESkinType.WIDE
         };
+        _userMock.PasswordHash = _passwordHasher.HashPassword(_userMock, _passwordMock);
     }
 
     /// <summary>

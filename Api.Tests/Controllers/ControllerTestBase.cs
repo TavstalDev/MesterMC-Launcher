@@ -21,6 +21,7 @@ public abstract class ControllerTestBase
     protected readonly ITestOutputHelper _testOutputHelper;
     protected readonly CustomDbContext _dbContext;
     protected readonly UserManager<CustomUser> _userManager;
+    protected readonly IPasswordHasher<CustomUser> _passwordHasher;
     protected readonly DefaultHttpContext _controllerHttpContext;
     protected readonly MemoryCacheService _memoryCacheService;
     protected readonly Settings _settings;
@@ -36,6 +37,7 @@ public abstract class ControllerTestBase
 
         _dbContext = TestHelper.CreateInMemoryDbContext();
         _userManager = TestHelper.CreateCustomUserManager(_dbContext);
+        _passwordHasher = TestHelper.PasswordHasher;
         _memoryCacheService = TestHelper.MemoryCacheService;
         _settings = TestHelper.CreateTestSettings();
 
@@ -65,13 +67,13 @@ public abstract class ControllerTestBase
             NormalizedEmail = "testuser@gmail.com".Normalize(),
             UserName = "testuser",
             NormalizedUserName = "testuser".Normalize(),
-            PasswordHash = StringChiper.GetEncryptedSha256Hash(_passwordMock, _settings.EncryptionKey),
+            PasswordHash = "",
             CreateDate = DateTimeOffset.UtcNow,
             LastLogin = DateTimeOffset.UtcNow,
             LastUpdate = DateTimeOffset.UtcNow,
-            SkinModel = ESkinType.WIDE,
-            LockoutEnabled = false,
+            SkinModel = ESkinType.WIDE
         };
+        _userMock.PasswordHash = _passwordHasher.HashPassword(_userMock, _passwordMock);
         _userMock2 = new CustomUser
         {
             Email = "testuser2@gmail.com",
@@ -79,13 +81,14 @@ public abstract class ControllerTestBase
             NormalizedEmail = "testuser2@gmail.com".Normalize(),
             UserName = "testuser2",
             NormalizedUserName = "testuser2".Normalize(),
-            PasswordHash = StringChiper.GetEncryptedSha256Hash(_passwordMock, _settings.EncryptionKey),
+            PasswordHash = "",
             CreateDate = DateTimeOffset.UtcNow,
             LastLogin = DateTimeOffset.UtcNow,
             LastUpdate = DateTimeOffset.UtcNow,
             SkinModel = ESkinType.WIDE,
             LockoutEnabled = false,
         };
+        _userMock2.PasswordHash = _passwordHasher.HashPassword(_userMock, _passwordMock);
     }
     
     protected async Task CreateUserAsync(Controller controller, CustomUser? user = null, bool givePermissions = true)
