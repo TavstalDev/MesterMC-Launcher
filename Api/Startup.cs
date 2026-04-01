@@ -44,7 +44,7 @@ public class Startup
         // Configure identity options
         services.Configure<IdentityOptions>(x =>
         {
-            x.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+            x.User.AllowedUserNameCharacters = Constants.Authentication.AllowedUsernameCharacters;
         });
             
         string? connectionString = _configuration.GetConnectionString("DefaultConnection");
@@ -352,7 +352,6 @@ public class Startup
         app.UseSwaggerUI(c =>
         {
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "MesterMC.API v1");
-            //c.IndexStream = () => File.OpenRead("wwwroot/swagger/index.html");
             c.RoutePrefix = "docs";
         });
 

@@ -95,30 +95,30 @@ public class Settings
     /// <exception cref="ArgumentNullException">Thrown if a required configuration value is missing.</exception>
     public Settings(IConfiguration configuration)
     {
-        WebsiteUrl = configuration["Servers:Website"] ?? throw new ArgumentNullException("WebsiteUrl"); 
-        ApiUrl = configuration["Servers:API"] ?? throw new ArgumentNullException("ApiUrl");
+        WebsiteUrl = configuration[Constants.ConfigurationKeys.ServerWebsite] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.ServerWebsite); 
+        ApiUrl = configuration[Constants.ConfigurationKeys.ServerApi] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.ServerApi);
         
-        DatabaseUser = configuration["DB_USER"] ?? throw new ArgumentNullException("DatabaseUser"); 
-        DatabasePassword = configuration["DB_PASSWORD"] ?? throw new ArgumentNullException("DatabasePassword");
+        DatabaseUser = configuration[Constants.ConfigurationKeys.DatabaseUser] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.DatabaseUser); 
+        DatabasePassword = configuration[Constants.ConfigurationKeys.DatabasePassword] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.DatabasePassword);
         
-        EncryptionKey = configuration["JWT_ENCRYPTION_KEY"] ?? throw new ArgumentNullException("EncryptionKey");
-        Issuer = configuration["Jwt:Issuer"] ?? throw new ArgumentNullException("Jwt:Issuer");
-        Audience = configuration["Jwt:Audience"] ?? throw new ArgumentNullException("Jwt:Audience");
+        EncryptionKey = configuration[Constants.ConfigurationKeys.JwtEncryptionKey] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.JwtEncryptionKey);
+        Issuer = configuration[Constants.ConfigurationKeys.JwtIssuer] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.JwtIssuer);
+        Audience = configuration[Constants.ConfigurationKeys.JwtAudience] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.JwtAudience);
         
-        EmailProvider = configuration["Email:Provider"] ?? throw new ArgumentNullException("EmailProvider");
-        EmailPort = configuration.GetValue("Email:Port", 587); 
-        EmailAddress = configuration["EMAIL_ADDRESS"] ?? throw new ArgumentNullException("EmailAddress"); 
-        EmailPassword = configuration["EMAIL_PASSWORD"] ?? throw new ArgumentNullException("EmailPassword");
+        EmailProvider = configuration[Constants.ConfigurationKeys.EmailProvider] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.EmailProvider);
+        EmailPort = configuration.GetValue(Constants.ConfigurationKeys.EmailPort, 587); 
+        EmailAddress = configuration[Constants.ConfigurationKeys.EmailAddress] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.EmailAddress); 
+        EmailPassword = configuration[Constants.ConfigurationKeys.EmailPassword] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.EmailPassword);
         
-        SkinDomains = configuration.GetSection("Yggdrasil:SkinDomains").Get<string[]>() ?? throw new ArgumentNullException("SkinDomains");
+        SkinDomains = configuration.GetSection(Constants.ConfigurationKeys.YggdrasilSkinDomains).Get<string[]>() ?? throw new ArgumentNullException(Constants.ConfigurationKeys.YggdrasilSkinDomains);
         
-        CertPassword = configuration["YGGDRASIL_CERT_PASSWORD"] ?? string.Empty;
-        if (CertPassword == " ")
-            CertPassword = string.Empty; // Treat a password of " " as an empty password
+        CertPassword = configuration[Constants.ConfigurationKeys.CertPassword] ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(CertPassword))
+            CertPassword = string.Empty;
         Cert = File.ReadAllBytes(Path.Combine(Program.ContentRoot, "localhost.pfx"));
-        ServerName = configuration["Yggdrasil:ServerName"] ?? throw new ArgumentNullException("ServerName");
-        ImplementationName = configuration["Yggdrasil:ImplementationName"] ?? throw new ArgumentNullException("ImplementationName");
-        ImplementationVersion = configuration["Yggdrasil:ImplementationVersion"] ?? throw new ArgumentNullException("ImplementationVersion");
+        ServerName = configuration[Constants.ConfigurationKeys.YggdrasilServerName] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.YggdrasilServerName);
+        ImplementationName = configuration[Constants.ConfigurationKeys.YggdrasilImplementationName] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.YggdrasilImplementationName);
+        ImplementationVersion = configuration[Constants.ConfigurationKeys.YggdrasilImplementationVersion] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.YggdrasilImplementationVersion);
     }
 
     public Settings(string websiteUrl, string apiUrl, string databaseUser, string databasePassword, string encryptionKey, string issuer, string audience, string emailProvider, int emailPort, string emailAddress, string emailPassword, string[] skinDomains, string certPassword, byte[] cert, string serverName, string implementationName, string implementationVersion)
