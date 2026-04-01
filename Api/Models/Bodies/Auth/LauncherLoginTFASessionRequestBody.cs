@@ -11,6 +11,8 @@ public class LauncherLoginTFASessionRequestBody
     /// Gets or sets the identifier of the user associated with the launcher TFA session.
     /// </summary>
     [Required]
+    [MinLength(32)]
+    [MaxLength(36)]
     public required string UserId { get; set; }
     
     /// <summary>
@@ -18,6 +20,7 @@ public class LauncherLoginTFASessionRequestBody
     /// This token is required to authenticate the session.
     /// </summary>
     [Required]
+    [StringLength(48)]
     public required string SessionToken { get; init; }
     
     /// <summary>
@@ -25,5 +28,6 @@ public class LauncherLoginTFASessionRequestBody
     /// This code is required to complete the login process.
     /// </summary>
     [Required]
+    [StringLength(6)]
     public required string TwoFactorCode { get; init; }
 }

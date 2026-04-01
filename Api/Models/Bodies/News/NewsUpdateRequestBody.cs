@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Tavstal.MesterMC.Api.Models.Bodies.News;
 
 /// <summary>
@@ -9,12 +11,16 @@ public class NewsUpdateRequestBody
     /// Gets or sets the title of the news entry.
     /// This field is optional.
     /// </summary>
+    [MinLength(3)]
+    [MaxLength(128)]
     public string? Title { get; set; }
     
     /// <summary>
     /// Gets or sets the content of the news entry.
     /// This field is optional.
     /// </summary>
+    [MinLength(3)]
+    [MaxLength(512)]
     public string? Content { get; set; }
     
     /// <summary>

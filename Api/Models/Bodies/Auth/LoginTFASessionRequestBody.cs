@@ -12,6 +12,7 @@ public class LoginTFASessionRequestBody
     /// This code is required to complete the login process.
     /// </summary>
     [Required]
+    [StringLength(6)]
     public required string TwoFactorCode { get; init; }
     
     /// <summary>

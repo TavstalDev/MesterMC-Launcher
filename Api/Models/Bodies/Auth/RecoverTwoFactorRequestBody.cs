@@ -12,6 +12,9 @@ public class RecoverTwoFactorRequestBody
     /// This field is required.
     /// </summary>
     [Required]
+    [EmailAddress]
+    [MinLength(3)]
+    [MaxLength(254)]
     public required string Email { get; set; }
     
     /// <summary>
@@ -19,6 +22,7 @@ public class RecoverTwoFactorRequestBody
     /// This token is required and is validated to ensure the recovery request is authorized.
     /// </summary>
     [Required]
+    [StringLength(48)]
     public required string RecoveryToken { get; set; }
     
     /// <summary>
@@ -26,6 +30,7 @@ public class RecoverTwoFactorRequestBody
     /// This field is required.
     /// </summary>
     [Required]
+    [StringLength(6)]
     public required string BackupCode { get; set; }
     
     /// <summary>

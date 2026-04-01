@@ -1,3 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using Tavstal.MesterMC.Api.Models.Attributes;
+using Tavstal.MesterMC.Api.Models.Common;
+
 namespace Tavstal.MesterMC.Api.Models.Bodies.News;
 
 /// <summary>
@@ -9,17 +13,25 @@ public class NewsCreateRequestBody
     /// Gets or sets the title of the news entry.
     /// This field is required.
     /// </summary>
+    [Required]
+    [MinLength(3)]
+    [MaxLength(128)]
     public required string Title { get; set; }
         
     /// <summary>
     /// Gets or sets the content of the news entry.
     /// This field is required.
     /// </summary>
+    [Required]
+    [MinLength(3)]
+    [MaxLength(512)]
     public required string Content { get; set; }
     
     /// <summary>
     /// Gets or sets the banner image for the news entry.
     /// This field is required.
     /// </summary>
+    [Required]
+    [FormFile(500, EFileSizeUnit.Kilobytes, ["image/png"], [".png"])]
     public required IFormFile Banner { get; set; }
 }

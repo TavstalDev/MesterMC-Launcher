@@ -20,11 +20,11 @@ public class RegisterRequestBody
     
     /// <summary>
     /// Gets or sets the email address of the user.
-    /// This field is required and must be between 5 and 320 characters long.
+    /// This field is required and must be between 5 and 254 characters long.
     /// </summary>
     [Required(AllowEmptyStrings = false)]
-    [MinLength(5)]
-    [MaxLength(320)]
+    [MinLength(3)]
+    [MaxLength(254)]
     [EmailAddress]
     public required string EmailAddress { get; set; }
     

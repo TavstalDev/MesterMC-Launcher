@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Database.Launcher;
 
@@ -12,6 +13,7 @@ public class CreateLauncherVersionDataRequest
     /// Gets or sets the operating system for which the launcher version is intended.
     /// This field is required.
     /// </summary>
+    [Required]
     public required ELauncherOs Os { get; set; }
     
     /// <summary>
@@ -20,6 +22,7 @@ public class CreateLauncherVersionDataRequest
     /// Supported file extensions are .zip, .tar.gz, and .tar.
     /// Supported content types are application/zip, application/gzip, and application/x-tar.
     /// </summary>
+    [Required]
     [FormFile(maxFileSize: 512, fileExtensions: [".zip", ".tar.gz", ".tar"], contentTypes: ["application/zip", "application/gzip", "application/x-tar"])]
     public required IFormFile File { get; set; }
 }
