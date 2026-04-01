@@ -3,3 +3,10 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+
+# Ignore local environment files containing secrets
+*.env
+/Api/.env
+
+# Ignore common local IDE files
+.idea/
