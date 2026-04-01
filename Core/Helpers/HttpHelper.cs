@@ -35,9 +35,9 @@ public static class HttpHelper
         HttpClient client;
         if (OSHelper.IsWIndows11())
         {
-            var handler = new SocketsHttpHandler()
+            var handler = new SocketsHttpHandler
             {
-                SslOptions = new SslClientAuthenticationOptions()
+                SslOptions = new SslClientAuthenticationOptions
                 {
                     EnabledSslProtocols = SslProtocols.Tls12
                 },
@@ -63,7 +63,7 @@ public static class HttpHelper
 
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         client.DefaultRequestHeaders.UserAgent.ParseAdd($"MesterMC-Launcher/v1 (+https://mestermc.hu)");
-        client.Timeout = TimeSpan.FromSeconds(20);
+        client.Timeout = TimeSpan.FromSeconds(120);
         return client;
     }
 
@@ -96,26 +96,6 @@ public static class HttpHelper
         catch (Exception ex)
         {
             _logger.Exc("Error while making GET request:");
-            _logger.Error(ex.ToString());
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Sends a GET request to retrieve a byte array from the specified URL.
-    /// </summary>
-    /// <param name="request">The URL to send the GET request to.</param>
-    /// <returns>The byte array, or null if an error occurs.</returns>
-    [Obsolete]
-    public static async Task<byte[]?> GetByteArrayAsync(string request)
-    {
-        try
-        {
-            return await _httpClient.GetByteArrayAsync(request);
-        }
-        catch (Exception ex)
-        {
-            _logger.Exc("Error while making GET request for byte array:");
             _logger.Error(ex.ToString());
             return null;
         }
