@@ -565,7 +565,14 @@ public class CustomUserManager(
                 return null;
 
             string normalizedValue = raw[0].Normalize().ToUpper();
-            return await context.FindUserAsync(x => (x.NormalizedEmail == normalizedValue || x.NormalizedUserName == normalizedValue) && x.PasswordHash == StringChiper.GetEncryptedSha256Hash(raw[1], settings.EncryptionKey));
+            var user = await context.FindUserAsync(x => x.NormalizedEmail == normalizedValue || x.NormalizedUserName == normalizedValue);
+            if (user == null)
+                return null;
+            
+            var result = PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, raw[1]);
+            if (result == PasswordVerificationResult.Failed)
+                return null;
+            return user;
         }
 
         if (lowerAuthString.StartsWith("bearer"))
