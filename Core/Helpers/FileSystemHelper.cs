@@ -233,6 +233,9 @@ public static class FileSystemHelper
             if (string.IsNullOrEmpty(path))
                 return false;
             
+            if (!File.Exists(path))
+                return false;
+            
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
