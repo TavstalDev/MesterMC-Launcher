@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
-using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
