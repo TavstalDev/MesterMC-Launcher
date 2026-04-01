@@ -30,11 +30,11 @@ public class CustomUserManager(
     CustomDbContext context,
     IConfiguration configuration,
     MemoryCacheService memoryCacheService,
-    Settings settings)
+    Settings settings,
+    IHttpClientFactory httpClientFactory)
     : UserManager<CustomUser>(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer,
         errors, services, logger)
 {
-    private static readonly HttpClient Client = new();
     private readonly TimeSpan CompPassTTL = TimeSpan.FromHours(1);
     
 
@@ -611,7 +611,8 @@ public class CustomUserManager(
         string cacheKey = $"pwned:{prefix}";
         if (!memoryCacheService.TryGetValue(cacheKey, out string? response))
         {
-            response = await Client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
+            using var client = httpClientFactory.CreateClient();
+            response = await client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
             if (!string.IsNullOrEmpty(cacheKey))
                 memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
         }
