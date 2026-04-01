@@ -28,26 +28,7 @@ public static class LauncherHelper
     /// If the file does not exist or is invalid, a new configuration is created and saved.
     /// </summary>
     /// <returns>The launcher settings as a <see cref="CoreConfigDto"/> object.</returns>
-    public static CoreConfigDto GetLauncherSettings()
-    {
-        if (!File.Exists(PathHelper.LauncherConfigPath))
-        {
-            CoreConfigDto result = new CoreConfigDto();
-            JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, result, CustomJsonContext.Default.CoreConfigDto);
-            return result;
-        }
-
-        var readResult = JsonHelper.ReadJsonFile<CoreConfigDto>(PathHelper.LauncherConfigPath, CustomJsonContext.Default.CoreConfigDto);
-        if (readResult == null)
-        {
-            CoreConfigDto result = new CoreConfigDto();
-            File.Move(PathHelper.LauncherConfigPath, PathHelper.LauncherConfigPath + ".bak", true);
-            JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, result, CustomJsonContext.Default.CoreConfigDto);
-            return result;
-        }
-
-        return readResult;
-    }
+    public static CoreConfigDto GetLauncherSettings() => GetLauncherSettingsAsync().GetAwaiter().GetResult();
 
     /// <summary>
     /// Asynchronously retrieves the launcher settings from the configuration file.
@@ -81,27 +62,7 @@ public static class LauncherHelper
     /// </summary>
     /// <param name="cacheDir">The directory where the news data is cached.</param>
     /// <returns>A list of <see cref="NewsDto"/> objects representing the news data.</returns>
-    public static List<NewsDto> GetNews(string cacheDir)
-    {
-        string newsPath = Path.Combine(cacheDir, "news.json");
-        if (!File.Exists(newsPath))
-        {
-            List<NewsDto> result = new();
-            JsonHelper.WriteJsonFile(newsPath, result, CustomJsonContext.Default.ListNewsDto);
-            return result;
-        }
-
-        var readResult = JsonHelper.ReadJsonFile<List<NewsDto>>(newsPath, CustomJsonContext.Default.ListNewsDto);
-        if (readResult == null)
-        {
-            List<NewsDto> result = new();
-            File.Move(newsPath, newsPath + ".bak", true);
-            JsonHelper.WriteJsonFile(newsPath, result, CustomJsonContext.Default.ListNewsDto);
-            return result;
-        }
-
-        return readResult;
-    }
+    public static List<NewsDto> GetNews(string cacheDir) =>  GetNewsAsync(cacheDir).GetAwaiter().GetResult();
     
     /// <summary>
     /// Asynchronously retrieves the news data from the specified cache directory.
