@@ -95,8 +95,8 @@ public class Startup
                 Description = "",
                 Contact = new OpenApiContact
                 {
-                    Name = "Developer",
-                    Email = "info@localhost.dev"
+                    Name = "MesterMC Community",
+                    Url = new Uri("https://github.com/TavstalDev/MesterMC-Launcher/issues")
                 },
                 License = new OpenApiLicense
                 {
