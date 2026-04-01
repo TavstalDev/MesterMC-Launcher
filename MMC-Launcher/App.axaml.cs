@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia;
@@ -14,10 +13,8 @@ using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Instances;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.KonkordLauncher.Core.Models.Installer;
-using Tavstal.KonkordLauncher.Core.Models.MojangApi.Meta;
 using Tavstal.MesterMC.Launcher.Helpers;
 using Tavstal.MesterMC.Launcher.Models.Config.DTOs;
-using Tavstal.MesterMC.Launcher.Models.Json;
 using Tavstal.MesterMC.Launcher.Views;
 
 namespace Tavstal.MesterMC.Launcher;

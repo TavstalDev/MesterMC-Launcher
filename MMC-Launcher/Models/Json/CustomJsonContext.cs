@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Tavstal.MesterMC.Launcher.Models.Config.DTOs;
-using Tavstal.MesterMC.Launcher.Models.Config.Java;
 
 namespace Tavstal.MesterMC.Launcher.Models.Json;
 

@@ -11,11 +11,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
-using Tavstal.KonkordLauncher.Core.Helpers;
 
 namespace Tavstal.MesterMC.Launcher.Models.Config.DTOs;
 
