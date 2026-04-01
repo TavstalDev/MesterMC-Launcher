@@ -32,7 +32,6 @@ public static class Program
 
                 
                 config.AddJsonFile(_isDevelopment ? "appsettings.Development.json" : "appsettings.json", optional: false, reloadOnChange: true);
-                //config.AddJsonFile("secrets.json", optional: false, reloadOnChange: true);
                 config.AddEnvironmentVariables();
             })
             .UseContentRoot(Directory.GetCurrentDirectory());

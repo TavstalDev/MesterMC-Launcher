@@ -79,9 +79,15 @@ public class EmailService : IEmailService
         {
             await smtp.AuthenticateAsync(_settings.EmailAddress, _settings.EmailPassword);
         }
-        catch (Exception)
+        catch (AuthenticationException ex)
         {
-            // ignored, the smtp server might not require authentication, so we can ignore authentication failures
+            // SMTP server might not require authentication, log and continue
+            _logger.LogWarning(ex, "SMTP authentication failed - server may not require authentication");
+        }
+        catch (Exception ex)
+        {
+            // Unexpected error - log but continue
+            _logger.LogError(ex, "Unexpected error during SMTP authentication");
         }
 
         await smtp.SendAsync(email);
