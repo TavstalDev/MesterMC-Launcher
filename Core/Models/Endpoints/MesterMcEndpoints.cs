@@ -15,21 +15,15 @@ public static class MesterMcEndpoints
     /// </summary>
     public const string AllReleases = "https://api.github.com/repos/TavstalDev/MesterMC-Launcher/releases";
 
+    public static string BaseEndpoint { get; set; } = 
 #if DEBUG
-    public const string AuthEndpoint = "https://localhost:36767/login/launcher";
-    
-    public const string TfaEndpoint = "https://localhost:36767/login/launcher/2fa";
-    
-    public const string YggdrasilEndpoint = "https://localhost:36767/yggdrasil";
-    
-    public const string ApiBaseEndpoint = "https://localhost:36767/";
+        "https://localhost:36767";
 #else
-    public const string AuthEndpoint = "https://api.mestermc.hu/login/launcher";
-    
-    public const string TfaEndpoint = "https://api.mestermc.hu/login/launcher/2fa";
-
-    public const string YggdrasilEndpoint = "https://api.mestermc.hu/yggdrasil";
-    
-    public const string ApiBaseEndpoint = "https://api.mestermc.hu/";
+        "https://api.mestermc.hu";
 #endif
+    
+    public static string AuthEndpoint => $"{BaseEndpoint}/login/launcher";
+    public static string TfaEndpoint => $"{BaseEndpoint}/login/launcher/2fa";
+    public static string YggdrasilEndpoint => $"{BaseEndpoint}/yggdrasil";
+    public static string ApiBaseEndpoint => $"{BaseEndpoint}/";
 }
