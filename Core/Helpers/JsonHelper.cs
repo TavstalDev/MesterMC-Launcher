@@ -8,7 +8,6 @@
  * * For full license details, see <http://www.gnu.org/licenses/gpl-3.0.html>.
  */
 
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Tavstal.KonkordLauncher.Core.Models;
@@ -30,29 +29,8 @@ public static class JsonHelper
     /// <param name="obj">The object to serialize into JSON.</param>
     /// <param name="typeInfo"></param>
     /// <returns>True if the operation succeeds, otherwise false.</returns>
-    public static bool WriteJsonFile<T>(string path, T obj, JsonTypeInfo<T> typeInfo)
-    {
-        try
-        {
-            using var stream = new MemoryStream();
-            JsonSerializer.Serialize(stream, obj, typeInfo);
-            stream.Position = 0;
-            var reader = new StreamReader(stream);
-            string content = reader.ReadToEnd();
-            var dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
-            
-            File.WriteAllText(path, content, Encoding.UTF8);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.Exc($"Error in WriteJsonFile<T> {path}:");
-            _logger.Error(ex.ToString());
-            return false;
-        }
-    }
+    public static bool WriteJsonFile<T>(string path, T obj, JsonTypeInfo<T> typeInfo) =>
+        WriteJsonFileAsync(path, obj, typeInfo).GetAwaiter().GetResult();
 
     /// <summary>
     /// Asynchronously writes an object to a JSON file at the specified path.
@@ -66,16 +44,12 @@ public static class JsonHelper
     {
         try
         {
-            using var stream = new MemoryStream();
-            await JsonSerializer.SerializeAsync(stream, obj, typeInfo);
-            stream.Position = 0;
-            var reader = new StreamReader(stream);
-            string content = await reader.ReadToEndAsync();
             var dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
             
-            await File.WriteAllTextAsync(path, content, Encoding.UTF8);
+            await using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write);
+            await JsonSerializer.SerializeAsync(fileStream, obj, typeInfo);
             return true;
         }
         catch (Exception ex)
@@ -93,21 +67,7 @@ public static class JsonHelper
     /// <param name="path">The file path to read the JSON content from.</param>
     /// <param name="typeInfo"></param>
     /// <returns>The deserialized object, or default if an error occurs.</returns>
-    public static T? ReadJsonFile<T>(string path, JsonTypeInfo<T> typeInfo)
-    {
-        try
-        {
-            using var stream = File.OpenRead(path);
-            var local = JsonSerializer.Deserialize(stream, typeInfo);
-            return local;
-        }
-        catch (Exception ex)
-        {
-            _logger.Exc($"Error in ReadJsonFile<T> {path}:");
-            _logger.Error(ex.ToString());
-            return default;
-        }
-    }
+    public static T? ReadJsonFile<T>(string path, JsonTypeInfo<T> typeInfo) => ReadJsonFileAsync(path, typeInfo).GetAwaiter().GetResult();
 
     /// <summary>
     /// Asynchronously reads and deserializes a JSON file into an object of type <typeparamref name="T"/>.
