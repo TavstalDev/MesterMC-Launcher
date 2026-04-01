@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
@@ -22,6 +24,7 @@ public class RecoveryController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
+    private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly IEmailService _emailService;
     private readonly MemoryCacheService _memoryCacheService;
     private readonly Settings _settings;
@@ -32,13 +35,15 @@ public class RecoveryController : CustomControllerBase
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="dbContext">Database context for accessing user data.</param>
+    /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="settings">Application settings.</param>
-    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomDbContext dbContext, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
+    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, CustomDbContext dbContext, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;
+        _passwordHasher = passwordHasher;
         _emailService = emailService;
         _memoryCacheService = memoryCacheService;
         _settings = settings;
@@ -57,7 +62,7 @@ public class RecoveryController : CustomControllerBase
     [EnableRateLimiting(RateLimits.AUTH_RESET)]
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RequestRecoveryAsync([BindRequired] string email)
+    public async Task<IActionResult> RequestRecoveryAsync([BindRequired, EmailAddress] string email)
     {
         try
         {
@@ -118,7 +123,7 @@ public class RecoveryController : CustomControllerBase
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RecoverPasswordAsync([FromBody] RecoverPasswordRequestBody request)
+    public async Task<IActionResult> RecoverPasswordAsync([Required, FromBody] RecoverPasswordRequestBody request)
     {
         try
         {
@@ -155,7 +160,7 @@ public class RecoveryController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Invalid or expired token.");
             }
             
-            user.PasswordHash = StringChiper.GetEncryptedSha256Hash(request.NewPassword, _settings.EncryptionKey);
+            user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
             await _dbContext.UpdateUserAsync(user);
 
             _memoryCacheService.RemoveValue(recoveryTokenKey);
@@ -186,7 +191,7 @@ public class RecoveryController : CustomControllerBase
     [EnableRateLimiting(RateLimits.AUTH_RESET)]
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RequestTFARecoveryAsync([BindRequired] string email)
+    public async Task<IActionResult> RequestTFARecoveryAsync([BindRequired, EmailAddress] string email)
     {
         try
         {
@@ -247,7 +252,7 @@ public class RecoveryController : CustomControllerBase
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RecoverTwoFactorAsync([FromBody] RecoverTwoFactorRequestBody request)
+    public async Task<IActionResult> RecoverTwoFactorAsync([Required, FromBody] RecoverTwoFactorRequestBody request)
     {
         try
         {
@@ -284,7 +289,7 @@ public class RecoveryController : CustomControllerBase
             if (!user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Two-factor authentication is not enabled.");
             
-            string hashedCode = StringChiper.GetEncryptedSha256Hash(request.BackupCode, _settings.EncryptionKey);
+            string hashedCode = StringChiper.GetEncryptedHash(request.BackupCode, _settings.EncryptionKey);
             var backupCode = await _dbContext.FindUserBackupCodeAsync(x => x.UserId == user.Id && x.HashedCode == hashedCode);
             if (backupCode == null)
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Backup code is invalid.");

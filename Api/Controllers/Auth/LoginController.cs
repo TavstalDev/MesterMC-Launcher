@@ -1,6 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Net;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using OtpNet;
@@ -24,6 +26,7 @@ public class LoginController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
+    private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly IEmailService _emailService;
     private readonly MemoryCacheService _memoryCacheService;
     
@@ -33,14 +36,16 @@ public class LoginController : CustomControllerBase
     /// <param name="logger">The logger instance for logging operations.</param>
     /// <param name="dbContext">The database context for accessing user-related data.</param>
     /// <param name="userManager">The user manager for managing user authentication and roles.</param>
+    /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">The email service for sending emails.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="settings">The application settings.</param>
     public LoginController(ILogger<LoginController> logger, CustomDbContext dbContext,
-        CustomUserManager userManager, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
+        CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
     {
         _dbContext = dbContext;
         _userManager = userManager;
+        _passwordHasher = passwordHasher;
         _emailService = emailService;
         _memoryCacheService = memoryCacheService;
     }
@@ -63,7 +68,7 @@ public class LoginController : CustomControllerBase
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LoginAsync([FromBody] LoginRequestBody request)
+    public async Task<IActionResult> LoginAsync([Required, FromBody] LoginRequestBody request)
     {
         try
         {
@@ -99,8 +104,16 @@ public class LoginController : CustomControllerBase
             }
             
             // Check password
-            if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, Settings.EncryptionKey))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+            switch (result)
+            {
+                case PasswordVerificationResult.Failed:
+                    return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
+                case PasswordVerificationResult.SuccessRehashNeeded:
+                    user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+                    await _dbContext.UpdateUserAsync(user, true);
+                    break;
+            }
 
             // Check two-factor authentication
             if (user.TwoFactorEnabled)
@@ -137,7 +150,7 @@ public class LoginController : CustomControllerBase
 
             string ipv4 = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
             string ipv6 = HttpContext.Connection.RemoteIpAddress?.MapToIPv6().ToString() ?? "::1";
-            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+            var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
             string operatingSystem = HttpHelper.GetOperatingSystem(userAgent);
             string browser = HttpHelper.GetBrowser(userAgent);
             
@@ -195,7 +208,7 @@ public class LoginController : CustomControllerBase
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LoginTwoFactorAsync([FromBody] LoginTFASessionRequestBody request)
+    public async Task<IActionResult> LoginTwoFactorAsync([Required, FromBody] LoginTFASessionRequestBody request)
     {
         try
         {
@@ -258,7 +271,7 @@ public class LoginController : CustomControllerBase
 
             string ipv4 = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
             string ipv6 = HttpContext.Connection.RemoteIpAddress?.MapToIPv6().ToString() ?? "::1";
-            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+            var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
             string operatingSystem = HttpHelper.GetOperatingSystem(userAgent);
             string browser = HttpHelper.GetBrowser(userAgent);
             
@@ -311,7 +324,7 @@ public class LoginController : CustomControllerBase
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LoginLauncherAsync([FromBody] LauncherLoginRequestBody request)
+    public async Task<IActionResult> LoginLauncherAsync([Required, FromBody] LauncherLoginRequestBody request)
     {
         try
         {
@@ -347,8 +360,16 @@ public class LoginController : CustomControllerBase
             }
             
             // Check password
-            if (user.PasswordHash != StringChiper.GetEncryptedSha256Hash(request.Password, Settings.EncryptionKey))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+            switch (result)
+            {
+                case PasswordVerificationResult.Failed:
+                    return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
+                case PasswordVerificationResult.SuccessRehashNeeded:
+                    user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+                    await _dbContext.UpdateUserAsync(user, true);
+                    break;
+            }
 
             // Check two-factor authentication
             if (user.TwoFactorEnabled)
@@ -410,7 +431,7 @@ public class LoginController : CustomControllerBase
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LoginLauncherTwoFactorAsync([FromBody] LauncherLoginTFASessionRequestBody request)
+    public async Task<IActionResult> LoginLauncherTwoFactorAsync([Required, FromBody] LauncherLoginTFASessionRequestBody request)
     {
         try
         {
@@ -508,7 +529,7 @@ public class LoginController : CustomControllerBase
     [HttpPost("/logout")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LogoutAsync(string? token)
+    public async Task<IActionResult> LogoutAsync([MinLength(48), MaxLength(48)] string? token)
     {
         try
         {

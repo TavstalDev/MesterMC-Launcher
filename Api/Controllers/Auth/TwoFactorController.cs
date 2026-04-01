@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
@@ -52,7 +53,7 @@ public class TwoFactorController : CustomControllerBase {
     [HttpPatch("enable")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> EnableTwoFactorAuthAsync([BindRequired] string twoFactorCode)
+    public async Task<IActionResult> EnableTwoFactorAuthAsync([BindRequired, StringLength(6)] string twoFactorCode)
     {
         try
         {
@@ -100,7 +101,7 @@ public class TwoFactorController : CustomControllerBase {
     [HttpPatch("disable")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> DisableTwoFactorAuthAsync([BindRequired] string twoFactorCode)
+    public async Task<IActionResult> DisableTwoFactorAuthAsync([BindRequired, StringLength(6)] string twoFactorCode)
     {
         try
         {
@@ -205,7 +206,7 @@ public class TwoFactorController : CustomControllerBase {
                 await _dbContext.AddUserBackupCodeAsync(new UserBackupCode
                 {
                     UserId = user.Id,
-                    HashedCode = StringChiper.GetEncryptedSha256Hash(recoveryCode, _settings.EncryptionKey),
+                    HashedCode = StringChiper.GetEncryptedHash(recoveryCode, _settings.EncryptionKey),
                     CreateAt = DateTime.UtcNow
                 });
             }

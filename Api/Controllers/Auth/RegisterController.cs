@@ -1,6 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SixLabors.ImageSharp;
@@ -30,6 +32,7 @@ public class RegisterController : CustomControllerBase
     private readonly CustomDbContext _dbContext;
     private readonly IEmailService _emailService;
     private readonly Settings _settings;
+    private readonly IPasswordHasher<CustomUser> _passwordHasher;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="RegisterController"/> class.
@@ -37,13 +40,15 @@ public class RegisterController : CustomControllerBase
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
+    /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, IEmailService emailService, Settings settings) : base(logger, settings)
+    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, Settings settings) : base(logger, settings)
     {
         _dbContext = dbContext;
         _userManager = userManager;
         _emailService = emailService;
+        _passwordHasher = passwordHasher;
         _settings = settings;
     }
 
@@ -62,7 +67,7 @@ public class RegisterController : CustomControllerBase
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status409Conflict), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RegisterForm([FromForm] RegisterRequestBody request)
+    public async Task<IActionResult> RegisterForm([Required, FromForm] RegisterRequestBody request)
     {
         try
         {
@@ -122,12 +127,15 @@ public class RegisterController : CustomControllerBase
                 }, true);
                 avatarData.SaveFile(stream);
             }
+
+            var newUser = new CustomUser(request.Username, normalizedUsername, request.EmailAddress, normalizedEmail,
+                "", ESkinType.WIDE,
+                null, string.Empty, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
             
-            user = await _dbContext.AddUserAsync(
-                new CustomUser(request.Username, normalizedUsername, request.EmailAddress, normalizedEmail, 
-                    StringChiper.GetEncryptedSha256Hash(request.Password, _settings.EncryptionKey), ESkinType.WIDE,
-                    null, string.Empty, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
-                true);
+            // Hash the password
+            newUser.PasswordHash = _passwordHasher.HashPassword(newUser, request.Password);
+            
+            user = await _dbContext.AddUserAsync(newUser, true);
             if (avatarData != null)
             {
                 avatarData.UserId = user.Id;
@@ -179,7 +187,7 @@ public class RegisterController : CustomControllerBase
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ConfirmRegistration([FromBody] ConfirmRegisterRequestBody request)
+    public async Task<IActionResult> ConfirmRegistration([Required, FromBody] ConfirmRegisterRequestBody request)
     {
         try
         {
