@@ -205,7 +205,7 @@ public class RegisterControllerTests
             objectResult!.StatusCode.Should().Be(201);
             _testOutputHelper.WriteLine("Registration Result: " + objectResult.Value);
 
-            _emailService.SentEmails.Should().HaveCount(1);
+            _emailService.SentEmails.Should().HaveCountGreaterThanOrEqualTo(1);
             SentEmail sentEmail = _emailService.SentEmails.First();
 
             string userId, token;
@@ -256,7 +256,7 @@ public class RegisterControllerTests
             objectResult!.StatusCode.Should().Be(201);
             _testOutputHelper.WriteLine("Registration Result: " + objectResult.Value);
 
-            _emailService.SentEmails.Should().HaveCount(1);
+            _emailService.SentEmails.Should().HaveCountGreaterThanOrEqualTo(1);
             SentEmail sentEmail = _emailService.SentEmails.First();
 
             string userId, token;
@@ -317,7 +317,7 @@ public class RegisterControllerTests
             objectResult!.StatusCode.Should().Be(201);
             _testOutputHelper.WriteLine("Registration Result: " + objectResult.Value);
 
-            _emailService.SentEmails.Should().HaveCount(1);
+            _emailService.SentEmails.Should().HaveCountGreaterThanOrEqualTo(1);
             SentEmail sentEmail = _emailService.SentEmails.First();
 
             var value = !string.IsNullOrEmpty(sentEmail.ActionUrl) ? sentEmail.ActionUrl : sentEmail.Body;

@@ -31,12 +31,20 @@ public abstract class ControllerTestBase
     protected ControllerTestBase(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
+        // Ensure test services are fresh for each test class run to avoid cross-test pollution
+        TestHelper.InitTestServices();
+
         _dbContext = TestHelper.CreateInMemoryDbContext();
         _userManager = TestHelper.CreateCustomUserManager(_dbContext);
         _memoryCacheService = TestHelper.MemoryCacheService;
         _settings = TestHelper.CreateTestSettings();
 
+        // Clear any previous fake emails in case tests reused the same process
+        TestHelper.FakeEmailService.Clear();
+
         var uploadTempDir = Path.Combine(Path.GetTempPath(), "mmc-tests-uploads");
+        // ensure unique per-run temporary upload directory to avoid collisions when tests run in parallel
+        uploadTempDir = Path.Combine(uploadTempDir, Guid.NewGuid().ToString());
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["UploadDirectory"] = uploadTempDir

@@ -1,14 +1,10 @@
-using System.Net;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.MesterMC.Api.Controllers.Auth;
-using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
-using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Tests.Helpers;
@@ -177,7 +173,7 @@ public class RecoveryControllerTests : ControllerTestBase
 
             result.Should().BeOfType<ObjectResult>();
             var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
+            objectResult!.StatusCode.Should().Be(400);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 

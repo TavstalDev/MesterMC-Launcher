@@ -7,7 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Moq;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
@@ -21,12 +20,25 @@ public class TestHelper
 {
     public const string UserAgent = "UnitTest/1.0";
     public const string IpAddress = "127.0.0.1";
-    public static readonly ServiceProvider ServiceProvider = new ServiceCollection()
+    public static ServiceProvider ServiceProvider { get; private set; } = new ServiceCollection()
         .AddLogging()
         .AddMemoryCache()
         .BuildServiceProvider();
-    public static readonly MemoryCacheService MemoryCacheService = new(ServiceProvider.GetRequiredService<IMemoryCache>());
-    public static readonly FakeEmailService FakeEmailService = new();
+
+    public static MemoryCacheService MemoryCacheService { get; private set; } = new(ServiceProvider.GetRequiredService<IMemoryCache>());
+    
+    public static FakeEmailService FakeEmailService { get; private set; } = new();
+    
+    public static void InitTestServices()
+    {
+        ServiceProvider = new ServiceCollection()
+            .AddLogging()
+            .AddMemoryCache()
+            .BuildServiceProvider();
+
+        MemoryCacheService = new MemoryCacheService(ServiceProvider.GetRequiredService<IMemoryCache>());
+        FakeEmailService = new FakeEmailService();
+    }
 
     public static string GetFingerprint(string userId)
     {

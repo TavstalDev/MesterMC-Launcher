@@ -246,7 +246,7 @@ public class LauncherControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: No version exists")]
         public async Task ReturnsNotFound_WhenVersionDoesNotExist()
         {
-            var result = await _controller.DownloadLauncherVersion(1, ELauncherOs.WINDOWS);
+            var result = await _controller.DownloadLauncherVersion(999, ELauncherOs.WINDOWS);
             result.Should().BeOfType<ObjectResult>();
             var objectResult = result as ObjectResult;
             objectResult!.StatusCode.Should().Be(404);
@@ -263,29 +263,6 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-            }, true);
-            
-            byte[] bytes = "Hello world"u8.ToArray();
-            using var stream = new MemoryStream(bytes);
-            using var sha256 = SHA256.Create();
-            byte[] hashBytes = await sha256.ComputeHashAsync(stream);
-            string fileHash = Convert.ToHexStringLower(hashBytes);
-            
-            
-            var fd = await _dbContext.AddFileDataAsync(new FileData
-            {
-                Hash = fileHash,
-                FileName = "test.zip",
-                ContentType = "application/zip",
-                Type = EFileDataType.LAUNCHER,
-            }, true);
-            await _dbContext.AddLauncherVersionDataAsync(new LauncherVersionData
-            {
-                VersionId = version.Id,
-                FileId = fd.Id,
-                Os = ELauncherOs.WINDOWS,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             }, true);
