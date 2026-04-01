@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -156,7 +157,7 @@ public class UserCapesController : CustomControllerBase
         TextResponse(StatusCodes.Status401Unauthorized),
         TextResponse(StatusCodes.Status403Forbidden),
         TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SelectCapeAdmin([BindRequired, FromRoute] string userId, [BindRequired, FromRoute] ulong capeId)
+    public async Task<IActionResult> SelectCapeAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired, FromRoute] ulong capeId)
     {
         try
         {
@@ -225,7 +226,7 @@ public class UserCapesController : CustomControllerBase
             TextResponse(StatusCodes.Status401Unauthorized),
             TextResponse(StatusCodes.Status403Forbidden),
             TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ClearSelectedCapeAdmin([BindRequired, FromRoute] string userId)
+    public async Task<IActionResult> ClearSelectedCapeAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
         try
         {

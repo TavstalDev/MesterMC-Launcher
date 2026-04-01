@@ -147,6 +147,6 @@ public abstract class CustomControllerBase : Controller
     
         // Combine traits and hash them
         var rawData = $"{userId}-{userAgent}-{ipAddress}";
-        return StringChiper.GetEncryptedSha256Hash(rawData, Settings.EncryptionKey);
+        return StringChiper.GetEncryptedHash(rawData, Settings.EncryptionKey);
     }
 }

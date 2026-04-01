@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -87,7 +88,7 @@ public class SessionServerController : CustomControllerBase
     /// <response code="401">The access token has expired.</response>
     /// <response code="403">The IP address does not match the request.</response>
     [HttpPost("join")]
-    public async Task<IActionResult> Join([FromBody] YigJoinServerRequest request)
+    public async Task<IActionResult> Join([Required, FromBody] YigJoinServerRequest request)
     {
         try
         {
@@ -152,7 +153,7 @@ public class SessionServerController : CustomControllerBase
     /// <response code="401">The server join has expired.</response>
     /// <response code="403">The username does not match the server join.</response>
     [HttpGet("hasJoined")]
-    public async Task<IActionResult> HasJoined([FromQuery] string serverId, [FromQuery] string username, [FromQuery] string? ip)
+    public async Task<IActionResult> HasJoined([FromQuery] string serverId, [FromQuery, MinLength(3), MaxLength(16)] string username, [FromQuery, MinLength(7), MaxLength(15)] string? ip)
     {
         try
         {
@@ -206,7 +207,7 @@ public class SessionServerController : CustomControllerBase
     /// <response code="404">User not found.</response>
     /// <response code="500">An error occurred while processing the request.</response>
     [HttpGet("profile/{uuid}")]
-    public async Task<IActionResult> GetProfile([BindRequired, FromRoute] string uuid, [FromQuery] bool unsigned = true)
+    public async Task<IActionResult> GetProfile([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string uuid, [FromQuery] bool unsigned = true)
     {
         try
         {

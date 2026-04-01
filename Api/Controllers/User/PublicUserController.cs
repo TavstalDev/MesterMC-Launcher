@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -43,7 +44,7 @@ public class PublicUserController : CustomControllerBase
     /// <response code="404">User not found.</response>
     [HttpGet("{userId}")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUserInfo([BindRequired, FromRoute] string userId)
+    public async Task<IActionResult> GetUserInfo([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
         try
         {
@@ -95,7 +96,7 @@ public class PublicUserController : CustomControllerBase
     /// <response code="404">User or avatar not found.</response>
     [HttpGet("{userId}/avatar")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status304NotModified), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetAvatar([BindRequired, FromRoute] string userId)
+    public async Task<IActionResult> GetAvatar([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
         try
         {

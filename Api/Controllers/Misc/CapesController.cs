@@ -51,7 +51,7 @@ public class CapesController : CustomControllerBase
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), 
      TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> UploadCape([BindRequired] IFormFile file)
+    public async Task<IActionResult> UploadCape([BindRequired, FormFile(500, EFileSizeUnit.Kilobytes)] IFormFile file)
     {
         try
         {

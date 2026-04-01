@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
@@ -199,7 +200,7 @@ public class LauncherController : CustomControllerBase
     [EnableRateLimiting(RateLimits.ADMIN)]
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CreateLauncherVersion([FromBody] CreateLauncherVersionRequest request)
+    public async Task<IActionResult> CreateLauncherVersion([Required, FromBody] CreateLauncherVersionRequest request)
     {
         try
         {
@@ -259,7 +260,7 @@ public class LauncherController : CustomControllerBase
     [EnableRateLimiting(RateLimits.ADMIN)]
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateLauncherVersion([BindRequired, FromRoute] ulong id, [FromBody] UpdateLauncherVersionRequest request)
+    public async Task<IActionResult> UpdateLauncherVersion([BindRequired, FromRoute] ulong id, [Required, FromBody] UpdateLauncherVersionRequest request)
     {
         try
         {
@@ -374,7 +375,7 @@ public class LauncherController : CustomControllerBase
     [EnableRateLimiting(RateLimits.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddLauncherVersionData([BindRequired, FromRoute] ulong id, [FromForm] CreateLauncherVersionDataRequest request)
+    public async Task<IActionResult> AddLauncherVersionData([BindRequired, FromRoute] ulong id, [Required, FromForm] CreateLauncherVersionDataRequest request)
     {
         try
         {

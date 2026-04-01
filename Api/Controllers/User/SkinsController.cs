@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
@@ -93,7 +94,7 @@ public class SkinsController : CustomControllerBase
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
      TextResponse(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> UploadSkin([BindRequired] IFormFile file)
+    public async Task<IActionResult> UploadSkin([BindRequired, FormFile(500, EFileSizeUnit.Kilobytes)] IFormFile file)
     {
         try
         {
@@ -231,7 +232,7 @@ public class SkinsController : CustomControllerBase
     [EnableRateLimiting(RateLimits.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetSkinAdmin([BindRequired, FromRoute] string userId)
+    public async Task<IActionResult> GetSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
         try
         {
@@ -295,7 +296,7 @@ public class SkinsController : CustomControllerBase
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UploadSkinAdmin([BindRequired, FromRoute] string userId, [BindRequired] IFormFile file)
+    public async Task<IActionResult> UploadSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired, FormFile(500, EFileSizeUnit.Kilobytes)] IFormFile file)
     {
         try
         {
@@ -399,7 +400,7 @@ public class SkinsController : CustomControllerBase
     [EnableRateLimiting(RateLimits.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteSkinAdmin([BindRequired, FromRoute] string userId)
+    public async Task<IActionResult> DeleteSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
         try
         {

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
@@ -119,7 +120,7 @@ public class AvatarController : CustomControllerBase
      TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> UploadAvatar([BindRequired] IFormFile file)
+    public async Task<IActionResult> UploadAvatar([BindRequired, FormFile(500, EFileSizeUnit.Kilobytes)] IFormFile file)
     {
         try
         {
@@ -263,7 +264,7 @@ public class AvatarController : CustomControllerBase
         TextResponse(StatusCodes.Status403Forbidden),
         TextResponse(StatusCodes.Status404NotFound),
         TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> UploadAvatarAdmin([BindRequired, FromRoute] string userId, [BindRequired] IFormFile file)
+    public async Task<IActionResult> UploadAvatarAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired] IFormFile file)
     {
         try
         {
@@ -365,7 +366,7 @@ public class AvatarController : CustomControllerBase
      TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> DeleteAvatarAdmin([BindRequired, FromRoute] string userId)
+    public async Task<IActionResult> DeleteAvatarAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
         try
         {

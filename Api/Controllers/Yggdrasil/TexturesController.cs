@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -45,7 +46,7 @@ public class TexturesController : CustomControllerBase
     /// <response code="404">Texture not found.</response>
     /// <response code="500">Failed to retrieve texture data.</response>
     [HttpGet("{hash}")]
-    public async Task<IActionResult> GetTexture([BindRequired, FromRoute] string hash)
+    public async Task<IActionResult> GetTexture([BindRequired, FromRoute, MinLength(64), MaxLength(64)] string hash)
     {
         try
         {

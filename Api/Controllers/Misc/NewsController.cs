@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
@@ -219,7 +220,7 @@ public class NewsController : CustomControllerBase
     [EnableRateLimiting(RateLimits.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CreateNews([FromForm] NewsCreateRequestBody requestBody)
+    public async Task<IActionResult> CreateNews([Required, FromForm] NewsCreateRequestBody requestBody)
     {
         try
         {
@@ -310,7 +311,7 @@ public class NewsController : CustomControllerBase
     [EnableRateLimiting(RateLimits.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateNews([BindRequired, FromRoute] ulong id, [FromForm] NewsUpdateRequestBody requestBody)
+    public async Task<IActionResult> UpdateNews([BindRequired, FromRoute] ulong id, [Required, FromForm] NewsUpdateRequestBody requestBody)
     {
         try
         {

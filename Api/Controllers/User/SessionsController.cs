@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -155,7 +156,7 @@ public class SessionsController : CustomControllerBase
     [HttpGet("{userId}/sessions")]
     [EnableRateLimiting(RateLimits.ADMIN)]
     [JsonResponse(typeof(List<CustomUserLogin>)),TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetSessionsAdmin([BindRequired, FromRoute] string userId)
+    public async Task<IActionResult> GetSessionsAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
         try
         {
@@ -206,7 +207,7 @@ public class SessionsController : CustomControllerBase
     [HttpDelete("{userId}/sessions/{sessionId}")]
     [EnableRateLimiting(RateLimits.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RevokeSessionAdmin([BindRequired, FromRoute] string userId, [BindRequired, FromRoute] ulong sessionId)
+    public async Task<IActionResult> RevokeSessionAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired, FromRoute] ulong sessionId)
     {
         try
         {

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Tavstal.MesterMC.Api.Models;
@@ -40,7 +41,7 @@ public class ProfilesController : CustomControllerBase
     /// <response code="404">No users found with the provided usernames.</response>
     [HttpPost("minecraft")]
     [JsonResponse(typeof(List<Dictionary<string, string>>)), TextResponse(StatusCodes.Status404NotFound)]
-    public IActionResult MinecraftProfile([FromBody] List<String> names)
+    public IActionResult MinecraftProfile([Required, FromBody] List<string> names)
     {
         try
         {
