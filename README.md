@@ -46,6 +46,7 @@ This project was designed to remain lightweight and legally compliant rather tha
 Please check the [installation guide](./docs/installation.md) for detailed instructions on how to install and set up the MesterMC Launcher on your system.
 
 ## Contributing
+
 While this project is no longer maintained, contributions are still welcome for educational purposes. 
 If you have improvements or fixes, please feel free to submit a pull request. 
 For more details on contributing, please refer to the [contributing guidelines](./CONTRIBUTING.md).
