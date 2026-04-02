@@ -56,7 +56,7 @@ public class ProfilesController : CustomControllerBase
             }
 
             // Retrieve users from the database whose usernames match the provided list.
-            List<CustomUser> users = _dbContext.GetUsers(x => names.Contains(x.UserName));
+            List<CustomUser> users = _dbContext.GetUsersAsync(x => names.Contains(x.UserName));
             if (users.Count == 0)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No users found with the provided usernames.");
 

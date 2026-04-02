@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Moq;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
@@ -74,6 +75,7 @@ public class TestHelper
         var lookupNormalizer = new UpperInvariantLookupNormalizer();
         var errors = new IdentityErrorDescriber();
 
+        var httpClientFactory = new Mock<IHttpClientFactory>().Object;
         var logger = NullLogger<CustomUserManager>.Instance;
 
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build();
@@ -92,7 +94,8 @@ public class TestHelper
             db,
             configuration,
             MemoryCacheService,
-            settings);
+            settings,
+            httpClientFactory);
 
         return manager;
     }

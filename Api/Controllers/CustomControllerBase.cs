@@ -21,7 +21,12 @@ public abstract class CustomControllerBase : Controller
     /// Logger instance used for logging within the controller.
     /// </summary>
     protected readonly ILogger Logger;
-
+    
+    /// <summary>
+    /// Reference to the application's <see cref="CustomUserStore"/> used to query and modify user data.
+    /// </summary>
+    protected readonly CustomUserStore UserStore;
+    
     /// <summary>
     /// Application settings instance available to derived controllers.
     /// </summary>
@@ -31,10 +36,12 @@ public abstract class CustomControllerBase : Controller
     /// Initializes a new instance of the <see cref="CustomControllerBase"/> class.
     /// </summary>
     /// <param name="logger">The logger instance to be used by the controller.</param>
+    /// <param name="userStore">The <see cref="CustomUserStore"/> instance for accessing user data.</param>
     /// <param name="settings">The <see cref="Settings"/> instance containing application configuration used by controllers.</param>
-    protected CustomControllerBase(ILogger logger, Settings settings)
+    protected CustomControllerBase(ILogger logger, CustomUserStore userStore, Settings settings)
     {
         Logger = logger;
+        UserStore = userStore;
         Settings = settings;
     }
     
@@ -44,15 +51,14 @@ public abstract class CustomControllerBase : Controller
     protected string? UserId => User.FindFirstValue(ClaimTypes.NameIdentifier);
 
     /// <summary>
-    /// Retrieves the current user asynchronously using the provided user manager.
+    /// Retrieves the current user asynchronously using the user store.
     /// </summary>
-    /// <param name="manager">The user manager used to find the user by their ID.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the current user.</returns>
-    protected async Task<CustomUser?> GetCurrentUserAsync(CustomUserManager manager)
+    protected async Task<CustomUser?> GetCurrentUserAsync()
     {
         if (string.IsNullOrEmpty(UserId))
             return null;
-        return await manager.FindByIdAsync(UserId);
+        return await UserStore.FindUserByIdAsync(UserId);
     }
 
     /// <summary>

@@ -23,6 +23,7 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 public class RecoveryController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
+    private readonly CustomSignInManager _signInManager;
     private readonly CustomDbContext _dbContext;
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly IEmailService _emailService;
@@ -34,14 +35,16 @@ public class RecoveryController : CustomControllerBase
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="settings">Application settings.</param>
-    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, CustomDbContext dbContext, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
+    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomSignInManager signInManager, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, CustomDbContext dbContext, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
+        _signInManager = signInManager;
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _emailService = emailService;
@@ -74,8 +77,9 @@ public class RecoveryController : CustomControllerBase
 
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
-            
-            CustomUser? user = await _userManager.FindByEmailAsync(email);
+
+            string normalizedEmail = email.Normalize().ToUpper();
+            CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
             
@@ -89,7 +93,7 @@ public class RecoveryController : CustomControllerBase
             if (_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
 
-            string recoveryToken = TokenHelper.GenerateRecoveryToken();
+            string recoveryToken = TokenHelper.GenerateRecoverySessionToken();
             _memoryCacheService.SetValue(recoveryTokenKey, recoveryToken, TimeSpan.FromMinutes(15));
             _memoryCacheService.SetValue(recoveryAttemptKey, 0, TimeSpan.FromMinutes(15));
             
@@ -136,7 +140,8 @@ public class RecoveryController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            CustomUser? user = await _userManager.FindByEmailAsync(request.Email);
+            string normalizedEmail = request.Email.Normalize().ToUpper();
+            CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
             
@@ -161,7 +166,8 @@ public class RecoveryController : CustomControllerBase
             }
             
             user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
-            await _dbContext.UpdateUserAsync(user);
+            user.SecurityStamp = Guid.NewGuid().ToString();
+            await UserStore.UpdateUserAsync(user, true);
 
             _memoryCacheService.RemoveValue(recoveryTokenKey);
             _memoryCacheService.RemoveValue(recoveryAttemptKey);
@@ -204,7 +210,8 @@ public class RecoveryController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            CustomUser? user = await _userManager.FindByEmailAsync(email);
+            string normalizedEmail = email.Normalize().ToUpper();
+            CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
             
@@ -218,7 +225,7 @@ public class RecoveryController : CustomControllerBase
             if (_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
             
-            string recoveryToken = TokenHelper.GenerateRecoveryToken();
+            string recoveryToken = TokenHelper.GenerateRecoverySessionToken();
             _memoryCacheService.SetValue(recoveryTokenKey, recoveryToken, TimeSpan.FromMinutes(15));
             _memoryCacheService.SetValue(recoveryAttemptKey, 0, TimeSpan.FromMinutes(15));
             
@@ -265,7 +272,8 @@ public class RecoveryController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            CustomUser? user = await _userManager.FindByEmailAsync(request.Email);
+            string normalizedEmail = request.Email.Normalize().ToUpper();
+            CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
             
@@ -290,7 +298,7 @@ public class RecoveryController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Two-factor authentication is not enabled.");
             
             string hashedCode = StringChiper.GetEncryptedHash(request.BackupCode, _settings.EncryptionKey);
-            var backupCode = await _dbContext.FindUserBackupCodeAsync(x => x.UserId == user.Id && x.HashedCode == hashedCode);
+            var backupCode = await UserStore.UserBackupCodes.FindAsync(x => x.UserId == user.Id && x.HashedCode == hashedCode);
             if (backupCode == null)
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Backup code is invalid.");
             
@@ -299,15 +307,14 @@ public class RecoveryController : CustomControllerBase
 
             user.TwoFactorEnabled = false;
             user.TwoFactorSecret = null;
-            await _dbContext.UpdateUserAsync(user);
+            user.SecurityStamp = Guid.NewGuid().ToString();
+            await UserStore.UpdateUserAsync(user, true);
 
             backupCode.UsedAt = DateTime.UtcNow;
-            await _dbContext.UpdateUserBackupCodeAsync(backupCode);
+            await UserStore.UserBackupCodes.UpdateAsync(backupCode, true);
             
             if (request.LogoutEverywhere)
-                await _dbContext.ClearUserLoginsAsync(user.Id);
-            
-            await _dbContext.SaveChangesAsync();
+                await _dbContext.ClearUserLoginsAsync(user.Id, true);
             
             _memoryCacheService.RemoveValue(recoveryTokenKey);
             _memoryCacheService.RemoveValue(recoveryAttemptKey);

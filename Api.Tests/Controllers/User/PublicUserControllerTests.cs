@@ -52,7 +52,7 @@ public class PublicUserControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             await CreateUserAsync(_controller);
-            var user = _dbContext.GetUsers().First();
+            var user = _dbContext.GetUsersAsync().First();
             
             IActionResult result = await _controller.GetUserInfo(user.Id);
             
@@ -92,7 +92,7 @@ public class PublicUserControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             await CreateUserAsync(_controller);
-            var user = _dbContext.GetUsers().First();
+            var user = _dbContext.GetUsersAsync().First();
 
             using var stream = CreateTestImage(128, 128);
             using var sha256 = SHA256.Create();
@@ -139,7 +139,7 @@ public class PublicUserControllerTests : ControllerTestBase
         public async Task ReturnsNotFound_WhenAvatarNotFound()
         {
             await CreateUserAsync(_controller);
-            var user = _dbContext.GetUsers().First();
+            var user = _dbContext.GetUsersAsync().First();
 
             IActionResult result = await _controller.GetAvatar(user.Id);
             result.Should().BeOfType<ObjectResult>();

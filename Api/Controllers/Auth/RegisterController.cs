@@ -15,6 +15,7 @@ using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Tavstal.MesterMC.Api.Utils.Extensions;
 using Tavstal.MesterMC.Api.Utils.Helpers;
 
@@ -31,9 +32,10 @@ public class RegisterController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly IEmailService _emailService;
-    private readonly Settings _settings;
+    private readonly IRepository<FileData> _fileDataRepository;
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
-    
+    private readonly Settings _settings;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="RegisterController"/> class.
     /// </summary>
@@ -42,13 +44,15 @@ public class RegisterController : CustomControllerBase
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
+    /// <param name="fileDataRepository">Repository for managing file data, such as user avatars.</param>
     /// <param name="settings">Application settings.</param>
-    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, Settings settings) : base(logger, settings)
+    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepository, Settings settings) : base(logger, settings)
     {
         _dbContext = dbContext;
         _userManager = userManager;
         _emailService = emailService;
         _passwordHasher = passwordHasher;
+        _fileDataRepository = fileDataRepository;
         _settings = settings;
     }
 
@@ -88,7 +92,7 @@ public class RegisterController : CustomControllerBase
                 
             var normalizedEmail = request.EmailAddress.Normalize();
             var normalizedUsername = request.Username.Normalize();
-            CustomUser? user = await _dbContext.FindUserAsync(x => x.NormalizedEmail == normalizedEmail || x.NormalizedUserName == normalizedUsername);
+            CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail || x.NormalizedUserName == normalizedUsername);
             if (user != null)
                 return ReturnResponseCode(HttpStatusCode.Conflict, "User already exists.");
             
@@ -118,7 +122,7 @@ public class RegisterController : CustomControllerBase
                     return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
                 }
                 
-                avatarData = await _dbContext.AddFileDataAsync(new FileData
+                avatarData = await _fileDataRepository.AddAsync(new FileData
                 {
                     Hash = fileHash,
                     FileName = $"{Guid.NewGuid():N}.png",
@@ -134,16 +138,17 @@ public class RegisterController : CustomControllerBase
             
             // Hash the password
             newUser.PasswordHash = _passwordHasher.HashPassword(newUser, request.Password);
+            newUser.SecurityStamp = Guid.NewGuid().ToString();
             
-            user = await _dbContext.AddUserAsync(newUser, true);
+            user = await UserStore.AddUserAsync(newUser, true);
             if (avatarData != null)
             {
                 avatarData.UserId = user.Id;
-                await _dbContext.UpdateFileDataAsync(avatarData);
+                await _fileDataRepository.UpdateAsync(avatarData);
             }
             
             // Add the user to the default role
-            var defaultRole = _dbContext.FindRole(x => x.NormalizedName == "DEFAULT");
+            var defaultRole = await UserStore.Roles.FindAsync(x => x.NormalizedName == "DEFAULT");
             if (defaultRole != null)
             {
                 await _dbContext.AddUserRoleAsync(new CustomUserRole { UserId = user.Id, RoleId = defaultRole.Id, });
@@ -210,7 +215,7 @@ public class RegisterController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "The user is already confirmed.");
 
             // Validate the confirmation token
-            var claim = _dbContext.FindUserClaim(x =>
+            var claim = _dbContext.FindUserClaimAsync(x =>
                 x.UserId == request.UserId && x.ClaimType == CustomClaimTypes.EmailConfirmationToken &&
                 x.ClaimValue == request.ConfirmationToken);
             if (claim == null)
@@ -245,7 +250,7 @@ public class RegisterController : CustomControllerBase
         if (string.IsNullOrEmpty(user.Email))
             return;
         
-        var claim = _dbContext.FindUserClaim(x => x.UserId == user.Id && x.ClaimType == CustomClaimTypes.EmailConfirmationToken);
+        var claim = _dbContext.FindUserClaimAsync(x => x.UserId == user.Id && x.ClaimType == CustomClaimTypes.EmailConfirmationToken);
         string token;
         if (claim == null || string.IsNullOrEmpty(claim.ClaimValue))
         {

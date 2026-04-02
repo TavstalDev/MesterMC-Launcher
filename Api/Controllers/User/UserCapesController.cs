@@ -69,7 +69,7 @@ public class UserCapesController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Capes.Select))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.Select))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? cape = await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.CapeId == capeId);
@@ -119,7 +119,7 @@ public class UserCapesController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Capes.Unselect))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.Unselect))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? currentlySelectedCape =
@@ -175,14 +175,14 @@ public class UserCapesController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Capes.SelectOther))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.SelectOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThan(user, targetUser))
+            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             UserCape? cape = await _dbContext.FindUserCapeAsync(x => x.UserId == targetUser.Id && x.CapeId == capeId);
@@ -244,14 +244,14 @@ public class UserCapesController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Capes.UnselectOther))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.UnselectOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThan(user, targetUser))
+            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             UserCape? currentlySelectedCape =

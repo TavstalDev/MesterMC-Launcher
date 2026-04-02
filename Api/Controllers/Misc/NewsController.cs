@@ -238,7 +238,7 @@ public class NewsController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.News.Create))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.News.Create))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (requestBody.Banner.Length > 1024 * 500) // 500 KB limit
@@ -329,7 +329,7 @@ public class NewsController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.News.Update))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.News.Update))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             News? news = await _dbContext.FindNewsAsync(x => x.Id == id);
@@ -433,7 +433,7 @@ public class NewsController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.News.Delete))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.News.Delete))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             News? news = await _dbContext.FindNewsAsync(x => x.Id == id);

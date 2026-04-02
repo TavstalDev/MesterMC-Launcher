@@ -57,7 +57,7 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Skins.View))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.View))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? skin =
@@ -112,7 +112,7 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Skins.Upload))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.Upload))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
@@ -198,7 +198,7 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Skins.Delete))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.Delete))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingSkin =
@@ -250,14 +250,14 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Skins.ViewOther))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.ViewOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThan(user, targetUser))
+            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? skin =
@@ -314,14 +314,14 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Skins.UploadOther))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.UploadOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThan(user, targetUser))
+            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
@@ -418,14 +418,14 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Skins.DeleteOther))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.DeleteOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThan(user, targetUser))
+            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? existingSkin =

@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
-using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using OtpNet;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Database.User;
@@ -22,6 +21,7 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 public class TwoFactorController : CustomControllerBase {
     
     private readonly CustomUserManager _userManager;
+    private readonly CustomSignInManager _signInManager;
     private readonly CustomDbContext _dbContext;
     private readonly IEmailService _emailService;
     private readonly Settings _settings;
@@ -34,9 +34,10 @@ public class TwoFactorController : CustomControllerBase {
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger, settings)
+    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomSignInManager signInManager, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger, settings)
     {
         _userManager = userManager;
+        _signInManager = signInManager;
         _dbContext = dbContext;
         _emailService = emailService;
         _settings = settings;
@@ -73,8 +74,8 @@ public class TwoFactorController : CustomControllerBase {
             if (user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
             
-            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret!));
-            if (!totp.VerifyTotp(twoFactorCode, out _, new VerificationWindow(2, 2)))
+            _signInManager.TwoFactorAuthenticatorSignInAsync(twoFactorCode, )
+            if (!_userManager.VerifyTwoFactorToken(user, twoFactorCode))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
             user.TwoFactorEnabled = true;
@@ -121,8 +122,7 @@ public class TwoFactorController : CustomControllerBase {
             if (!user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
             
-            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret!));
-            if (!totp.VerifyTotp(twoFactorCode, out _, new VerificationWindow(2, 2)))
+            if (!await _userManager.VerifyTwoFactorCode(user, "TwoFactorSecret", twoFactorCode))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
             user.TwoFactorEnabled = false;
@@ -159,16 +159,14 @@ public class TwoFactorController : CustomControllerBase {
             if (user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
 
-            user.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _dbContext.UpdateUserAsync(user);
-            await _dbContext.SaveChangesAsync();
+            string rawSecret = await _userManager.GenerateTwoFactorTokenAsync(user, "TwoFactorSecret");
             
             return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
                 userId = user.Id,
                 email = user.Email,
-                secret = user.TwoFactorSecret,
+                secret = rawSecret,
             });
         }
         catch (Exception ex)
@@ -199,14 +197,13 @@ public class TwoFactorController : CustomControllerBase {
             var recoveryCodes = await _dbContext.GetUserBackupCodeAsync(x => x.UserId == user.Id);
             foreach (var code in recoveryCodes) 
                 await _dbContext.RemoveUserBackupCodeAsync(code);
-            var newCodes = new List<string>();
-            for (int i = 0; i < 6; i++)
+            var newCodes = TokenHelper.GenerateRecoveryCodes();
+            foreach (var code in newCodes)
             {
-                var recoveryCode = TokenHelper.GenerateRecoveryCode();
                 await _dbContext.AddUserBackupCodeAsync(new UserBackupCode
                 {
                     UserId = user.Id,
-                    HashedCode = StringChiper.GetEncryptedHash(recoveryCode, _settings.EncryptionKey),
+                    HashedCode = StringChiper.GetEncryptedHash(code, _settings.EncryptionKey),
                     CreateAt = DateTime.UtcNow
                 });
             }

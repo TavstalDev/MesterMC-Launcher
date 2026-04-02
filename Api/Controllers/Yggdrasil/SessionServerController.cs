@@ -108,6 +108,9 @@ public class SessionServerController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.NotFound,
                     "User not found for the provided selectedProfile UUID");
 
+            if (!await _userManager.VerifyJwtTokenAsync(request.accessToken))
+                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid access token");
+            
             UserPlaySession? session = await _dbContext.FindUserPlaySessionAsync(x => x.Token == request.accessToken);
             if (session == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound,

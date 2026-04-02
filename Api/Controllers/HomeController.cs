@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Tavstal.MesterMC.Api.Models;
+using Tavstal.MesterMC.Api.Services.Database;
 
 namespace Tavstal.MesterMC.Api.Controllers;
 
@@ -13,8 +14,9 @@ public class HomeController : CustomControllerBase
     /// Initializes a new instance of the <see cref="HomeController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="settings">Application settings.</param>
-    public HomeController(ILogger<HomeController> logger, Settings settings) : base(logger, settings) { }
+    public HomeController(ILogger<HomeController> logger, CustomUserStore userStore, Settings settings) : base(logger, userStore, settings) { }
     
     /// <summary>
     /// Handles the root endpoint ("/") and returns an HTTP 200 OK response.

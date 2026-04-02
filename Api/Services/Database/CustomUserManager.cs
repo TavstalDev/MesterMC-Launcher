@@ -1,15 +1,14 @@
-﻿using System.Security.Claims;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using OtpNet;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database.User;
-using Tavstal.MesterMC.Api.Models.Database.User.Claims;
-using Tavstal.MesterMC.Api.Utils.Extensions;
 using Tavstal.MesterMC.Api.Utils.Helpers;
-using KeyGeneration = OtpSharp.KeyGeneration;
+
 #pragma warning disable CS9113 // Parameter is unread.
 
 namespace Tavstal.MesterMC.Api.Services.Database;
@@ -18,23 +17,29 @@ namespace Tavstal.MesterMC.Api.Services.Database;
 /// Initializes a new instance of the <see cref="CustomUserManager"/> class.
 /// </summary>
 public class CustomUserManager(
-    IUserStore<CustomUser> store,
-    IOptions<IdentityOptions> optionsAccessor,
+    CustomUserStore userStore,
     IPasswordHasher<CustomUser> passwordHasher,
-    IEnumerable<IUserValidator<CustomUser>> userValidators,
-    IEnumerable<IPasswordValidator<CustomUser>> passwordValidators,
-    ILookupNormalizer keyNormalizer,
-    IdentityErrorDescriber errors,
-    IServiceProvider services,
+    IHttpClientFactory httpClientFactory,
     ILogger<CustomUserManager> logger,
     CustomDbContext context,
-    IConfiguration configuration,
     MemoryCacheService memoryCacheService,
-    Settings settings,
-    IHttpClientFactory httpClientFactory)
-    : UserManager<CustomUser>(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer,
-        errors, services, logger)
+    Settings settings)
 {
+    private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler = new();
+    private readonly TokenValidationParameters _tokenValidationParameters = new()
+    {
+        ValidateIssuer = true,
+        ValidIssuer = settings.Issuer,
+        
+        ValidateAudience = true,
+        ValidAudience = settings.Audience,
+        
+        ValidateLifetime = true,
+        ClockSkew = settings.ClockSkew,
+        
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.EncryptionKey)),
+    };
     private readonly TimeSpan CompPassTTL = TimeSpan.FromHours(1);
     
 
@@ -47,17 +52,12 @@ public class CustomUserManager(
     /// <param name="user">The user to check.</param>
     /// <param name="roleName">The role name to check.</param>
     /// <returns>True if the user has the role, otherwise false.</returns>
-    public bool HasRole(CustomUser user, string roleName)
+    public async Task<bool> HasRoleAsync(CustomUser user, string roleName)
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (user == null)
-            return false;
-
-        var role = context.FindRole(x => x.NormalizedName == roleName.Normalize());
+        var role = await userStore.Roles.FindAsync(x => x.NormalizedName == roleName.Normalize());
         if (role == null)
             return false;
-
-        return context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
+        return await userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
     }
 
     /// <summary>
@@ -66,12 +66,8 @@ public class CustomUserManager(
     /// <param name="userClaims">The user claims principal to check.</param>
     /// <param name="roleName">The role name to check.</param>
     /// <returns>True if the user claims principal has the role, otherwise false.</returns>
-    public bool HasRole(ClaimsPrincipal userClaims, string roleName)
+    public async Task<bool> HasRoleAsync(ClaimsPrincipal userClaims, string roleName)
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (userClaims == null)
-            return false;
-
         if (!userClaims.HasClaim(x => x.Type == "userId"))
             return false;
 
@@ -80,14 +76,14 @@ public class CustomUserManager(
             return false;
             
         string userid = userClaim.Value;
-        CustomUser? user = context.FindUser(x => x.Id == userid);
+        CustomUser? user = await userStore.FindUserByIdAsync(userid);
         if (user == null)
             return false;
 
-        var role = context.FindRole(x => x.NormalizedName == roleName.Normalize());
+        var role = await userStore.Roles.FindAsync(x => x.NormalizedName == roleName.Normalize());
         if (role == null)
             return false;
-        return context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
+        return await userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
     }
         
     /// <summary>
@@ -96,9 +92,9 @@ public class CustomUserManager(
     /// <param name="user">The user to check.</param>
     /// <param name="role">The role to check.</param>
     /// <returns>True if the user has the role, otherwise false.</returns>
-    public bool HasRole(CustomUser user, CustomRole role)
+    public async Task<bool> HasRoleAsync(CustomUser user, CustomRole role)
     {
-        return context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
+        return await userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
     }
 
     /// <summary>
@@ -107,17 +103,9 @@ public class CustomUserManager(
     /// <param name="userClaims">The user claims principal to check.</param>
     /// <param name="role">The role to check.</param>
     /// <returns>True if the user claims principal has the role, otherwise false.</returns>
-    public bool HasRole(ClaimsPrincipal userClaims, CustomRole role)
+    public async Task<bool> HasRoleAsync(ClaimsPrincipal userClaims, CustomRole role)
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (userClaims == null)
-            return false;
-
         if (!userClaims.HasClaim(x => x.Type == "userId"))
-            return false;
-
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (role == null)
             return false;
             
         var userClaim = userClaims.Claims.FirstOrDefault(x => x.Type == "userId");
@@ -125,11 +113,11 @@ public class CustomUserManager(
             return false;
 
         string userid = userClaim.Value;
-        CustomUser? user = context.FindUser(x => x.Id == userid);
+        CustomUser? user = await userStore.FindUserByIdAsync(userid);
         if (user == null)
             return false;
 
-        return context.FindUserRole(x => x.RoleId == role.Id && x.UserId == user.Id) != null;
+        return await userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
     }
 
     /// <summary>
@@ -138,18 +126,14 @@ public class CustomUserManager(
     /// <param name="user">The user to check.</param>
     /// <param name="rolenames">The list of role names to check.</param>
     /// <returns>True if the user has all roles, otherwise false.</returns>
-    public bool HasAllRole(CustomUser user, List<string> rolenames)
+    public async Task<bool> HasAllRoleAsync(CustomUser user, List<string> rolenames)
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (user == null)
-            return false;
-            
         foreach (var role in rolenames)
         {
-            var r = context.FindRole(x => x.Name.ToLower() == role.ToLower());
+            var r = await userStore.Roles.FindAsync(x => x.Name.ToLower() == role.ToLower());
             if (r == null)
                 return false;
-            if (context.FindUserRole(x => x.UserId == user.Id && x.RoleId == r.Id) == null)
+            if (!await userStore.UserRoles.ExistsAsync(x => x.UserId == user.Id && x.RoleId == r.Id))
                 return false;
         }
 
@@ -162,18 +146,14 @@ public class CustomUserManager(
     /// <param name="user">The user to check.</param>
     /// <param name="rolenames">The list of role names to check.</param>
     /// <returns>True if the user has any role, otherwise false.</returns>
-    public bool HasAnyRole(CustomUser user, List<string> rolenames)
+    public async Task<bool> HasAnyRoleAsync(CustomUser user, List<string> rolenames)
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (user == null)
-            return false;
-            
         foreach (var role in rolenames)
         {
-            var r = context.FindRole(x => x.Name.ToLower() == role.ToLower());
+            var r = await userStore.Roles.FindAsync(x => x.Name.ToLower() == role.ToLower());
             if (r != null)
             {
-                if (context.FindUserRole(x => x.UserId == user.Id && x.RoleId == r.Id) != null)
+                if (await userStore.UserRoles.ExistsAsync(x => x.UserId == user.Id && x.RoleId == r.Id))
                     return true;
             }
         }
@@ -186,20 +166,16 @@ public class CustomUserManager(
     /// </summary>
     /// <param name="role">The role to check.</param>
     /// <returns>A list of users with the role.</returns>
-    public List<CustomUser> GetUsersByRole(CustomRole role)
+    public async Task<List<CustomUser>> GetUsersByRoleAsync(CustomRole role)
     {
-        List<CustomUser> users = new List<CustomUser>();
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (role == null)
-            return users;
-
-        foreach (var userRole in context.GetUserRoles(x => x.RoleId == role.Id))
+        List<CustomUser> users = [];
+        foreach (var userRole in await userStore.UserRoles.QueryAsync(x => x.RoleId == role.Id))
         {
-            CustomUser? user = context.FindUser(x => x.Id == userRole.UserId);
+            CustomUser? user = await userStore.FindUserByIdAsync(userRole.UserId);
             if (user == null)
                 continue;
                 
-            if (GetUserCustomRoles(user.Id).Any(x => x.Level > role.Level))
+            if ((await GetUserCustomRolesAsync(user.Id)).Any(x => x.Level > role.Level))
                 continue;
 
             users.Add(user);
@@ -215,12 +191,12 @@ public class CustomUserManager(
     /// <param name="caller">The caller to check.</param>
     /// <param name="target">The target to check.</param>
     /// <returns>True if the caller has a higher role, otherwise false.</returns>
-    public bool HasHigherRoleThan(CustomUser caller, CustomUser target)
+    public async Task<bool> HasHigherRoleThanAsync(CustomUser caller, CustomUser target)
     {
         if (caller.Id == target.Id)
             return true;
 
-        return GetUserHighestRole(caller.Id).Level > GetUserHighestRole(target.Id).Level;
+        return (await GetUserHighestRoleAsync(caller.Id)).Level > (await GetUserHighestRoleAsync(target.Id)).Level;
     }
         
     /// <summary>
@@ -228,31 +204,13 @@ public class CustomUserManager(
     /// </summary>
     /// <param name="userid">The user ID to get the custom roles for.</param>
     /// <returns>A list of custom roles.</returns>
-    private List<CustomRole> GetUserCustomRoles(string userid)
+    private async Task<List<CustomRole>> GetUserCustomRolesAsync(string userid)
     {
-        var userRoles = context.GetUserRoles(x => x.UserId == userid);
-        List<CustomRole> roles = new List<CustomRole>();
+        var userRoles = await userStore.UserRoles.QueryAsync(x => x.UserId == userid);
+        List<CustomRole> roles = [];
         foreach (var role in userRoles)
         {
-            var r = context.FindRole(x => x.Id == role.RoleId);
-            if (r != null)
-                roles.Add(r);
-        }
-        return roles;
-    }
-        
-    /// <summary>
-    /// Retrieves the roles associated with a specific user.
-    /// </summary>
-    /// <param name="userid">The ID of the user whose roles are to be retrieved.</param>
-    /// <returns>A list of <see cref="CustomRole"/> objects representing the user's roles.</returns>
-    public List<CustomRole> GetUserRoles(string userid)
-    {
-        var userRoles =context. GetUserRoles(x => x.UserId == userid);
-        List<CustomRole> roles = new List<CustomRole>();
-        foreach (var role in userRoles)
-        {
-            var r = context.FindRole(x => x.Id == role.RoleId);
+            var r = await userStore.Roles.FindByIdAsync(role.RoleId);
             if (r != null)
                 roles.Add(r);
         }
@@ -264,13 +222,13 @@ public class CustomUserManager(
     /// </summary>
     /// <param name="userid">The user ID to get the highest role for.</param>
     /// <returns>The highest role.</returns>
-    public CustomRole GetUserHighestRole(string userid)
+    public async Task<CustomRole> GetUserHighestRoleAsync(string userid)
     {
-        var userRoles =context. GetUserRoles(x => x.UserId == userid);
-        List<CustomRole> roles = new List<CustomRole>();
+        var userRoles = await userStore.UserRoles.QueryAsync(x => x.UserId == userid);
+        List<CustomRole> roles = [];
         foreach (var role in userRoles)
         {
-            var r = context.FindRole(x => x.Id == role.RoleId);
+            var r = await userStore.Roles.FindByIdAsync(role.RoleId);
             if (r != null)
                 roles.Add(r);
         }
@@ -278,92 +236,18 @@ public class CustomUserManager(
     }
     #endregion
     #region Claims
-
-    /// <summary>
-    /// Checks if the user has a specific claim.
-    /// </summary>
-    /// <param name="userid">The user ID to check.</param>
-    /// <param name="claim">The claim to check.</param>
-    /// <returns>True if the user has the claim, otherwise false.</returns>
-    public bool UserHasClaim(string userid, string claim)
-    {
-        CustomUser? user = context.FindUser(x => x.Id == userid);
-        if (user == null)
-            return false;
-
-        return context.FindUserClaim(x => x.UserId == userid && x.ClaimType == claim) != null;
-    }
-
-        
-    /// <summary>
-    /// Checks if the user has a specific claim.
-    /// </summary>
-    /// <param name="user">The user to check.</param>
-    /// <param name="claim">The claim to check.</param>
-    /// <returns>True if the user has the claim, otherwise false.</returns>
-    public bool UserHasClaim(CustomUser user, string claim)
-    {
-        return context.FindUserClaim(x =>  user.Id == x.UserId && x.ClaimType == claim) != null;
-    }
-
-    /// <summary>
-    /// Checks if the user has a specific claim with a specific value.
-    /// </summary>
-    /// <param name="userid">The user ID to check.</param>
-    /// <param name="claim">The claim to check.</param>
-    /// <param name="value">The claim value to check.</param>
-    /// <returns>True if the user has the claim with the value, otherwise false.</returns>
-    public bool UserHasClaim(string userid, string claim, string value)
-    {
-        CustomUser? user = context.FindUser(x => x.Id == userid);
-        if (user == null)
-            return false;
-
-        var localClaim = context.FindUserClaim(x => x.UserId == user.Id && x.ClaimType ==claim);
-        if (localClaim == null)
-            return false;
-
-        if (localClaim.ClaimValue == null)
-            return false;
-        return localClaim.ClaimValue.EqualsIgnoreCase(value);
-    }
-
-    /// <summary>
-    /// Checks if the user has a specific claim with a specific value.
-    /// </summary>
-    /// <param name="user">The user to check.</param>
-    /// <param name="claim">The claim to check.</param>
-    /// <param name="value">The claim value to check.</param>
-    /// <returns>True if the user has the claim with the value, otherwise false.</returns>
-    public bool UserHasClaim(CustomUser user, string claim, string value)
-    {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (user == null)
-            return false;
-
-        var localClaim = context.FindUserClaim(x => x.UserId == user.Id && x.ClaimType == claim);
-        if (localClaim == null)
-            return false;
-
-        if (string.IsNullOrEmpty(localClaim.ClaimValue))
-            return false;
-            
-        return localClaim.ClaimValue.EqualsIgnoreCase(value);
-    }
-
-        
     /// <summary>
     /// Gets the role claims for a user.
     /// </summary>
     /// <param name="userid">The user ID to get the role claims for.</param>
     /// <returns>A list of role claims.</returns>
-    private List<IdentityRoleClaim<string>> GetUserRoleClaims(string userid)
+    private async Task<List<IdentityRoleClaim<string>>> GetUserRoleClaimsAsync(string userid)
     {
-        List<IdentityRoleClaim<string>> claims = new List<IdentityRoleClaim<string>>();
-        List<CustomRole> roles = GetUserCustomRoles(userid);
+        List<IdentityRoleClaim<string>> claims = [];
+        List<CustomRole> roles = await GetUserCustomRolesAsync(userid);
         foreach (var role in roles.OrderByDescending(x => x.Level))
         {
-            claims.AddRange(context.GetRoleClaims(x => x.RoleId == role.Id));
+            claims.AddRange(await  userStore.RoleClaims.QueryAsync(x => x.RoleId == role.Id));
         }
         return claims;
     }
@@ -375,12 +259,12 @@ public class CustomUserManager(
     /// <param name="claim">The claim to set.</param>
     /// <param name="value">The claim value to set.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task SetUserClaim(CustomUser user, string claim, string value)
+    public async Task SetUserClaimAsync(CustomUser user, string claim, string value)
     {
-        var localClaim = context.FindUserClaim(x => x.UserId == user.Id && x.ClaimType == claim);
+        var localClaim = await userStore.UserClaims.FindAsync(x => x.UserId == user.Id && x.ClaimType == claim);
         if (localClaim == null)
         {
-            await context.AddUserClaimAsync(new CustomUserClaim
+            await userStore.UserClaims.AddAsync(new CustomUserClaim
             {
                 UserId = user.Id,
                 ClaimType = claim,
@@ -390,7 +274,7 @@ public class CustomUserManager(
         }
 
         localClaim.ClaimValue = value;
-        await context.UpdateUserClaimAsync(localClaim, true);
+        await userStore.UserClaims.UpdateAsync(localClaim, true);
     }
     #endregion
         
@@ -401,13 +285,19 @@ public class CustomUserManager(
     /// <param name="claim">The claim to check.</param>
     /// <param name="value">The claim value to check.</param>
     /// <returns>True if the user has the permission, otherwise false.</returns>
-    public bool HasPermission(string userid, string claim, string value = "true")
+    public async Task<bool> HasPermissionAsync(string userid, string claim, string value = "true")
     {
-        var roleClaim = context.FindUserClaim(x => x.UserId == userid && x.ClaimType == claim && x.ClaimValue == value);
+        var roleClaim = await userStore.UserClaims.FindAsync(x => x.UserId == userid && x.ClaimType == claim && x.ClaimValue == value);
         if (roleClaim != null)
             return true;
-
-        return GetUserRoleClaims(userid).Any(x => x.ClaimType == claim && x.ClaimValue == value);
+        
+        List<CustomRole> roles = await GetUserCustomRolesAsync(userid);
+        foreach (var role in roles.OrderByDescending(x => x.Level))
+        {
+            if (await userStore.RoleClaims.ExistsAsync(x => x.RoleId == role.Id && x.ClaimType == claim && x.ClaimValue == value))
+                return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -417,181 +307,13 @@ public class CustomUserManager(
     /// <param name="claim">The claim to check.</param>
     /// <param name="value">The claim value to check.</param>
     /// <returns>True if the user has the permission, otherwise false.</returns>
-    public bool HasPermission(CustomUser user, string claim, string value = "true")
+    public async Task<bool> HasPermissionAsync(CustomUser user, string claim, string value = "true")
     {
-        return HasPermission(user.Id, claim, value);
-    }
-
-    /// <summary>
-    /// Gets the users with a specific permission.
-    /// </summary>
-    /// <param name="claim">The claim to check.</param>
-    /// <param name="value">The claim value to check.</param>
-    /// <returns>A list of users with the permission.</returns>
-    public List<CustomUser> GetUsersByPermission(string claim, string value = "true")
-    {
-        List<CustomUser> users = new List<CustomUser>();
-        foreach (var user in context.GetUsers())
-            if (HasPermission(user, claim, value))
-                users.Add(user);
-
-        return users;
-    }
-        
-    /// <summary>
-    /// Retrieves all claims associated with a user, including role claims if specified.
-    /// </summary>
-    /// <param name="userId">The ID of the user whose claims are to be retrieved.</param>
-    /// <param name="includeRoles">A boolean indicating whether to include role claims (default is true).</param>
-    /// <returns>A list of <see cref="CustomClaim"/> objects representing the user's claims.</returns>
-    public List<CustomClaim> GetAllClaimsOfUser(string userId, bool includeRoles = true)
-    {
-        List<CustomClaim> claims = new List<CustomClaim>();
-        List<string> addedKeys = new List<string>();
-        List<CustomUserClaim> userClaims = context.GetUserClaims(x => x.UserId == userId);
-        foreach (var userClaim in userClaims)
-        {
-            if (string.IsNullOrEmpty(userClaim.ClaimType))
-                continue;
-            
-            if (addedKeys.Contains(userClaim.ClaimType))
-                continue;
-                
-            addedKeys.Add(userClaim.ClaimType);
-            claims.Add(new CustomClaim(userClaim.ClaimType, userClaim.ClaimValue ?? string.Empty));
-        }
-            
-        if (includeRoles)
-            foreach (var userClaim in GetUserRoleClaims(userId))
-            {
-                if (string.IsNullOrEmpty(userClaim.ClaimType))
-                    continue;
-                
-                if (addedKeys.Contains(userClaim.ClaimType))
-                    continue;
-                
-                addedKeys.Add(userClaim.ClaimType);
-                claims.Add(new CustomClaim(userClaim.ClaimType, userClaim.ClaimValue ?? string.Empty));
-            }
-
-        // ReSharper disable once RedundantAssignment
-        addedKeys = new  List<string>();
-        return claims;
-    }
-    
-    /// <summary>
-    /// Retrieves all claims associated with a user, including role claims if specified.
-    /// </summary>
-    /// <param name="userId">The ID of the user whose claims are to be retrieved.</param>
-    /// <param name="includeRoles">A boolean indicating whether to include role claims (default is true).</param>
-    /// <returns>A list of <see cref="Claim"/> objects representing the user's claims.</returns>
-    public List<Claim> GetAllClaimsOfUserV2(string userId, bool includeRoles = true)
-    {
-        List<Claim> claims = new List<Claim>();
-        List<string> addedKeys = new List<string>();
-        List<CustomUserClaim> userClaims = context.GetUserClaims(x => x.UserId == userId);
-        foreach (var userClaim in userClaims)
-        {
-            if (string.IsNullOrEmpty(userClaim.ClaimType))
-                continue;
-                
-            if (addedKeys.Contains(userClaim.ClaimType))
-                continue;
-                
-            addedKeys.Add(userClaim.ClaimType);
-            claims.Add(new Claim(userClaim.ClaimType, userClaim.ClaimValue ?? string.Empty));
-        }
-            
-        if (includeRoles)
-            foreach (var userClaim in GetUserRoleClaims(userId))
-            {
-                if (string.IsNullOrEmpty(userClaim.ClaimType))
-                    continue;
-                    
-                if (addedKeys.Contains(userClaim.ClaimType))
-                    continue;
-                
-                addedKeys.Add(userClaim.ClaimType);
-                claims.Add(new Claim(userClaim.ClaimType, userClaim.ClaimValue ?? string.Empty));
-            }
-
-        // ReSharper disable once RedundantAssignment
-        addedKeys = new  List<string>();
-        return claims;
+        return await HasPermissionAsync(user.Id, claim, value);
     }
     #endregion
-    
-    /// <summary>
-    /// Retrieves a user based on their credentials token.
-    /// </summary>
-    /// <param name="token">The token used to identify the user.</param>
-    /// <returns>
-    /// The <see cref="CustomUser"/> object if the token is valid and associated with a user; otherwise, null.
-    /// </returns>
-    public CustomUser? GetUserByCredentials(string token)
-    {
-        var userToken = context.FindUserToken(x => x.Value == token);
-        if (userToken == null)
-            return null;
 
-        var userLogin = context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
-        if (userLogin == null)
-            return null;
-            
-        return context.FindUser(x => x.Id == userToken.UserId);
-    }
-    
-    /// <summary>
-    /// Retrieves a user based on an authentication string.
-    /// </summary>
-    /// <param name="authenticationString">The authentication string (e.g., Basic or Bearer token).</param>
-    /// <returns>
-    /// The <see cref="CustomUser"/> object if the authentication string is valid and associated with a user; otherwise, null.
-    /// </returns>
-    public async Task<CustomUser?> GetUserByAuthenticationStringAsync(string? authenticationString)
-    {
-        if (string.IsNullOrEmpty(authenticationString))
-            return null;
-            
-        string lowerAuthString = authenticationString.ToLower();
-        if (lowerAuthString.StartsWith("basic"))
-        {
-            string value = authenticationString.Remove(0, 6);
-            if (value.EndsWith("=") || !(value.Contains(":") || value.Contains(".")))
-                value = Encoding.UTF8.GetString(Convert.FromBase64String(value));
-            
-            var raw = value.Split(value.Contains(':') ? ":" : ".");
-            if (raw.Length < 2)
-                return null;
-
-            string normalizedValue = raw[0].Normalize().ToUpper();
-            var user = await context.FindUserAsync(x => x.NormalizedEmail == normalizedValue || x.NormalizedUserName == normalizedValue);
-            if (user == null)
-                return null;
-            
-            var result = PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, raw[1]);
-            if (result == PasswordVerificationResult.Failed)
-                return null;
-            return user;
-        }
-
-        if (lowerAuthString.StartsWith("bearer"))
-        {
-            string token = authenticationString.Remove(0, 7);
-            var userToken = context.FindUserToken(x => x.Value == token);
-            if (userToken == null)
-                return null;
-
-            var userLogin = context.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
-            if (userLogin == null)
-                return null;
-
-            return await context.FindUserAsync(x => x.Id == userToken.UserId);
-        }
-
-        return null;
-    }
-    
+    #region Authentication
     /// <summary>
     /// Checks if a password has been compromised using the Pwned Passwords API.
     /// </summary>
@@ -617,19 +339,141 @@ public class CustomUserManager(
                 memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
         }
         
-        if (string.IsNullOrEmpty(response))
-            return false;
-        
-        return response.Contains(suffix);
+        return !string.IsNullOrEmpty(response) && response.Contains(suffix);
     }
 
-    /// <summary>
-    /// Generates a secret key for two-factor authentication.
-    /// </summary>
-    /// <returns>A base32-encoded string representing the secret key.</returns>
-    public string GenerateSecretKey()
+    public string CreateJwtToken(TimeSpan duration, ClaimsIdentity? claims = null)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var token = handler.CreateJwtSecurityToken(
+            settings.Issuer, 
+            settings.Audience, 
+            claims, 
+            DateTime.UtcNow, 
+            DateTime.UtcNow.Add(duration), 
+            DateTime.UtcNow,
+            new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.EncryptionKey)),
+                SecurityAlgorithms.HmacSha256)
+            );
+        return handler.WriteToken(token);
+    }
+
+    public async Task<CustomUser?> VerifyPasswordAsync(string username, string password)
+    {
+        string normalizedUsername = username.Normalize().ToUpper();
+        CustomUser? user = await userStore.FindUserAsync(x => x.NormalizedEmail == normalizedUsername || x.NormalizedUserName == normalizedUsername);
+        if (user == null)
+            return null;
+        
+        var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        switch (result)
+        {
+            case PasswordVerificationResult.Failed:
+                user.AccessFailedCount++;
+                if (user.AccessFailedCount > settings.LockoutMaxAttempts)
+                {
+                    user.LockoutEnabled = true;
+                    user.LockoutEnd = DateTimeOffset.UtcNow.Add(settings.LockoutDuration);
+                    user.LockoutReason = "Too many failed login attempts.";
+                }
+                await userStore.UpdateUserAsync(user, true);
+                return null;
+            case PasswordVerificationResult.SuccessRehashNeeded:
+                user.PasswordHash = passwordHasher.HashPassword(user, password);
+                user.SecurityStamp = Guid.NewGuid().ToString();
+                await userStore.UpdateUserAsync(user, true);
+                break;
+        }
+        
+        return user;
+    }
+
+    public async Task<CustomUser?> VerifyTokenLoginAsync(string token)
+    {
+        if (!await VerifyJwtTokenAsync(token))
+            return null;
+        
+        CustomUserToken? userToken = await userStore.UserTokens.FindAsync(x => x.Value == token);
+        if (userToken == null)
+            return null;
+
+        CustomUserLogin? userLogin = await userStore.UserLogins.FindAsync(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
+        if (userLogin == null)
+            return null;
+
+        return await userStore.FindUserByIdAsync(userToken.UserId);
+    }
+    
+    public async Task<bool> VerifyJwtTokenAsync(string token)
+    {
+        try
+        {
+            var result = await _jwtSecurityTokenHandler.ValidateTokenAsync(token, _tokenValidationParameters);
+            if (result == null || !result.IsValid)
+                return false;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occurred while verifying the token.");
+            return false;
+        }
+    }
+    
+    public string GetMachineFingerprint(HttpRequest httpRequest, string userId)
+    {
+        var userAgent = httpRequest.Headers.UserAgent.ToString();
+        var ipAddress = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString();
+    
+        // Combine traits and hash them
+        var rawData = $"{userId}-{userAgent}-{ipAddress}";
+        return StringChiper.GetEncryptedHash(rawData, settings.EncryptionKey);
+    }
+    #endregion
+
+    #region TwoFactor Authentication
+
+    public async Task<string> GenerateTwoFactorTokenAsync(CustomUser user)
     {
         var key = KeyGeneration.GenerateRandomKey(20);
-        return Base32Encoding.ToString(key);
+        string token = Encoding.UTF8.GetString(key);
+        user.TwoFactorSecret = token.EncryptSelf(settings.EncryptionKey);
+        user.SecurityStamp  = Guid.NewGuid().ToString();
+        await userStore.UpdateUserAsync(user, true);
+        return token;
     }
+    
+    public bool VerifyTwoFactorCode(CustomUser user, string code)
+    {
+        if (string.IsNullOrEmpty(user.TwoFactorSecret))
+            return false;
+        
+        string decryptedSecret = user.TwoFactorSecret.DecryptSelf(settings.EncryptionKey);
+        var totp = new Totp(Encoding.UTF8.GetBytes(decryptedSecret));
+        return totp.VerifyTotp(code, out _, new VerificationWindow(2, 2));
+    }
+    
+    public async Task<IEnumerable<string>?> GenerateNewTwoFactorRecoveryCodesAsync(CustomUser user, int number)
+    {
+        var existingCodes = await userStore.UserBackupCodes.QueryAsync(x => x.UserId == user.Id);
+        foreach (var code in existingCodes)
+            await userStore.UserBackupCodes.RemoveAsync(code);
+        await context.SaveChangesAsync();
+        List<string> newCodes = [];
+        for (int i = 0; i < number; i++)
+        {
+            string code = TokenHelper.GenerateRandomString(length: 10);
+            newCodes.Add(code);
+            await userStore.UserBackupCodes.AddAsync(new UserBackupCode
+            {
+                UserId = user.Id,
+                HashedCode = StringChiper.GetEncryptedHash(code, settings.EncryptionKey),
+                CreateAt = DateTime.UtcNow
+            });
+        }
+        await context.SaveChangesAsync();
+        return newCodes;
+    }
+    #endregion
 }

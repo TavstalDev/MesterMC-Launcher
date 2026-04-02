@@ -53,7 +53,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Enable 2FA")]
         public async Task ReturnsOk()
         {
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
+            _userMock.TwoFactorSecret =  _userManager.Generate;
             await CreateUserAsync(_controller, _userMock);
 
             byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret);

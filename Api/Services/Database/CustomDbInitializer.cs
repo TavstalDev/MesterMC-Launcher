@@ -13,7 +13,8 @@ public static class CustomDbInitializer
     /// Initializes the database by ensuring it is created and populating default data.
     /// </summary>
     /// <param name="context">The custom database context to initialize.</param>
-    public static void Initialize(CustomDbContext context)
+    /// <param name="userStore">The custom user store used for managing user data.</param>
+    public static void Initialize(CustomDbContext context, CustomUserStore userStore)
     {
         // Ensures the database is created.
         context.Database.EnsureCreated();
@@ -21,24 +22,29 @@ public static class CustomDbInitializer
         Task.Run(async () =>
         {
             // Checks if roles are empty and adds default roles.
-            if (context.Roles.ToList().Count == 0)
+            var roles = await userStore.Roles.QueryAsync(null);
+            if (!roles.Any())
             {
-                context.Roles.AddRange(new List<CustomRole>
-                {
+                 await userStore.Roles.AddRangeAsync([
                     new(1, "Default", "DEFAULT"),
                     new (90, "Moderator", "MODERATOR"),
                     new(100, "Admin", "ADMIN"),
-                });
-                await context.SaveChangesAsync();
+                ], true);
 
+                Dictionary<string, CustomRole> roleCache = new();
+                 
                 // Adds claims to roles based on predefined role claims.
                 foreach (var roleClaims in CustomRoleClaims.Claims)
                 {
-                    var role = context.FindRole(x => x.Name == roleClaims.Key);
-                    if (role == null)
-                        continue;
+                    if (!roleCache.TryGetValue(roleClaims.Key, out CustomRole? role))
+                    {
+                        role = await userStore.Roles.FindAsync(x => x.NormalizedName == roleClaims.Key);
+                        if (role == null)
+                            continue;
+                        roleCache[roleClaims.Key] = role;
+                    }
 
-                    context.RoleClaims.AddRange(RoleClaim.ToList(roleClaims.Value.ToList(), role.Id));
+                    await userStore.RoleClaims.AddRangeAsync(RoleClaim.ToList(roleClaims.Value.ToList(), role.Id));
                 }
                 await context.SaveChangesAsync();
             }

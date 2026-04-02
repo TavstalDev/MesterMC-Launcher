@@ -1,19 +1,17 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Net;
-using System.Text;
-using Microsoft.AspNetCore.Identity;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using OtpNet;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
-using Tavstal.MesterMC.Api.Models.Common;
+using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Utils.Helpers;
+using SignInResult = Tavstal.MesterMC.Api.Models.Database.SignInResult;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
@@ -25,8 +23,7 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 public class LoginController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
-    private readonly CustomDbContext _dbContext;
-    private readonly IPasswordHasher<CustomUser> _passwordHasher;
+    private readonly CustomSignInManager _signInManager;
     private readonly IEmailService _emailService;
     private readonly MemoryCacheService _memoryCacheService;
     
@@ -34,18 +31,17 @@ public class LoginController : CustomControllerBase
     /// Initializes a new instance of the <see cref="LoginController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for logging operations.</param>
-    /// <param name="dbContext">The database context for accessing user-related data.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="userManager">The user manager for managing user authentication and roles.</param>
-    /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
+    /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
     /// <param name="emailService">The email service for sending emails.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="settings">The application settings.</param>
-    public LoginController(ILogger<LoginController> logger, CustomDbContext dbContext,
-        CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
+    public LoginController(ILogger<LoginController> logger, CustomUserStore userStore,
+        CustomUserManager userManager, CustomSignInManager signInManager, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
     {
-        _dbContext = dbContext;
+        _signInManager = signInManager;
         _userManager = userManager;
-        _passwordHasher = passwordHasher;
         _emailService = emailService;
         _memoryCacheService = memoryCacheService;
     }
@@ -80,50 +76,21 @@ public class LoginController : CustomControllerBase
 
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
-            
-            var normalizedEmail = request.Email.Normalize();
-            CustomUser? user = await _dbContext.FindUserAsync(x => (x.NormalizedEmail.Equals(normalizedEmail) || x.NormalizedUserName.Equals(normalizedEmail)));
-            if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
-            // Check if the user is locked out
-            if (user.LockoutEnabled)
-            {
-                if (user.LockoutEnd > DateTimeOffset.UtcNow)
-                    return ReturnJson(new
-                    {
-                        statusCode = HttpStatusCode.Locked,
-                        message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
-                        lockoutExpires = user.LockoutEnd.ToString()
-                    });
-            
-                user.LockoutEnabled = false;
-                user.LockoutReason = string.Empty;
-                await _dbContext.UpdateUserAsync(user);
-                await _dbContext.SaveChangesAsync();
-            }
-            
-            // Check password
-            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-            switch (result)
-            {
-                case PasswordVerificationResult.Failed:
-                    return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
-                case PasswordVerificationResult.SuccessRehashNeeded:
-                    user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
-                    await _dbContext.UpdateUserAsync(user, true);
-                    break;
-            }
+            SignInResult result;
+            if (request.Email.Contains('@'))
+                result = await _signInManager.EmailSignInAsync(request.Email, request.Password, request.RememberMe, HttpContext);
+            else
+                result = await _signInManager.UsernameSignInAsync(request.Email, request.Password, request.RememberMe, HttpContext);
 
-            // Check two-factor authentication
-            if (user.TwoFactorEnabled)
-            {
-                string sessionToken = TokenHelper.GenerateTwoFactorSessionToken();
-                string fingerprint = GetMachineFingerprint(user.Id);
-                _memoryCacheService.SetValue($"auth:{fingerprint}:tfa:token", sessionToken, TimeSpan.FromMinutes(5));
-                _memoryCacheService.SetValue($"auth:{fingerprint}:tfa:attempts", 0, TimeSpan.FromMinutes(5));
+            if (!result.Succeeded && !result.RequiresTwoFactor)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
 
-                var expiry = DateTimeOffset.UtcNow.AddMinutes(5);
+            if (result.RequiresTwoFactor)
+            {
+                var user = result.User!;
+                string sessionToken = result.SessionToken!;
+                var expiry = result.TokenExpiresAt;
                 Response.Cookies.Append("mmc-userId", user.Id, new CookieOptions
                 {
                     HttpOnly = true,
@@ -147,26 +114,12 @@ public class LoginController : CustomControllerBase
                     url = $"{Settings.WebsiteUrl}/2fa?rememberMe={request.RememberMe}"
                 });
             }
+            
+            if (!result.Succeeded)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
 
-            string ipv4 = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
-            string ipv6 = HttpContext.Connection.RemoteIpAddress?.MapToIPv6().ToString() ?? "::1";
-            var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
-            string operatingSystem = HttpHelper.GetOperatingSystem(userAgent);
-            string browser = HttpHelper.GetBrowser(userAgent);
-            
-            IpInfo ipInfo = await DatabaseHelper.GetIpInformation(ipv4);
-            DateTimeOffset expireDate = request.RememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddMinutes(60);
-            var userToken = await _dbContext.AddUserTokenAsync(
-                new CustomUserToken(
-                    user.Id, 
-                    "AccessToken", 
-                    TokenHelper.GenerateJwtToken(Settings.EncryptionKey, Settings.Issuer, Settings.Audience, expireDate), 
-                    "MesterMC", 
-                    DateTimeOffset.UtcNow), 
-                true);
-            
-            var userLogin = await _dbContext.AddUserLoginAsync(new CustomUserLogin(user.Id,  userToken.Id, "MesterMC", 
-                "MesterMC", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate), true);
+            var userToken = result.UserToken!;
+            var userLogin = result.UserLogin!;
             
             Response.Cookies.Append("mmc-token", userToken.Value, new CookieOptions
             {
@@ -232,66 +185,25 @@ public class LoginController : CustomControllerBase
             if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != sessionCookie)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
 
-            string attemptKey = $"auth:{fingerprint}:tfa:attempts";
-            if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
-            
-            if (cachedAttempts >= 3)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "To many failed attempts. Please try reauthorizing again.");
-            
-            CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == userIdCookie);
+            CustomUser? user = await UserStore.FindUserByIdAsync(userIdCookie);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
-            if (user.LockoutEnabled)
+            var result = await _signInManager.TwoFactorSignInAsync(user, request.TwoFactorCode, request.RememberMe, HttpContext);
+            if (!result.Succeeded)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid two-factor code.");
+            
+            var userToken = result.UserToken!;
+            var userLogin = result.UserLogin!;
+            
+            Response.Cookies.Append("mmc-token", userToken.Value, new CookieOptions
             {
-                if (user.LockoutEnd > DateTimeOffset.UtcNow)
-                    return ReturnJson(new
-                    {
-                        statusCode = HttpStatusCode.Locked,
-                        message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
-                        lockoutEnd = user.LockoutEnd.ToString()
-                    });
+                HttpOnly = true,
+                Secure = true, // only over HTTPS
+                SameSite = SameSiteMode.None, // required for cross-origin
+                Expires = userLogin.ExpireDate
+            });
             
-                user.LockoutEnabled = false;
-                user.LockoutReason = string.Empty;
-                await _dbContext.UpdateUserAsync(user);
-                await _dbContext.SaveChangesAsync();
-            }
-            
-            if (!user.TwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecret))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled for this user.");
-
-            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
-            if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
-            {
-                _memoryCacheService.SetValue(attemptKey, cachedAttempts + 1);
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
-            }
-
-            string ipv4 = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
-            string ipv6 = HttpContext.Connection.RemoteIpAddress?.MapToIPv6().ToString() ?? "::1";
-            var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
-            string operatingSystem = HttpHelper.GetOperatingSystem(userAgent);
-            string browser = HttpHelper.GetBrowser(userAgent);
-            
-            IpInfo ipInfo = await DatabaseHelper.GetIpInformation(ipv4);
-            DateTimeOffset expireDate = request.RememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddMinutes(60);
-            var userToken = await _dbContext.AddUserTokenAsync(new CustomUserToken(
-                user.Id, 
-                "AccessToken", 
-                TokenHelper.GenerateJwtToken(Settings.EncryptionKey, Settings.Issuer, Settings.Audience, expireDate), 
-                "MesterMC", 
-                DateTimeOffset.UtcNow), 
-                true);
-            
-            var userLogin = await _dbContext.AddUserLoginAsync(new CustomUserLogin(user.Id,  userToken.Id, "MesterMC", 
-                "MesterMC", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate));
-            
-            await _dbContext.SaveChangesAsync();
-            
-            _memoryCacheService.RemoveValue(tokenKey);
-            _memoryCacheService.RemoveValue(attemptKey);
             return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
@@ -337,48 +249,15 @@ public class LoginController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            var normalizedUsername = request.Username.Normalize();
-            CustomUser? user = await _dbContext.FindUserAsync(x => x.NormalizedUserName.Equals(normalizedUsername));
-            if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+            LauncherSignInResult result = await _signInManager.LauncherSignInAsync(request.Username, request.Password, HttpContext);
 
-            // Check if the user is locked out
-            if (user.LockoutEnabled)
-            {
-                if (user.LockoutEnd > DateTimeOffset.UtcNow)
-                    return ReturnJson(new
-                    {
-                        statusCode = HttpStatusCode.Locked,
-                        message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
-                        lockoutExpires = user.LockoutEnd.ToString()
-                    });
-            
-                user.LockoutEnabled = false;
-                user.LockoutReason = string.Empty;
-                await _dbContext.UpdateUserAsync(user);
-                await _dbContext.SaveChangesAsync();
-            }
-            
-            // Check password
-            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-            switch (result)
-            {
-                case PasswordVerificationResult.Failed:
-                    return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid password.");
-                case PasswordVerificationResult.SuccessRehashNeeded:
-                    user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
-                    await _dbContext.UpdateUserAsync(user, true);
-                    break;
-            }
+            if (!result.Succeeded && !result.RequiresTwoFactor)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
 
-            // Check two-factor authentication
-            if (user.TwoFactorEnabled)
+            if (result.RequiresTwoFactor)
             {
-                string sessionToken = TokenHelper.GenerateTwoFactorSessionToken();
-                string fingerprint = GetMachineFingerprint(user.Id);
-                _memoryCacheService.SetValue($"auth:{fingerprint}:tfa-launcher:token", sessionToken, TimeSpan.FromMinutes(5));
-                _memoryCacheService.SetValue($"auth:{fingerprint}:tfa-launcher:attempts", 0, TimeSpan.FromMinutes(5));
-                    
+                var user = result.User!;
+                string sessionToken = result.SessionToken!;
                 return ReturnJson(new
                 {
                     statusCode = HttpStatusCode.Redirect,
@@ -388,17 +267,11 @@ public class LoginController : CustomControllerBase
                     url = $"{Settings.ApiUrl}/login/launcher/2fa"
                 });
             }
-
-            string host = HttpContext.Request.Host.Host;
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
-            {
-                UserId = user.Id,
-                UserIp = host,
-                Token = TokenHelper.GenerateToken(),
-                CreatedAt =  DateTimeOffset.UtcNow,
-                ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
-            }, true);
             
+            if (!result.Succeeded)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
+            
+            var userPlaySession = result.UserPlaySession!;
             return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
@@ -449,56 +322,15 @@ public class LoginController : CustomControllerBase
             if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != request.SessionToken)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
 
-            string attemptKey = $"auth:{fingerprint}:tfa-launcher:attempts";
-            if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
-            
-            if (cachedAttempts >= 3)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "To many failed attempts. Please try reauthorizing again.");
-            
-            CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == request.UserId);
+            CustomUser? user = await UserStore.FindUserByIdAsync(request.UserId);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
-            if (user.LockoutEnabled)
-            {
-                if (user.LockoutEnd > DateTimeOffset.UtcNow)
-                    return ReturnJson(new
-                    {
-                        statusCode = HttpStatusCode.Locked,
-                        message = string.IsNullOrEmpty(user.LockoutReason) ? "User is locked out" : user.LockoutReason,
-                        lockoutEnd = user.LockoutEnd.ToString()
-                    });
-            
-                user.LockoutEnabled = false;
-                user.LockoutReason = string.Empty;
-                await _dbContext.UpdateUserAsync(user);
-                await _dbContext.SaveChangesAsync();
-            }
-            
-            if (!user.TwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecret))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled for this user.");
+            var result = await _signInManager.LauncherTwoFactorSignInAsync(user, request.TwoFactorCode, HttpContext);
+            if (!result.Succeeded)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid two-factor code.");
 
-            var totp = new Totp(Encoding.UTF8.GetBytes(user.TwoFactorSecret));
-            if (!totp.VerifyTotp(request.TwoFactorCode, out _, new VerificationWindow(2, 2)))
-            {
-                _memoryCacheService.SetValue(attemptKey, cachedAttempts + 1);
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
-            }
-            
-            _memoryCacheService.RemoveValue(tokenKey);
-            _memoryCacheService.RemoveValue(attemptKey);
-            
-            string host = HttpContext.Request.Host.Host;
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
-            {
-                UserId = user.Id,
-                UserIp = host,
-                Token = TokenHelper.GenerateToken(),
-                CreatedAt =  DateTimeOffset.UtcNow,
-                ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
-            }, true);
-            
+            var userPlaySession = result.UserPlaySession!;
             return ReturnJson(new
             {
                 statusCode = HttpStatusCode.OK,
@@ -535,25 +367,23 @@ public class LoginController : CustomControllerBase
         {
             if (string.IsNullOrEmpty(token))
             {
-                if (Request.Headers.TryGetValue("Authorization", out var authHeader))
-                    token = authHeader.ToString();
-                else if (Request.Cookies.TryGetValue("mmc-token", out var authCookie))
+                if (Request.Cookies.TryGetValue("mmc-token", out var authCookie))
                     token = authCookie;
+                else if (Request.Headers.TryGetValue("Authorization", out var authHeader))
+                {
+                    string headerValue = authHeader.ToString();
+                    var authenticationHeader = AuthenticationHeaderValue.Parse(headerValue);
+                    if (authenticationHeader.Scheme == "Bearer")
+                        token = authenticationHeader.Parameter;
+                }
             }
             
             if (string.IsNullOrEmpty(token))
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid token.");
             
-            CustomUserToken? userToken = _dbContext.FindUserToken(x => x.Value == token);
-            if (userToken == null)
+            if (!await _signInManager.SignOutAsync(token))
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid token.");
             
-            CustomUserLogin? userLogin = _dbContext.FindUserLogin(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id);
-            if (userLogin != null)
-                await _dbContext.RemoveUserLoginAsync(userLogin);
-            
-            await _dbContext.RemoveUserTokenAsync(userToken);
-            await _dbContext.SaveChangesAsync();
             return SignOut();
         }
         catch (Exception ex)

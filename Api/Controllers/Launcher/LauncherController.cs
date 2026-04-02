@@ -218,7 +218,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Launcher.CreateVersion))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? existingVersion =
@@ -278,7 +278,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Launcher.UpdateVersion))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.UpdateVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
@@ -342,7 +342,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Launcher.DeleteVersion))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
@@ -393,7 +393,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Launcher.CreateVersion))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
@@ -477,7 +477,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermission(user, CustomPermissions.Launcher.DeleteVersion))
+            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersionData? versionData =
