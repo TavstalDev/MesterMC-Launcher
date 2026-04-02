@@ -40,6 +40,22 @@ public class Settings
     /// Gets or sets the JWT audience.
     /// </summary>
     public string Audience { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the clock skew tolerance for JWT token validation.
+    /// </summary>
+    public TimeSpan ClockSkew { get; set; }
+    
+    /// <summary>
+    /// Maximum number of failed authentication attempts allowed before a user is locked out.
+    /// </summary>
+    public int LockoutMaxAttempts { get; set; }
+    
+    /// <summary>
+    /// Duration of the lockout applied when the user exceeds the allowed failed authentication attempts.
+    /// </summary>
+    public TimeSpan LockoutDuration { get; set; }
+    
     /// <summary>
     /// Gets or sets the email provider.
     /// </summary>
@@ -97,8 +113,8 @@ public class Settings
     /// <exception cref="ArgumentNullException">Thrown if a required configuration value is missing.</exception>
     public Settings(IConfiguration configuration)
     {
-        WebsiteUrl = configuration[Constants.ConfigurationKeys.ServerWebsite] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.ServerWebsite); 
-        ApiUrl = configuration[Constants.ConfigurationKeys.ServerApi] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.ServerApi);
+        WebsiteUrl = configuration[Constants.ConfigurationKeys.RuntimeWebsiteUrl] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.RuntimeWebsiteUrl); 
+        ApiUrl = configuration[Constants.ConfigurationKeys.RuntimeApiUrl] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.RuntimeApiUrl);
         
         DatabaseUser = configuration[Constants.ConfigurationKeys.DatabaseUser] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.DatabaseUser); 
         DatabasePassword = configuration[Constants.ConfigurationKeys.DatabasePassword] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.DatabasePassword);
@@ -106,6 +122,9 @@ public class Settings
         EncryptionKey = configuration[Constants.ConfigurationKeys.JwtEncryptionKey] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.JwtEncryptionKey);
         Issuer = configuration[Constants.ConfigurationKeys.JwtIssuer] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.JwtIssuer);
         Audience = configuration[Constants.ConfigurationKeys.JwtAudience] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.JwtAudience);
+        ClockSkew = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtClockSkew, 5));
+        LockoutMaxAttempts = configuration.GetValue(Constants.ConfigurationKeys.JwtLockoutMaxAttempts, 5);
+        LockoutDuration = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtLockoutDuration, 900)); 
         
         EmailProvider = configuration[Constants.ConfigurationKeys.EmailProvider] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.EmailProvider);
         EmailPort = configuration.GetValue(Constants.ConfigurationKeys.EmailPort, 587); 
