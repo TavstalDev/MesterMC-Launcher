@@ -54,23 +54,4 @@ public static class TokenHelper
     /// </summary>
     /// <returns>A two-factor session token as a base64-encoded string.</returns>
     public static string GenerateTwoFactorSessionToken() => GenerateToken(32);
-    
-    /// <summary>
-    /// Generates a list of recovery codes.
-    /// </summary>
-    /// <param name="count">The number of recovery codes to generate.</param>
-    /// <returns>A list of recovery codes.</returns>
-    public static List<string> GenerateRecoveryCodes(int count = 6)
-    {
-        List<string> recoveryCodes = [];
-        for (int i = 0; i < count; i++)
-            recoveryCodes.Add(GenerateToken(8));
-        return recoveryCodes;
-    }
-
-    /// <summary>
-    /// Generates a random password.
-    /// </summary>
-    /// <returns>A randomly generated password as a base64-encoded string.</returns>
-    public static string GeneratePassword() => GenerateToken(16);
 }
