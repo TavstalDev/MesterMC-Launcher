@@ -9,6 +9,8 @@ namespace Tavstal.MesterMC.Api.Utils.Helpers;
 /// </summary>
 public static class DatabaseHelper
 {
+    private static readonly HttpClient _client = new();
+
     /// <summary>
     /// Retrieves information about an IP address, such as country, region, and city.
     /// If the information cannot be retrieved, returns default values.
@@ -17,21 +19,7 @@ public static class DatabaseHelper
     /// <returns>An <see cref="IpInfo"/> object containing the IP information.</returns>
     public static async Task<IpInfo> GetIpInformation(string ip)
     {
-        IpInfo? ipInfo = null;
-        try
-        {
-            using var client = new HttpClient();
-            string info = await client.GetStringAsync("https://ipinfo.io/" + ip);
-            ipInfo = JsonConvert.DeserializeObject<IpInfo>(info);
-            if (ipInfo != null)
-                ipInfo.Country = new RegionInfo(ipInfo.Country).EnglishName;
-        }
-        catch (Exception)
-        {
-            // Ignore
-        }
-
-        ipInfo ??= new IpInfo(
+        IpInfo ipInfo = new IpInfo(
             ip,
             "Unknown",
             "Unknown",
@@ -41,6 +29,21 @@ public static class DatabaseHelper
             "Unknown",
             "Unknown"
         );
+        
+        try
+        {
+            string info = await _client.GetStringAsync($"https://ipinfo.io/{ip}");
+            var localInfo = JsonConvert.DeserializeObject<IpInfo>(info);
+            if (localInfo != null)
+            {
+                ipInfo = localInfo;
+                ipInfo.Country = new RegionInfo(ipInfo.Country).EnglishName;
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore
+        }
         return ipInfo;
     }
 }
