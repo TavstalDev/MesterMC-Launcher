@@ -19,7 +19,7 @@ public static class MesterMcEndpoints
 #if DEBUG
         "https://localhost:36767";
 #else
-        "https://api.mestermc.hu";
+        Constants.ApiUrl;
 #endif
     
     public static string AuthEndpoint => $"{BaseEndpoint}/login/launcher";
