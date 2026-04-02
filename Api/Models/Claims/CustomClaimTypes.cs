@@ -9,9 +9,4 @@ public static class CustomClaimTypes
     /// Claim type for user badges.
     /// </summary>
     public const string Badge = "mmc.User.Badge";
-    
-    /// <summary>
-    /// Claim type for the email confirmation token.
-    /// </summary>
-    public const string EmailConfirmationToken = "mmc.Email.ConfirmationToken";
 }
