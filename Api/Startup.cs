@@ -10,12 +10,15 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Linq;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
+using Tavstal.MesterMC.Api.Services.Authentication;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace Tavstal.MesterMC.Api;
@@ -56,7 +59,7 @@ public class Startup
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         _configuration = configuration;
         string basePath = AppContext.BaseDirectory;
-        _uploadDirectory = Path.Combine(basePath, _configuration.GetValue<string>("UploadDirectory") ?? "uploads");
+        _uploadDirectory = Path.Combine(basePath, _configuration.GetValue<string>(Constants.ConfigurationKeys.RuntimeUploadDir) ?? "uploads");
         if (!Directory.Exists(_uploadDirectory))
             Directory.CreateDirectory(_uploadDirectory);
     }
@@ -77,43 +80,47 @@ public class Startup
     /// <param name="services">Service collection to which services should be added.</param>
     public void ConfigureServices(IServiceCollection services)
     {
-        #region Database & Identity
+        #region Database
         // Configure identity options
         services.Configure<IdentityOptions>(x =>
         {
             x.User.AllowedUserNameCharacters = Constants.Authentication.AllowedUsernameCharacters;
         });
             
-        string? connectionString = _configuration.GetConnectionString("DefaultConnection");
+        string? connectionString = _configuration.GetValue<string>(Constants.ConfigurationKeys.DatabaseConnectionString);
         if (string.IsNullOrEmpty(connectionString))
-        {
             throw new InvalidOperationException("Connection string is missing from the configuration.");
-        }
 
         connectionString = connectionString
-            .Replace("$DB_USER", _configuration.GetValue<string>("DB_USER"))
-            .Replace("$DB_PASSWORD", _configuration.GetValue<string>("DB_PASSWORD"));
+            .Replace($"${Constants.ConfigurationKeys.DatabaseUser}", _configuration.GetValue<string>(Constants.ConfigurationKeys.DatabaseUser))
+            .Replace($"${Constants.ConfigurationKeys.DatabasePassword}", _configuration.GetValue<string>(Constants.ConfigurationKeys.DatabasePassword));
 
+        string? databaseProvider = _configuration.GetValue<string>(Constants.ConfigurationKeys.DatabaseProvider);
+        if (string.IsNullOrEmpty(databaseProvider))
+            throw new InvalidOperationException("Database Provider is missing from the configuration.");
+        
+        string? databaseVersion = _configuration.GetValue<string>(Constants.ConfigurationKeys.DatabaseVersion);
+        if (string.IsNullOrEmpty(databaseVersion) || !Version.TryParse(databaseVersion, out Version? dbVersion))
+            throw new  InvalidOperationException("Database Version is missing from the configuration.");
+        
         // Configure the database context
         services.AddDbContext<CustomDbContext>(options =>
-            // ReSharper disable once AccessToModifiedClosure
-            options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 31)), optionsBuilder => 
+        {
+            switch (databaseProvider?.ToLower())
             {
-                optionsBuilder.EnableRetryOnFailure();
-            }));
-            
-        // Configure identity core services with custom user and database context
-        services.AddIdentityCore<CustomUser>(options => options.SignIn.RequireConfirmedAccount = true)
-            // Add Entity Framework stores for the custom database context
-            .AddEntityFrameworkStores<CustomDbContext>()
-            // Add custom user manager
-            .AddUserManager<CustomUserManager>()
-            // Add sign-in manager for custom user
-            .AddSignInManager<SignInManager<CustomUser>>()
-            // Add custom user store
-            .AddUserStore<CustomUserStore>()
-            // Add default token providers for generating tokens
-            .AddDefaultTokenProviders();
+                case "postgresql":
+                    options.UseNpgsql(connectionString, optionsBuilder => 
+                        optionsBuilder.EnableRetryOnFailure());
+                    break;
+                case "sqlite":
+                    options.UseSqlite(connectionString);
+                    break;
+                default:
+                    options.UseMySql(connectionString, new MySqlServerVersion(dbVersion), optionsBuilder => optionsBuilder.EnableRetryOnFailure());
+                    break;
+            }
+        });
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         #endregion
         #region Swagger Docs
         // Configure JSON options for controllers
@@ -167,7 +174,17 @@ public class Startup
                 BearerFormat = "JWT",
                 Scheme = "basic",
             });
-            // Add security requirements for Bearer and Basic authentication
+            // Add security definition for Cookie authentication
+            config.AddSecurityDefinition("Cookie", new OpenApiSecurityScheme
+            {
+                In = ParameterLocation.Cookie,
+                Description = "JWT Authorization cookie. \r\n\r\nExample: \"mmc-token=12345abcdef\"",
+                Name = "mmc-token",
+                Type = SecuritySchemeType.Http,
+                BearerFormat = "JWT",
+                Scheme = "cookie",
+            });
+            // Add security requirements for Bearer, Basic and cookie authentication
             config.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
@@ -191,11 +208,28 @@ public class Startup
                         }
                     },
                     []
+                },
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type=ReferenceType.SecurityScheme,
+                            Id="Cookie"
+                        }
+                    },
+                    []
                 }
             });
         });
         #endregion
         #region Authentication
+        services.AddScoped<CustomUserStore>();
+        services.AddScoped<CustomUserManager>();
+        services.AddScoped<CustomSignInManager>();
+        services.AddScoped<IPasswordHasher<CustomUser>, PasswordHasher<CustomUser>>();
+
+        services.AddHttpContextAccessor();
         // Configure authentication schemes
         services.AddAuthentication(x =>
             {
@@ -208,43 +242,17 @@ public class Startup
                 // Set the default sign-out scheme to JWT Bearer
                 x.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            // Add cookie authentication
-            .AddCookie() 
-            // Add JWT Bearer authentication
-            .AddJwtBearer(x =>
-            {
-                // Include error details in the response
-                x.IncludeErrorDetails = true;
-                // Set token validation parameters
-                x.TokenValidationParameters = new TokenValidationParameters
-                {
-                    // Validate the issuer of the token
-                    ValidateIssuer = true,
-                    // Validate the audience of the token
-                    ValidateAudience = true,
-                    // Validate the signing key of the token
-                    ValidateIssuerSigningKey = true,
-                    // Validate the lifetime of the token
-                    ValidateLifetime = true,
-                    // Require the token to have an expiration time
-                    RequireExpirationTime = true,
-                    // Set the valid issuer for the token
-                    ValidIssuer = _configuration.GetValue<string>("Jwt:Issuer"),
-                    // Set the valid audience for the token
-                    ValidAudience = _configuration.GetValue<string>("Jwt:Audience"),
-                    // Set the signing key for the token
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("JWT_ENCRYPTION_KEY") ?? throw new Exception("Encryption key is not set"))),
-                };
-            })
-            // Add custom authentication scheme for Basic authentication
-            .AddScheme<AuthenticationSchemeOptions, AuthenticationHandler>("Basic", null);
+            // Add JWT Bearer authentication  scheme
+            .AddScheme<AuthenticationSchemeOptions, BearerAuthenticationHandler>("Bearer", null)
+            // Add Basic authentication scheme
+            .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("Basic", null)
+            // Add cookie authentication  scheme
+            .AddScheme<AuthenticationSchemeOptions, CookieAuthenticationHandler>("Cookie", null);
         #endregion
 
         // Configure form options
-        services.Configure<FormOptions>(options =>
-        {
-            options.MultipartBodyLengthLimit = 100 * 1024 * 1024; // 100 MB
-        });
+        int bodyLengthLimit = _configuration.GetValue(Constants.ConfigurationKeys.RateLimitingUploadLimit, 100);
+        services.Configure<FormOptions>(options => { options.MultipartBodyLengthLimit = 1024 * 1024 * bodyLengthLimit; });
             
         #region Cors
         // Retrieve the CORS configuration section from the application configuration
@@ -288,89 +296,34 @@ public class Startup
         #region Services
         // Configure identity options for claims
         services.Configure<IdentityOptions>(options => options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier);
+        // Add HTTP client factory for making HTTP requests
+        services.AddHttpClient();
         // Add memory caching services
         services.AddMemoryCache();
         services.AddSingleton<MemoryCacheService>();
         // Configure IP rate limiting
         #region Rate Limiting
+
+        var rules = _configuration.GetValue(Constants.ConfigurationKeys.RateLimitingRules, new Dictionary<string, object>());
         services.AddRateLimiter(options =>
         {
-            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-            // Default
-            options.AddFixedWindowLimiter(RateLimits.DEFAULT, config =>
+            options.RejectionStatusCode = _configuration.GetValue(Constants.ConfigurationKeys.RateLimitingStatusCode, 429);
+            foreach (var rule in rules)
             {
-                // Set the limit to 100 requests per minute
-                config.PermitLimit = 100;
-                // Set the window duration to 1 minute
-                config.Window = TimeSpan.FromMinutes(1);
-                // Set the queue limit to 10 requests
-                config.QueueLimit = 10;
-                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
-            // Auth Register
-            options.AddFixedWindowLimiter(RateLimits.AUTH_REGISTER, config =>
-            {
-                config.PermitLimit = 2;
-                config.Window = TimeSpan.FromMinutes(60);
-                config.QueueLimit = 10;
-                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
-            // Auth Login
-            options.AddFixedWindowLimiter(RateLimits.AUTH_LOGIN, config =>
-            {
-                config.PermitLimit = 5;
-                config.Window = TimeSpan.FromMinutes(5);
-                config.QueueLimit = 5;
-                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
-            // Auth TFA & Reset
-            options.AddFixedWindowLimiter(RateLimits.AUTH_RESET, config =>
-            {
-                config.PermitLimit = 3;
-                config.Window = TimeSpan.FromMinutes(60);
-                config.QueueLimit = 5;
-                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
-            // Upload
-            options.AddFixedWindowLimiter(RateLimits.UPLOAD, config =>
-            {
-                config.PermitLimit = 20;
-                config.Window = TimeSpan.FromMinutes(10);
-                config.QueueLimit = 5;
-                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
-            // Download
-            options.AddFixedWindowLimiter(RateLimits.DOWNLOAD, config =>
-            {
-                config.PermitLimit = 30;
-                config.Window = TimeSpan.FromMinutes(5);
-                config.QueueLimit = 5;
-                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
-            // Search
-            options.AddFixedWindowLimiter(RateLimits.SEARCH, config =>
-            {
-                config.PermitLimit = 60;
-                config.Window = TimeSpan.FromMinutes(1);
-                config.QueueLimit = 5;
-                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
-            // Write
-            options.AddFixedWindowLimiter(RateLimits.WRITE, config =>
-            {
-                config.PermitLimit = 30;
-                config.Window = TimeSpan.FromMinutes(1);
-                config.QueueLimit = 5;
-                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
-            // Admin
-            options.AddFixedWindowLimiter(RateLimits.ADMIN, config =>
-            {
-                config.PermitLimit = 20;
-                config.Window = TimeSpan.FromMinutes(1);
-                config.QueueLimit = 5;
-                config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
+                JObject jObject = JObject.FromObject(rule.Value);
+                if (jObject.TryGetValue("PermitLimit", out JToken? permitLimitToken) &&
+                    jObject.TryGetValue("WindowSeconds", out JToken? windowToken) &&
+                    jObject.TryGetValue("QueueLimit", out JToken? queueLimitToken))
+                {
+                    options.AddFixedWindowLimiter(rule.Key, config =>
+                    {
+                        config.PermitLimit = permitLimitToken.Value<int>();
+                        config.Window = TimeSpan.FromSeconds(windowToken.Value<int>());
+                        config.QueueLimit = queueLimitToken.Value<int>();
+                        config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    });
+                }
+            }
         });
         #endregion
         // Database cleaner service
@@ -444,12 +397,13 @@ public class Startup
         try
         {
             var database = serviceScope.ServiceProvider.GetRequiredService<CustomDbContext>();
-            CustomDbInitializer.Initialize(database);
+            var userStore = serviceScope.ServiceProvider.GetRequiredService<CustomUserStore>();
+            CustomDbInitializer.Initialize(database, userStore);
         }
         catch (Exception ex)
         {
             var logger = serviceScope.ServiceProvider.GetRequiredService<ILogger<Startup>>();
-            logger.LogCritical(ex.ToString());
+            logger.LogCritical(ex, "An error occurred while initializing the database.");
         }
     }
 }
