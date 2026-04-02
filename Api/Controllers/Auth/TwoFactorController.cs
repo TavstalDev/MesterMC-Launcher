@@ -31,10 +31,12 @@ public class TwoFactorController : CustomControllerBase {
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
+    /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomSignInManager signInManager, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger, settings)
+    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomSignInManager signInManager, CustomUserStore userStore, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -67,20 +69,18 @@ public class TwoFactorController : CustomControllerBase {
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
             
-            _signInManager.TwoFactorAuthenticatorSignInAsync(twoFactorCode, )
-            if (!_userManager.VerifyTwoFactorToken(user, twoFactorCode))
+            if (!_userManager.VerifyTwoFactorCode(user, twoFactorCode))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
             user.TwoFactorEnabled = true;
-            await _dbContext.UpdateUserAsync(user);
-            await _dbContext.SaveChangesAsync();
+            await UserStore.UpdateUserAsync(user, true);
             
             return ReturnResponseCode(HttpStatusCode.OK, "Two-factor authentication enabled.");
         }
@@ -115,19 +115,18 @@ public class TwoFactorController : CustomControllerBase {
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
             
-            if (!await _userManager.VerifyTwoFactorCode(user, "TwoFactorSecret", twoFactorCode))
+            if (!_userManager.VerifyTwoFactorCode(user, twoFactorCode))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
             user.TwoFactorEnabled = false;
-            await _dbContext.UpdateUserAsync(user);
-            await _dbContext.SaveChangesAsync();
+            await UserStore.UpdateUserAsync(user, true);
             
             return ReturnResponseCode(HttpStatusCode.OK, "Two-factor authentication disabled.");
         }
@@ -152,14 +151,14 @@ public class TwoFactorController : CustomControllerBase {
     {
         try
         {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (user.TwoFactorEnabled)
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
 
-            string rawSecret = await _userManager.GenerateTwoFactorTokenAsync(user, "TwoFactorSecret");
+            string rawSecret = await _userManager.GenerateTwoFactorTokenAsync(user);
             
             return ReturnJson(new
             {
@@ -190,25 +189,14 @@ public class TwoFactorController : CustomControllerBase {
     {
         try
         {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            var recoveryCodes = await _dbContext.GetUserBackupCodeAsync(x => x.UserId == user.Id);
+            var recoveryCodes = await UserStore.UserBackupCodes.QueryAsync(x => x.UserId == user.Id);
             foreach (var code in recoveryCodes) 
-                await _dbContext.RemoveUserBackupCodeAsync(code);
-            var newCodes = TokenHelper.GenerateRecoveryCodes();
-            foreach (var code in newCodes)
-            {
-                await _dbContext.AddUserBackupCodeAsync(new UserBackupCode
-                {
-                    UserId = user.Id,
-                    HashedCode = StringChiper.GetEncryptedHash(code, _settings.EncryptionKey),
-                    CreateAt = DateTime.UtcNow
-                });
-            }
-            
-            await _dbContext.SaveChangesAsync();
+                await UserStore.UserBackupCodes.RemoveAsync(code);
+            var newCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 6);
             
             return ReturnJson(new
             {

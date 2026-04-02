@@ -41,12 +41,13 @@ public class RegisterController : CustomControllerBase
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="dbContext">Database context for accessing user data.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="fileDataRepository">Repository for managing file data, such as user avatars.</param>
     /// <param name="settings">Application settings.</param>
-    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepository, Settings settings) : base(logger, settings)
+    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepository, Settings settings) : base(logger, userStore, settings)
     {
         _dbContext = dbContext;
         _userManager = userManager;
@@ -151,10 +152,10 @@ public class RegisterController : CustomControllerBase
             var defaultRole = await UserStore.Roles.FindAsync(x => x.NormalizedName == "DEFAULT");
             if (defaultRole != null)
             {
-                await _dbContext.AddUserRoleAsync(new CustomUserRole { UserId = user.Id, RoleId = defaultRole.Id, });
+                await UserStore.UserRoles.AddAsync(new CustomUserRole { UserId = user.Id, RoleId = defaultRole.Id, });
             }
             // Add customer role claim to the user
-            await _dbContext.AddUserClaimAsync(new CustomUserClaim { UserId = user.Id, ClaimType = ClaimTypes.Role, ClaimValue = "default" });
+            await UserStore.UserClaims.AddAsync(new CustomUserClaim { UserId = user.Id, ClaimType = ClaimTypes.Role, ClaimValue = "default" });
             // Save changes
             await _dbContext.SaveChangesAsync();
             
@@ -206,7 +207,7 @@ public class RegisterController : CustomControllerBase
             }
             
             // Find the user by ID
-            CustomUser? user = await _dbContext.FindUserAsync(x => x.Id == request.UserId);
+            CustomUser? user = await UserStore.FindUserByIdAsync(request.UserId);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "User does not exist.");
 
@@ -215,16 +216,16 @@ public class RegisterController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "The user is already confirmed.");
 
             // Validate the confirmation token
-            var claim = _dbContext.FindUserClaimAsync(x =>
-                x.UserId == request.UserId && x.ClaimType == CustomClaimTypes.EmailConfirmationToken &&
-                x.ClaimValue == request.ConfirmationToken);
-            if (claim == null)
+            var confirmationToken = await UserStore.UserTokens.FindAsync(x => x.UserId == user.Id && x.Name == "EmailConfirmationToken");
+            if (confirmationToken == null)
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid confirmation token");
 
-            // Remove the confirmation token claim and update the user's email confirmation status
-            await _dbContext.RemoveUserClaimAsync(claim);
+            if (confirmationToken.Value != request.ConfirmationToken)
+                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid confirmation token");
+            
+            await UserStore.UserTokens.RemoveAsync(confirmationToken);
             user.EmailConfirmed = true;
-            await _dbContext.UpdateUserAsync(user);
+            await UserStore.UpdateUserAsync(user);
             await _dbContext.SaveChangesAsync();
 
             // Send a confirmation email to the user
@@ -250,22 +251,20 @@ public class RegisterController : CustomControllerBase
         if (string.IsNullOrEmpty(user.Email))
             return;
         
-        var claim = _dbContext.FindUserClaimAsync(x => x.UserId == user.Id && x.ClaimType == CustomClaimTypes.EmailConfirmationToken);
-        string token;
-        if (claim == null || string.IsNullOrEmpty(claim.ClaimValue))
+        var confirmationToken = await UserStore.UserTokens.FindAsync(x => x.UserId == user.Id && x.Name == "EmailConfirmationToken");
+        if (confirmationToken != null)
+            await UserStore.UserTokens.RemoveAsync(confirmationToken, true);
+
+        confirmationToken = await UserStore.UserTokens.AddAsync(new CustomUserToken
         {
-            token = TokenHelper.GenerateAccountConfirmationToken();
-            await _dbContext.AddUserClaimAsync(
-                new CustomUserClaim
-                {
-                    UserId = user.Id, ClaimType = CustomClaimTypes.EmailConfirmationToken,
-                    ClaimValue = token
-                }, true);
-        }
-        else
-            token = claim.ClaimValue;
+            Name = "EmailConfirmationToken",
+            LoginProvider = "MesterMC",
+            Value = TokenHelper.GenerateAccountConfirmationToken(),
+            CreateDate = DateTimeOffset.UtcNow,
+            UserId = user.Id
+        }, true);
         
-        string confirmationLink = $"{_settings.WebsiteUrl}/register/confirm?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+        string confirmationLink = $"{_settings.WebsiteUrl}/register/confirm?userId={user.Id}&token={Uri.EscapeDataString(confirmationToken.Value)}";
         await _emailService.SendEmailAsync(user.Email, user.UserName, "Registration Confirmation",
             $"Confirm your account by clicking the button below, or by copying and pasting the following link into your browser: {confirmationLink}<br/><br/>", 
             confirmationLink, 
