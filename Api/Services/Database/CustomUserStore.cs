@@ -71,6 +71,8 @@ public class CustomUserStore
     /// Tracks session/activity related information for users (for example for analytics or session history).
     /// </summary>
     public IRepository<UserPlaySession> UserPlaySessions { get; }
+    
+    public IRepository<UserCape> UserCapes { get; }
 
     /// <summary>
     /// Constructs a new <see cref="CustomUserStore"/> instance with the specified repositories.
@@ -100,7 +102,8 @@ public class CustomUserStore
         IRepository<IdentityRoleClaim<string>> roleClaims,
         IRepository<UserBackupCode> userBackupCodes,
         IRepository<UserBillingInformation> userBillingInformations,
-        IRepository<UserPlaySession> userPlaySessions)
+        IRepository<UserPlaySession> userPlaySessions,
+        IRepository<UserCape> userCapes)
     {
         Users = users;
         UserClaims = userClaims;
@@ -112,6 +115,7 @@ public class CustomUserStore
         UserBackupCodes = userBackupCodes;
         UserBillingInformations = userBillingInformations;
         UserPlaySessions = userPlaySessions;
+        UserCapes = userCapes;
     }
     
     public async Task<CustomUser> AddUserAsync(CustomUser value, bool shouldSave = false)
