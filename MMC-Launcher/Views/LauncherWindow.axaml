@@ -8,6 +8,7 @@
     xmlns:vm="clr-namespace:Tavstal.MesterMC.Launcher.Views.Models"
     xmlns:local="clr-namespace:Tavstal.MesterMC.Launcher"
     xmlns:converters="clr-namespace:Tavstal.MesterMC.Launcher.Models.Converters"
+    xmlns:core="clr-namespace:Tavstal.KonkordLauncher.Core;assembly=Core"
     Title="MesterMC Launcher"
     Width="1280"
     Height="665"
@@ -70,7 +71,7 @@
                 <HyperlinkButton
                     Grid.Row="0"
                     Classes="FacebookButton"
-                    NavigateUri="https://www.facebook.com/mestermc.hu">
+                    NavigateUri="{x:Static core:Constants.FacebookPageUrl}">
                     <Image />
                 </HyperlinkButton>
 
@@ -83,7 +84,7 @@
                     <HyperlinkButton
                         Grid.Column="0"
                         Classes="ServerListButton"
-                        NavigateUri="https://mestermc.hu/szerverek">
+                        NavigateUri="{x:Static core:Constants.ServersWebEndpoint}">
                         <Image />
                     </HyperlinkButton>
 
@@ -91,7 +92,7 @@
                     <HyperlinkButton
                         Grid.Column="1"
                         Classes="HelpButton"
-                        NavigateUri="mailto:info@mestermc.hu">
+                        NavigateUri="{x:Static core:Constants.InfoMailUrl}">
                         <Image />
                     </HyperlinkButton>
                 </Grid>
@@ -100,7 +101,7 @@
                 <HyperlinkButton
                     Grid.Row="2"
                     Classes="BanyakozpontButton"
-                    NavigateUri="https://banyakozpont.mestermc.hu">
+                    NavigateUri="{x:Static core:Constants.DashboardUrl}">
                     <Image />
                 </HyperlinkButton>
 
@@ -108,7 +109,7 @@
                 <HyperlinkButton
                     Grid.Row="3"
                     Classes="BanyaszermeButton"
-                    NavigateUri="https://mestermc.hu/banyaszerme">
+                    NavigateUri="{x:Static core:Constants.BanyaszermeWebEndpoint}">
                     <Image />
                 </HyperlinkButton>
             </Grid>

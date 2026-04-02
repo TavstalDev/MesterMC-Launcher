@@ -17,6 +17,7 @@ using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Models;
 using Tavstal.MesterMC.Installer.Models;
 using ShellLink;
+using Tavstal.KonkordLauncher.Core;
 
 namespace Tavstal.MesterMC.Installer.Views;
 
@@ -167,7 +168,7 @@ public partial class MainViewModel : ObservableObject
                 }
 
                 if (OpenWebsite)
-                    OSHelper.OpenUrl("https://mestermc.hu/");
+                    OSHelper.OpenUrl(Constants.WebUrl);
                 return Task.CompletedTask;
             }
             catch (Exception exception)

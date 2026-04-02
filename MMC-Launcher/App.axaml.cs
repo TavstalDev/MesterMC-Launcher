@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using DiscordRPC;
+using Tavstal.KonkordLauncher.Core;
 using Tavstal.KonkordLauncher.Core.Enums;
 using Tavstal.KonkordLauncher.Core.Helpers;
 using Tavstal.KonkordLauncher.Core.Instances;
@@ -35,6 +36,9 @@ public partial class App : Application
 {
     private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(App));
     private static MinecraftInstance? _instance;
+    private const string _minecraftVersion = "1.21.8";
+    private const string _fabricVersion = "0.17.3";
+    private const string _jvmArguments = "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=50 -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:+OptimizeStringConcat -XX:+UseStringDeduplication -Dfml.ignoreInvalidMinecraftCertificates=true -Dfml.ignorePatchDiscrepancies=true -XX:ParallelGCThreads=4 -Dlog4j2.formatMsgNoLookups=true -Djava.net.preferIPv4Stack=true";
     private static DiscordRpcClient? _rpcClient;
     
     #region Screen Size
@@ -182,25 +186,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new UpdateWindow();
-            try
-            {
-                _rpcClient = new DiscordRpcClient("1440491989261877359");
-                _rpcClient.Initialize();
-                _rpcClient.SetPresence(new RichPresence
-                {
-                    Details = "Az indítóban",
-                    Timestamps = Timestamps.Now,
-                    Assets = new Assets
-                    {
-                        LargeImageKey = "logo",
-                        LargeImageText = "MesterMC",
-                    }
-                });
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
+            InitRpc();
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -276,10 +262,10 @@ public partial class App : Application
             _javaPath, 
             launcherSettings.Java.MinMemory, 
             launcherSettings.Java.MaxMemory, 
-            "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=50 -XX:+UnlockExperimentalVMOptions -XX:+AlwaysPreTouch -XX:+OptimizeStringConcat -XX:+UseStringDeduplication -Dfml.ignoreInvalidMinecraftCertificates=true -Dfml.ignorePatchDiscrepancies=true -XX:ParallelGCThreads=4 -Dlog4j2.formatMsgNoLookups=true -Djava.net.preferIPv4Stack=true", 
-            "1.21.8", 
+            _jvmArguments, 
+            _minecraftVersion, 
             EMinecraftKind.FABRIC, 
-            "0.17.3", 
+            _fabricVersion, 
             launcherSettings.Launcher.MinecraftDataDirectoryPath,
             launcherSettings.Misc.EnableFeralGameMode,
             launcherSettings.Misc.EnableMangoHud,
@@ -310,6 +296,34 @@ public partial class App : Application
     #endregion
     
     #region Discord RPC
+
+    /// <summary>
+    /// Initializes the Discord Rich Presence (RPC) client and sets the initial presence.
+    /// </summary>
+    public static void InitRpc()
+    {
+        try
+        {
+            _rpcClient = new DiscordRpcClient(Constants.DiscordRpcClientId);
+            _rpcClient.Initialize();
+            _rpcClient.SetPresence(new RichPresence
+            {
+                Details = "Az indítóban",
+                Timestamps = Timestamps.Now,
+                Assets = new Assets
+                {
+                    LargeImageKey = "logo",
+                    LargeImageText = "MesterMC",
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.Exc("Failed to initialize Discord RPC:");
+            _logger.Error(ex);
+        }
+    }
+    
     /// <summary>
     /// Updates the Discord Rich Presence (RPC) with the specified details.
     /// </summary>
