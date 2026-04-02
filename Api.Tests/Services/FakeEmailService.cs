@@ -25,8 +25,9 @@ public class FakeEmailService : IEmailService
     /// <param name="to">Recipient email address.</param>
     /// <param name="subject">Email subject line.</param>
     /// <param name="body">Email body (HTML or plain text).</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation. Defaults to CancellationToken.None.</param>
     /// <returns>A completed <see cref="Task"/>; no asynchronous I/O is performed.</returns>
-    public Task SendEmailAsync(string to, string subject, string body)
+    public Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
     {
         _sent.Add(new SentEmail(to, null, subject, body));
         return Task.CompletedTask;
@@ -39,8 +40,9 @@ public class FakeEmailService : IEmailService
     /// <param name="username">Optional username related to the recipient.</param>
     /// <param name="subject">Email subject line.</param>
     /// <param name="body">Email body (HTML or plain text).</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation. Defaults to CancellationToken.None.</param>
     /// <returns>A completed <see cref="Task"/>; no asynchronous I/O is performed.</returns>
-    public Task SendEmailAsync(string to, string username, string subject, string body)
+    public Task SendEmailAsync(string to, string username, string subject, string body, CancellationToken cancellationToken = default)
     {
         _sent.Add(new SentEmail(to, username, subject, body));
         return Task.CompletedTask;
@@ -55,8 +57,9 @@ public class FakeEmailService : IEmailService
     /// <param name="body">Email body (HTML or plain text).</param>
     /// <param name="actionUrl">URL for a call-to-action included in the message (may be <c>null</c>).</param>
     /// <param name="buttonText">Text displayed for the action button (may be <c>null</c>).</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation. Defaults to CancellationToken.None.</param>
     /// <returns>A completed <see cref="Task"/>; no asynchronous I/O is performed.</returns>
-    public Task SendEmailAsync(string to, string username, string subject, string body, string actionUrl, string buttonText)
+    public Task SendEmailAsync(string to, string username, string subject, string body, string actionUrl, string buttonText, CancellationToken cancellationToken = default)
     {
         _sent.Add(new SentEmail(to, username, subject, body, actionUrl, buttonText));
         return Task.CompletedTask;

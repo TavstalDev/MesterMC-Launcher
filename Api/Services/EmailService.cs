@@ -76,8 +76,9 @@ public class EmailService : IEmailService
     /// <param name="to">The recipient's email address.</param>
     /// <param name="subject">The subject of the email.</param>
     /// <param name="body">The body content of the email.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation. Defaults to CancellationToken.None.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task SendEmailAsync(string to, string subject, string body)
+    public async Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
     {
         var email = new MimeMessage();
         email.From.Add(MailboxAddress.Parse(_settings.EmailAddress));
@@ -86,12 +87,12 @@ public class EmailService : IEmailService
         email.Body = new TextPart(TextFormat.Html) { Text = body };
 
         using var smtp = new SmtpClient();
-        await smtp.ConnectAsync(_settings.EmailProvider,  _settings.EmailPort, SecureSocketOptions.None);
+        await smtp.ConnectAsync(_settings.EmailProvider,  _settings.EmailPort, SecureSocketOptions.None, cancellationToken);
         try
         {
             try
             {
-                await smtp.AuthenticateAsync(_settings.EmailAddress, _settings.EmailPassword);
+                await smtp.AuthenticateAsync(_settings.EmailAddress, _settings.EmailPassword, cancellationToken);
             }
             catch (AuthenticationException ex)
             {
@@ -104,11 +105,11 @@ public class EmailService : IEmailService
                 _logger.LogError(ex, "Unexpected error during SMTP authentication");
             }
 
-            await smtp.SendAsync(email);
+            await smtp.SendAsync(email, cancellationToken);
         }
         finally
         {
-            await smtp.DisconnectAsync(true);
+            await smtp.DisconnectAsync(true, cancellationToken);
         }
     }
 
@@ -119,19 +120,20 @@ public class EmailService : IEmailService
     /// <br/>- {{USERNAME}} will be replaced with <paramref name="username"/>.
     /// <br/>
     /// If the template was not successfully loaded, the method will still call the raw
-    /// <see cref="SendEmailAsync(string,string,string)"/> with a best-effort constructed body.
+    /// <see cref="SendEmailAsync(string,string,string,CancellationToken)"/> with a best-effort constructed body.
     /// </summary>
     /// <param name="to">Recipient email address.</param>
     /// <param name="username">Username to insert into the template.</param>
     /// <param name="subject">Email subject/title.</param>
     /// <param name="body">Plain text or HTML message body to insert into the template.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation. Defaults to CancellationToken.None.</param>
     /// <returns>A task representing the asynchronous send operation.</returns>
-    public async Task SendEmailAsync(string to, string username, string subject, string body)
+    public async Task SendEmailAsync(string to, string username, string subject, string body, CancellationToken cancellationToken = default)
     {
         string finalBody = _emailBlankDoc.Replace("{{TITLE}}", subject)
             .Replace("{{MESSAGE_BODY}}", body)
             .Replace("{{USERNAME}}", username);
-        await SendEmailAsync(to, subject, finalBody);
+        await SendEmailAsync(to, subject, finalBody, cancellationToken);
     }
     
     /// <summary>
@@ -152,15 +154,16 @@ public class EmailService : IEmailService
     /// <param name="body">Plain text or HTML message body to insert into the template.</param>
     /// <param name="actionUrl">URL to use for the primary action button in the template.</param>
     /// <param name="buttonText">Text to display on the action button.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation. Defaults to CancellationToken.None.</param>
     /// <returns>A task representing the asynchronous send operation.</returns>
     public async Task SendEmailAsync(string to, string username, string subject, string body, string actionUrl,
-        string buttonText)
+        string buttonText, CancellationToken cancellationToken = default)
     {
         string finalBody = _emailActionDoc.Replace("{{TITLE}}", subject)
             .Replace("{{MESSAGE_BODY}}", body)
             .Replace("{{USERNAME}}", username)
             .Replace("{{ACTION_URL}}", actionUrl)
             .Replace("{{BUTTON_TEXT}}", buttonText);
-        await SendEmailAsync(to, subject, finalBody);
+        await SendEmailAsync(to, subject, finalBody, cancellationToken);
     }
 }

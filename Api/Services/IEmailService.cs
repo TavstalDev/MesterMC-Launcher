@@ -12,7 +12,7 @@ public interface IEmailService
     /// <param name="subject">The subject line of the email.</param>
     /// <param name="body">The HTML or plain-text body of the email.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous send operation.</returns>
-    Task SendEmailAsync(string to, string subject, string body);
+    Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Send an email that includes the recipient's username. Useful for templated messages
@@ -23,7 +23,7 @@ public interface IEmailService
     /// <param name="subject">The subject line of the email.</param>
     /// <param name="body">The HTML or plain-text body of the email.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous send operation.</returns>
-    Task SendEmailAsync(string to, string username, string subject, string body);
+    Task SendEmailAsync(string to, string username, string subject, string body, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Send an email containing an action link (for example: password reset, account verification)
@@ -37,5 +37,5 @@ public interface IEmailService
     /// <param name="actionUrl">A URL that the recipient can click to perform an action (e.g. confirm, reset).</param>
     /// <param name="buttonText">Text to display for the action button (e.g. "Reset password").</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous send operation.</returns>
-    Task SendEmailAsync(string to, string username, string subject, string body, string actionUrl, string buttonText);
+    Task SendEmailAsync(string to, string username, string subject, string body, string actionUrl, string buttonText, CancellationToken cancellationToken = default);
 }
