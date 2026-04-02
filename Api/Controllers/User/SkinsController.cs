@@ -53,11 +53,11 @@ public class SkinsController : CustomControllerBase
     {
         try
         {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.View))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.View))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? skin =
@@ -108,11 +108,11 @@ public class SkinsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.Upload))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.Upload))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
@@ -194,11 +194,11 @@ public class SkinsController : CustomControllerBase
     {
         try
         {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.Delete))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.Delete))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingSkin =
@@ -246,11 +246,11 @@ public class SkinsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.ViewOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.ViewOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
@@ -310,11 +310,11 @@ public class SkinsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.UploadOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.UploadOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
@@ -414,11 +414,11 @@ public class SkinsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Skins.DeleteOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.DeleteOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);

@@ -48,11 +48,11 @@ public class SessionsController : CustomControllerBase
     {
         try
         {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.View.Sessions))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.Sessions))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             var userLogins = _dbContext.GetUserLoginsAsync(x => x.UserId == user.Id);
@@ -91,11 +91,11 @@ public class SessionsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Session))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Session))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             var userLogin = _dbContext.FindUserLoginAsync(x => x.Id == sessionId && x.UserId == user.Id);
@@ -126,11 +126,11 @@ public class SessionsController : CustomControllerBase
     {
         try
         {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Sessions))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Sessions))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             await _dbContext.ClearUserLoginsAsync(user.Id, true);
@@ -170,11 +170,11 @@ public class SessionsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.View.SessionsOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.SessionsOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
@@ -221,11 +221,11 @@ public class SessionsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
@@ -275,11 +275,11 @@ public class SessionsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionsOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionsOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);

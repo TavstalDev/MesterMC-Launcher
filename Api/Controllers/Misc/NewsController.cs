@@ -234,11 +234,11 @@ public class NewsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            var user = await GetCurrentUserAsync(_userManager);
+            var user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.News.Create))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Create))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (requestBody.Banner.Length > 1024 * 500) // 500 KB limit
@@ -325,11 +325,11 @@ public class NewsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            var user = await GetCurrentUserAsync(_userManager);
+            var user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.News.Update))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Update))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             News? news = await _dbContext.FindNewsAsync(x => x.Id == id);
@@ -429,11 +429,11 @@ public class NewsController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            var user = await GetCurrentUserAsync(_userManager);
+            var user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.News.Delete))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Delete))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             News? news = await _dbContext.FindNewsAsync(x => x.Id == id);

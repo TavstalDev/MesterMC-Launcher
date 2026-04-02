@@ -65,11 +65,11 @@ public class UserCapesController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.Select))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Select))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? cape = await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.CapeId == capeId);
@@ -115,11 +115,11 @@ public class UserCapesController : CustomControllerBase
     {
         try
         {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.Unselect))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Unselect))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? currentlySelectedCape =
@@ -171,11 +171,11 @@ public class UserCapesController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.SelectOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.SelectOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
@@ -240,11 +240,11 @@ public class UserCapesController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.UnselectOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.UnselectOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);

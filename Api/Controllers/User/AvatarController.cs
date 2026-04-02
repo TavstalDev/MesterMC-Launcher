@@ -63,11 +63,11 @@ public class AvatarController : CustomControllerBase
     {
         try
         {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.View.Avatar))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.Avatar))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             string cacheKey = $"avatar:{user.Id}";
@@ -134,11 +134,11 @@ public class AvatarController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.Avatar))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.Avatar))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
@@ -217,11 +217,11 @@ public class AvatarController : CustomControllerBase
     {
         try
         {
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Avatar))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Avatar))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingAvatar =
@@ -279,11 +279,11 @@ public class AvatarController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.AvatarOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.AvatarOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
@@ -380,11 +380,11 @@ public class AvatarController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.AvatarOther))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.AvatarOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
