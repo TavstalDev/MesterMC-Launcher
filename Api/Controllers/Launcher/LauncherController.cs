@@ -15,6 +15,7 @@ using Tavstal.MesterMC.Api.Models.Database.Launcher;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Controllers.Launcher;
 
@@ -27,6 +28,9 @@ public class LauncherController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
+    private readonly IRepository<LauncherVersion> _launcherVersionRepository;
+    private readonly IRepository<LauncherVersionData> _launcherVersionDataRepository;
+    private readonly IRepository<FileData> _fileDataRepository;
     private readonly MemoryCacheService _memoryCacheService;
     private readonly TimeSpan CacheTTL = TimeSpan.FromHours(1);
     
@@ -35,12 +39,17 @@ public class LauncherController : CustomControllerBase
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="dbContext">Database context for accessing launcher data.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="settings">Application settings.</param>
-    public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService memoryCacheService, Settings settings) : base(logger, settings)
+    public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomUserStore userStore, IRepository<LauncherVersion> launcherVersionRepository, IRepository<LauncherVersionData> launcherVersionDataRepository,
+       IRepository<FileData> fileDataRepository, CustomDbContext dbContext, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
+        _launcherVersionRepository = launcherVersionRepository;
+        _launcherVersionDataRepository = launcherVersionDataRepository;
+        _fileDataRepository = fileDataRepository;
         _dbContext = dbContext;
         _memoryCacheService = memoryCacheService;
     }
@@ -56,7 +65,7 @@ public class LauncherController : CustomControllerBase
     {
         try
         {
-            var versions = await _dbContext.GetLauncherVersionsAsync();
+            var versions = (await _launcherVersionRepository.QueryAsync(null)).ToList();
             if (versions.Count == 0)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No launcher versions found.");
 
@@ -80,7 +89,12 @@ public class LauncherController : CustomControllerBase
     {
         try
         {
-            var version = await _dbContext.FindLatestLauncherVersionAsync();
+            var versions = (await _launcherVersionRepository.QueryAsync(null)).ToList();
+            if (versions.Count == 0)
+                return ReturnResponseCode(HttpStatusCode.NotFound, "No launcher versions found.");
+
+            var version = versions.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+            
             if (version == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No launcher versions found.");
             return ReturnJson(version);
@@ -115,11 +129,11 @@ public class LauncherController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            var version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
+            var version = await _launcherVersionRepository.FindByIdAsync(id);
             if (version == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version not found.");
             
-            var versionDetails = await _dbContext.GetLauncherVersionDatasAsync(x => x.VersionId == version.Id);
+            var versionDetails = await _launcherVersionDataRepository.QueryAsync(x => x.VersionId == version.Id);
             return ReturnJson(versionDetails);
         }
         catch (Exception ex)
@@ -158,16 +172,16 @@ public class LauncherController : CustomControllerBase
             if (_memoryCacheService.TryGetValue(cacheKey, out (byte[], string) cachedVersion))
                 return File(cachedVersion.Item1, cachedVersion.Item2);
 
-            var version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
+            var version = await _launcherVersionRepository.FindByIdAsync(id);
             if (version == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version not found.");
 
             var versionData =
-                await _dbContext.FindLauncherVersionDataAsync(x => x.Os == os && x.VersionId == version.Id);
+                await _launcherVersionDataRepository.FindAsync(x => x.Os == os && x.VersionId == version.Id);
             if (versionData == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version data not found.");
 
-            var fileData = await _dbContext.FindFileDataAsync(x => x.Id == versionData.FileId);
+            var fileData = await _fileDataRepository.FindAsync(x => x.Id == versionData.FileId);
             if (fileData == null || !fileData.Exists())
                 return ReturnResponseCode(HttpStatusCode.NotFound, "File data not found.");
 
@@ -214,20 +228,19 @@ public class LauncherController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            LauncherVersion? existingVersion =
-                await _dbContext.FindLauncherVersionAsync(x => x.Version == request.Version);
+            LauncherVersion? existingVersion = await _launcherVersionRepository.FindByIdAsync(request.Version);
             if (existingVersion != null)
                 return ReturnResponseCode(HttpStatusCode.BadRequest,
                     "A launcher version with the same version number already exists.");
 
-            await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            await _launcherVersionRepository.AddAsync(new LauncherVersion
             {
                 Version = request.Version,
                 VersionType = request.VersionType,
@@ -274,21 +287,21 @@ public class LauncherController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.UpdateVersion))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.UpdateVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
+            LauncherVersion? version = await _launcherVersionRepository.FindByIdAsync(id);
             if (version == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version not found.");
 
             if (!string.IsNullOrEmpty(request.Version))
             {
                 LauncherVersion? existingVersion =
-                    await _dbContext.FindLauncherVersionAsync(x => x.Version == request.Version && x.Id != version.Id);
+                    await _launcherVersionRepository.FindAsync(x => x.Version == request.Version && x.Id != version.Id);
                 if (existingVersion != null)
                     return ReturnResponseCode(HttpStatusCode.BadRequest,
                         "A launcher version with the same version number already exists.");
@@ -302,7 +315,7 @@ public class LauncherController : CustomControllerBase
             if (request.VersionType != null)
                 version.VersionType = request.VersionType.Value;
 
-            await _dbContext.UpdateLauncherVersionAsync(version, true);
+            await _launcherVersionRepository.UpdateAsync(version, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Launcher version updated successfully.");
         }
         catch (Exception ex)
@@ -338,19 +351,30 @@ public class LauncherController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
+            LauncherVersion? version = await _launcherVersionRepository.FindByIdAsync(id);
             if (version == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version not found.");
 
-            await _dbContext.ClearLauncherVersionDatasAsync(version.Id);
-            await _dbContext.RemoveLauncherVersionAsync(version, true);
+            var versions = await _launcherVersionDataRepository.QueryAsync(x => x.VersionId == version.Id);
+            foreach (var ver in versions)
+            {
+                var fileData = await _fileDataRepository.FindByIdAsync(ver.FileId);
+                if (fileData != null)
+                {
+                    fileData.DeleteFile();
+                    await _fileDataRepository.RemoveAsync(fileData);
+                }
+                await _launcherVersionDataRepository.RemoveAsync(ver);
+            }
+            
+            await _launcherVersionRepository.RemoveAsync(version, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Launcher version deleted successfully.");
         }
         catch (Exception ex)
@@ -389,19 +413,19 @@ public class LauncherController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            LauncherVersion? version = await _dbContext.FindLauncherVersionAsync(x => x.Id == id);
+            LauncherVersion? version = await _launcherVersionRepository.FindByIdAsync(id);
             if (version == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version not found.");
 
             LauncherVersionData? versionData =
-                await _dbContext.FindLauncherVersionDataAsync(x => x.VersionId == version.Id && x.Os == request.Os);
+                await _launcherVersionDataRepository.FindAsync(x => x.VersionId == version.Id && x.Os == request.Os);
             if (versionData != null)
                 return ReturnResponseCode(HttpStatusCode.NotFound,
                     "Launcher version data for the specified OS already exists.");
@@ -420,7 +444,7 @@ public class LauncherController : CustomControllerBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepository.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.{request.File.FileName.Split('.').Last()}",
@@ -429,7 +453,7 @@ public class LauncherController : CustomControllerBase
             }, true);
             fd.SaveFile(stream);
 
-            await _dbContext.AddLauncherVersionDataAsync(new LauncherVersionData
+            await _launcherVersionDataRepository.AddAsync(new LauncherVersionData
             {
                 VersionId = version.Id,
                 FileId = fd.Id,
@@ -473,26 +497,26 @@ public class LauncherController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersionData? versionData =
-                await _dbContext.FindLauncherVersionDataAsync(x => x.Id == dataId && x.VersionId == versionId);
+                await _launcherVersionDataRepository.FindAsync(x => x.Id == dataId && x.VersionId == versionId);
             if (versionData == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Launcher version data not found.");
 
-            FileData? fileData = await _dbContext.FindFileDataAsync(x => x.Id == versionData.FileId);
+            FileData? fileData = await _fileDataRepository.FindByIdAsync(versionData.FileId);
             if (fileData != null)
             {
                 fileData.DeleteFile();
-                await _dbContext.RemoveFileDataAsync(fileData);
+                await _fileDataRepository.RemoveAsync(fileData);
             }
 
-            await _dbContext.RemoveLauncherVersionDataAsync(versionData, true);
+            await _launcherVersionDataRepository.RemoveAsync(versionData, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Launcher version data added successfully.");
         }
         catch (Exception ex)

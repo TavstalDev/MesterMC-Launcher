@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Common;
+using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Controllers.Misc;
 
@@ -18,6 +20,7 @@ namespace Tavstal.MesterMC.Api.Controllers.Misc;
 public class FilesController : CustomControllerBase
 {
     private readonly CustomDbContext _dbContext;
+    private readonly IRepository<FileData> _fileDataRepository;
     private readonly MemoryCacheService _memoryCache;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(1);
     
@@ -28,9 +31,11 @@ public class FilesController : CustomControllerBase
     /// <param name="dbContext">Database context for accessing file data.</param>
     /// <param name="memoryCache">Service for caching file data.</param>
     /// <param name="settings">Application settings.</param>
-    public FilesController(ILogger<FilesController> logger, CustomDbContext dbContext, MemoryCacheService memoryCache, Settings settings) : base(logger, settings)
+    public FilesController(ILogger<FilesController> logger, CustomDbContext dbContext, CustomUserStore userStore, IRepository<FileData> fileDataRepository, MemoryCacheService memoryCache, Settings settings) :
+        base(logger, userStore, settings)
     {
         _dbContext = dbContext;
+        _fileDataRepository = fileDataRepository;
         _memoryCache = memoryCache;
     }
     
@@ -66,7 +71,7 @@ public class FilesController : CustomControllerBase
             string contentType;
             if (!_memoryCache.TryGetValue<(byte[], string)>(cacheKey, out var fd))
             {
-                var fileData = await _dbContext.FindFileDataAsync(x =>
+                var fileData = await _fileDataRepository.FindAsync(x =>
                     x.Hash == hash && (x.Type == EFileDataType.CAPE || x.Type == EFileDataType.SKIN ||
                                        x.Type == EFileDataType.PROFILE_PICTURE || x.Type == EFileDataType.NEWS_BANNER));
                 if (fileData == null)

@@ -12,6 +12,7 @@ using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Controllers.Misc;
 
@@ -23,6 +24,8 @@ namespace Tavstal.MesterMC.Api.Controllers.Misc;
 public class CapesController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
+    private readonly IRepository<Cape> _capeRepository;
+    private readonly IRepository<FileData> _fileDataRepository;
     private readonly CustomDbContext _dbContext;
     
     /// <summary>
@@ -32,9 +35,12 @@ public class CapesController : CustomControllerBase
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="dbContext">Database context for accessing cape data.</param>
     /// <param name="settings">Application settings.</param>
-    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger, settings)
+    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomUserStore userStore, IRepository<Cape> capeRepository, IRepository<FileData> fileDataRepository, CustomDbContext dbContext, Settings settings) 
+        : base(logger, userStore, settings)
     {
         _userManager = userManager;
+        _capeRepository = capeRepository;
+        _fileDataRepository = fileDataRepository;
         _dbContext = dbContext;
     }
     
@@ -65,11 +71,11 @@ public class CapesController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.Create))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Create))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 512) // 500 KB limit
@@ -85,7 +91,7 @@ public class CapesController : CustomControllerBase
             stream.Position = 0;
 
             FileData? existingCape =
-                await _dbContext.FindFileDataAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE);
+                await _fileDataRepository.FindAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE);
             if (existingCape != null)
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape with the same content already exists.");
 
@@ -114,7 +120,7 @@ public class CapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
             }
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepository.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -122,13 +128,13 @@ public class CapesController : CustomControllerBase
                 Type = EFileDataType.CAPE,
             }, true);
             fd.SaveFile(stream);
-            Cape cape = await _dbContext.AddCapeAsync(new Cape
+            Cape cape = await _capeRepository.AddAsync(new Cape
             {
                 Name = file.FileName.Split('.')[0],
                 FileId = fd.Id,
                 IsPublic = true
             }, true);
-            await _dbContext.AddUserCapeAsync(new UserCape
+            await UserStore.UserCapes.AddAsync(new UserCape
             {
                 UserId = user.Id,
                 CapeId = cape.Id,
@@ -175,24 +181,29 @@ public class CapesController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await GetCurrentUserAsync(_userManager);
+            CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!_userManager.HasPermissionAsync(user, CustomPermissions.Capes.Delete))
+            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Delete))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            Cape? cape = await _dbContext.FindCapeAsync(x => x.Id == capeId);
+            Cape? cape = await _capeRepository.FindByIdAsync(capeId);
             if (cape == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found");
 
-            cape.FileData.DeleteFile();
-            await _dbContext.RemoveFileDataAsync(cape.FileData);
-            await _dbContext.RemoveCapeAsync(cape);
-
-            var capes = await _dbContext.GetUserCapesAsync(x => x.CapeId == capeId);
-            foreach (var userCape in capes)
-                await _dbContext.RemoveUserCapeAsync(userCape);
+            var fileData = await _fileDataRepository.FindByIdAsync(cape.FileId);
+            if (fileData != null)
+            {
+                fileData.DeleteFile();
+                await _fileDataRepository.RemoveAsync(fileData);
+            }
+            
+            var userCapes = await UserStore.UserCapes.QueryAsync(x => x.CapeId == capeId);
+            foreach (var userCape in userCapes)
+                await UserStore.UserCapes.RemoveAsync(userCape);
+            
+            await _capeRepository.RemoveAsync(cape);
 
             await _dbContext.SaveChangesAsync();
             return ReturnResponseCode(HttpStatusCode.OK, "Cape deleted successfully");
