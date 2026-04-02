@@ -30,14 +30,60 @@ public static class Constants
         /// The configuration key for the public-facing website URL of hosted game servers.
         /// Example: "https://example.com"
         /// </summary>
-        public const string ServerWebsite = "Servers:Website";
+        public const string RuntimeWebsiteUrl = "Runtime:WebsiteUrl";
 
         /// <summary>
         /// The configuration key for the API base URL.
         /// Example: "https://api.example.com"
         /// </summary>
-        public const string ServerApi = "Servers:API";
+        public const string RuntimeApiUrl = "Runtime:ApiUrl";
+        
+        /// <summary>
+        /// Configuration key for the application's upload directory path.
+        /// Specifies the directory where uploaded files (e.g., user avatars, documents) are stored.
+        /// Example: "wwwroot/uploads"
+        /// </summary>
+        public const string RuntimeUploadDir = "Runtime:UploadDir";
+        
+        /// <summary>
+        /// Configuration key for the HTTP status code returned when rate limiting is triggered.
+        /// Example: 429 (Too Many Requests)
+        /// </summary>
+        public const string RateLimitingStatusCode = "RateLimiting:StatusCode";
 
+        /// <summary>
+        /// Configuration key for the maximum file upload size limit in megabytes.
+        /// Example: 100 (allows uploads up to 100 MB)
+        /// </summary>
+        public const string RateLimitingUploadLimit = "RateLimiting:UploadLimitMegabytes";
+        
+        /// <summary>
+        /// Configuration key for the rate limiting rules' dictionary.
+        /// Contains configuration for different rate limit policies (Default, AuthLogin, Upload, etc.).
+        /// Each rule specifies PermitLimit, WindowSeconds, and QueueLimit values.
+        /// </summary>
+        public const string RateLimitingRules = "RateLimiting:Rules";
+
+        /// <summary>
+        /// Configuration key for the database connection string.
+        /// The connection string contains placeholders for $DB_USER and $DB_PASSWORD that are 
+        /// replaced at runtime with values from the DatabaseUser and DatabasePassword configuration keys.
+        /// Example: "server=localhost;port=3306;database=mmc;uid=$DB_USER;pwd=$DB_PASSWORD;"
+        /// </summary>
+        public const string DatabaseConnectionString = "Database:ConnectionString";
+
+        /// <summary>
+        /// Configuration key for the database provider type.
+        /// Determines which Entity Framework Core database provider to use.
+        /// </summary>
+        public const string DatabaseProvider = "Database:Provider";
+
+        /// <summary>
+        /// Configuration key for the database version.
+        /// Used to configure database-specific behavior and compatibility options.
+        /// </summary>
+        public const string DatabaseVersion = "Database:Version";
+        
         /// <summary>
         /// Environment/config key for the database username (used to build the DB connection string).
         /// </summary>
@@ -64,6 +110,23 @@ public static class Constants
         /// </summary>
         public const string JwtAudience = "Jwt:Audience";
 
+        /// <summary>
+        /// Configuration key for the JWT token clock skew tolerance value in seconds.
+        /// </summary>
+        public const string JwtClockSkew = "Jwt:ClockSkew";
+        
+        /// <summary>
+        /// Configuration key that holds the maximum number of failed authentication attempts
+        /// before a user is locked out for JWT-based authentication flows.
+        /// </summary>
+        public const string JwtLockoutMaxAttempts = "Jwt:Lockout:MaxAttempts";
+        
+        /// <summary>
+        /// Configuration key that holds the lockout duration applied when a user has exceeded
+        /// the allowed failed authentication attempts in JWT-based authentication flows.
+        /// </summary>
+        public const string JwtLockoutDuration = "Jwt:Lockout:Duration";
+        
         /// <summary>
         /// Configuration key for the email (SMTP) provider hostname.
         /// Example: "smtp.example.com"
