@@ -62,7 +62,7 @@ public static class HttpHelper
         }
 
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
-        client.DefaultRequestHeaders.UserAgent.ParseAdd($"MesterMC-Launcher/v1 (+https://mestermc.hu)");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd($"MesterMC-Launcher/v1 (+{Constants.WebUrl})");
         client.Timeout = TimeSpan.FromSeconds(120);
         return client;
     }
