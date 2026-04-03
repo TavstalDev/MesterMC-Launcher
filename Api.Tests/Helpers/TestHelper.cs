@@ -3,15 +3,14 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Moq;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Tavstal.MesterMC.Api.Tests.Services;
 using Tavstal.MesterMC.Api.Utils.Helpers;
 
@@ -56,48 +55,72 @@ public class TestHelper
             .UseInMemoryDatabase(dbName)
             .Options;
 
-        var logger = NullLogger<CustomDbContext>.Instance;
-        var db = new CustomDbContext(options, logger);
+        // CustomDbContext now only requires DbContextOptions in ctor
+        var db = new CustomDbContext(options);
 
         // Ensure database tables created for EF InMemory
         db.Database.EnsureCreated();
         return db;
     }
 
-    public static CustomUserManager CreateCustomUserManager(CustomDbContext db)
+    public static CustomUserManager CreateCustomUserManager(CustomDbContext db, CustomUserStore userStore)
     {
-        var userStore = new CustomUserStore(db); // adjust if constructor differs
-
-        var options = Options.Create(new IdentityOptions());
-        var passwordHasher = new PasswordHasher<CustomUser>();
-        var userValidators = new List<IUserValidator<CustomUser>>();
-        var passwordValidators = new List<IPasswordValidator<CustomUser>>();
-        var lookupNormalizer = new UpperInvariantLookupNormalizer();
-        var errors = new IdentityErrorDescriber();
-
         var httpClientFactory = new Mock<IHttpClientFactory>().Object;
         var logger = NullLogger<CustomUserManager>.Instance;
 
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build();
         var settings = CreateTestSettings();
 
+        // New CustomUserManager signature: (CustomUserStore, IPasswordHasher<CustomUser>, IHttpClientFactory, ILogger<CustomUserManager>, CustomDbContext, MemoryCacheService, Settings)
         var manager = new CustomUserManager(
             userStore,
-            options,
-            passwordHasher,
-            userValidators,
-            passwordValidators,
-            lookupNormalizer,
-            errors,
-            ServiceProvider,
+            PasswordHasher,
+            httpClientFactory,
             logger,
             db,
-            configuration,
             MemoryCacheService,
-            settings,
-            httpClientFactory);
+            settings
+        );
 
         return manager;
+    }
+
+    public static CustomSignInManager CreateSignInManager(CustomUserStore userStore, CustomUserManager userManager, Settings settings)
+    {
+        return new CustomSignInManager(userStore, userManager, PasswordHasher, MemoryCacheService, settings);
+    }
+
+    /// <summary>
+    /// Create a <see cref="CustomUserStore"/> backed by the provided <see cref="CustomDbContext"/>.
+    /// Tests can use this when they need to pass a <see cref="CustomUserStore"/> into controller constructors
+    /// or to exercise store-specific behaviour.
+    /// </summary>
+    public static CustomUserStore CreateCustomUserStore(CustomDbContext db)
+    {
+        var usersRepo = new Repository<CustomUser>(db);
+        var userClaimsRepo = new Repository<CustomUserClaim>(db);
+        var userRolesRepo = new Repository<CustomUserRole>(db);
+        var rolesRepo = new Repository<CustomRole>(db);
+        var userTokensRepo = new Repository<CustomUserToken>(db);
+        var userLoginsRepo = new Repository<CustomUserLogin>(db);
+        var roleClaimsRepo = new Repository<IdentityRoleClaim<string>>(db);
+        var userBackupCodesRepo = new Repository<UserBackupCode>(db);
+        var userBillingRepo = new Repository<UserBillingInformation>(db);
+        var userPlaySessionsRepo = new Repository<UserPlaySession>(db);
+        var userCapesRepo = new Repository<UserCape>(db);
+
+        return new CustomUserStore(
+            usersRepo,
+            userClaimsRepo,
+            userRolesRepo,
+            rolesRepo,
+            userTokensRepo,
+            userLoginsRepo,
+            roleClaimsRepo,
+            userBackupCodesRepo,
+            userBillingRepo,
+            userPlaySessionsRepo,
+            userCapesRepo
+        );
     }
 
     public static Settings CreateTestSettings()
@@ -116,7 +139,7 @@ public class TestHelper
             1025,
             "example@localhost",
             "12345678",
-            ["localhost"],
+            new string[] { "localhost" },
             pfxResult.password,
             pfxResult.pfxBytes,
             "MesterMC Development",
