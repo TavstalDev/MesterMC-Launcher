@@ -16,18 +16,13 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [Tags("Yggdrasil")]
 public class ProfilesController : CustomControllerBase
 {
-    private readonly CustomDbContext _dbContext;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ProfilesController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
-    /// <param name="dbContext">The database context for accessing user data.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="settings">Application settings.</param>
-    public ProfilesController(ILogger<ProfilesController> logger, CustomDbContext dbContext, Settings settings) : base(logger, settings)
-    {
-        _dbContext = dbContext;
-    }
+    public ProfilesController(ILogger<ProfilesController> logger, CustomUserStore userStore, Settings settings) : base(logger, userStore, settings) {}
 
     /// <summary>
     /// Retrieves Minecraft profiles for the specified list of usernames.
@@ -41,7 +36,7 @@ public class ProfilesController : CustomControllerBase
     /// <response code="404">No users found with the provided usernames.</response>
     [HttpPost("minecraft")]
     [JsonResponse(typeof(List<Dictionary<string, string>>)), TextResponse(StatusCodes.Status404NotFound)]
-    public IActionResult MinecraftProfile([Required, FromBody] List<string> names)
+    public async Task<IActionResult> MinecraftProfile([Required, FromBody] List<string> names)
     {
         try
         {
@@ -56,7 +51,7 @@ public class ProfilesController : CustomControllerBase
             }
 
             // Retrieve users from the database whose usernames match the provided list.
-            List<CustomUser> users = _dbContext.GetUsersAsync(x => names.Contains(x.UserName));
+            List<CustomUser> users = (await UserStore.QueryUserAsync(x => names.Contains(x.UserName))).ToList();
             if (users.Count == 0)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No users found with the provided usernames.");
 

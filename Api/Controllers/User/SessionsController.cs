@@ -28,8 +28,9 @@ public class SessionsController : CustomControllerBase
     /// <param name="logger">The logger instance.</param>
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="dbContext">The database context.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="settings">Application settings.</param>
-    public SessionsController(ILogger<SessionsController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger, settings)
+    public SessionsController(ILogger<SessionsController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
         _dbContext = dbContext;
@@ -55,7 +56,7 @@ public class SessionsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.Sessions))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            var userLogins = _dbContext.GetUserLoginsAsync(x => x.UserId == user.Id);
+            var userLogins = await UserStore.UserLogins.QueryAsync(x => x.UserId == user.Id);
             return ReturnJson(userLogins);
         }
         catch (Exception ex)
@@ -98,11 +99,11 @@ public class SessionsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Session))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            var userLogin = _dbContext.FindUserLoginAsync(x => x.Id == sessionId && x.UserId == user.Id);
+            var userLogin = await UserStore.UserLogins.FindAsync(x => x.Id == sessionId && x.UserId == user.Id);
             if (userLogin == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Session not found.");
 
-            await _dbContext.RemoveUserLoginAsync(userLogin, true);
+            await UserStore.UserLogins.RemoveAsync(userLogin, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Session revoked successfully.");
         }
         catch (Exception ex)
@@ -177,14 +178,14 @@ public class SessionsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.SessionsOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
-            var userLogins = _dbContext.GetUserLoginsAsync(x => x.UserId == targetUser.Id);
+            var userLogins = await UserStore.UserLogins.QueryAsync(x => x.UserId == targetUser.Id);
             return ReturnJson(userLogins);
         }
         catch (Exception ex)
@@ -228,18 +229,18 @@ public class SessionsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
-            var userLogin = _dbContext.FindUserLoginAsync(x => x.Id == sessionId && x.UserId == targetUser.Id);
+            var userLogin = await UserStore.UserLogins.FindAsync(x => x.Id == sessionId && x.UserId == targetUser.Id);
             if (userLogin == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Session not found.");
 
-            await _dbContext.RemoveUserLoginAsync(userLogin, true);
+            await UserStore.UserLogins.RemoveAsync(userLogin, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Session revoked successfully.");
         }
         catch (Exception ex)
@@ -282,11 +283,11 @@ public class SessionsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionsOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             await _dbContext.ClearUserLoginsAsync(targetUser.Id, true);

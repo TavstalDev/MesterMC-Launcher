@@ -13,6 +13,7 @@ using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
@@ -25,19 +26,21 @@ namespace Tavstal.MesterMC.Api.Controllers.User;
 public class SkinsController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
-    private readonly CustomDbContext _dbContext;
+    private readonly IRepository<FileData> _fileDataRepository;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="SkinsController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="userManager">The custom user manager.</param>
-    /// <param name="dbContext">The database context.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="fileDataRepository">Repository for managing file data (skins).</param>
     /// <param name="settings">Application settings.</param>
-    public SkinsController(ILogger<SkinsController > logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger, settings)
+    public SkinsController(ILogger<SkinsController > logger, CustomUserManager userManager, CustomUserStore userStore,
+        IRepository<FileData> fileDataRepository, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
-        _dbContext = dbContext;
+        _fileDataRepository = fileDataRepository;
     }
 
     /// <summary>
@@ -61,13 +64,13 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? skin =
-                await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
+                await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
             if (skin == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No skin found for the user");
 
             if (!skin.Exists())
             {
-                await _dbContext.RemoveFileDataAsync(skin, true);
+                await _fileDataRepository.RemoveAsync(skin, true);
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No skin found for the user");
             }
 
@@ -122,11 +125,11 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
             FileData? existingSkin =
-                await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
+                await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
             if (existingSkin != null)
             {
                 existingSkin.DeleteFile();
-                await _dbContext.RemoveFileDataAsync(existingSkin, true);
+                await _fileDataRepository.RemoveAsync(existingSkin, true);
             }
 
             await using var stream = file.OpenReadStream();
@@ -160,7 +163,7 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
             }
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepository.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -202,12 +205,12 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingSkin =
-                await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
+                await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
             if (existingSkin == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No skin found for the user");
 
             existingSkin.DeleteFile();
-            await _dbContext.RemoveFileDataAsync(existingSkin, true);
+            await _fileDataRepository.RemoveAsync(existingSkin, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Skin deleted successfully");
         }
         catch (Exception ex)
@@ -253,21 +256,21 @@ public class SkinsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.ViewOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? skin =
-                await _dbContext.FindFileDataAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
+                await _fileDataRepository.FindAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
             if (skin == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No skin found for the user");
 
             if (!skin.Exists())
             {
-                await _dbContext.RemoveFileDataAsync(skin, true);
+                await _fileDataRepository.RemoveAsync(skin, true);
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No skin found for the user");
             }
 
@@ -317,11 +320,11 @@ public class SkinsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.UploadOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
@@ -331,11 +334,11 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
             FileData? existingSkin =
-                await _dbContext.FindFileDataAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
+                await _fileDataRepository.FindAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
             if (existingSkin != null)
             {
                 existingSkin.DeleteFile();
-                await _dbContext.RemoveFileDataAsync(existingSkin, true);
+                await _fileDataRepository.RemoveAsync(existingSkin, true);
             }
 
             await using var stream = file.OpenReadStream();
@@ -369,7 +372,7 @@ public class SkinsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
             }
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepository.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -421,20 +424,20 @@ public class SkinsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.DeleteOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? existingSkin =
-                await _dbContext.FindFileDataAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
+                await _fileDataRepository.FindAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
             if (existingSkin == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No skin found for the user");
 
             existingSkin.DeleteFile();
-            await _dbContext.RemoveFileDataAsync(existingSkin, true);
+            await _fileDataRepository.RemoveAsync(existingSkin, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Skin deleted successfully");
         }
         catch (Exception ex)

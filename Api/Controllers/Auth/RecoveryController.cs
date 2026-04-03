@@ -22,8 +22,6 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 [Tags("Authentication: Recovery")]
 public class RecoveryController : CustomControllerBase
 {
-    private readonly CustomUserManager _userManager;
-    private readonly CustomSignInManager _signInManager;
     private readonly CustomDbContext _dbContext;
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly IEmailService _emailService;
@@ -34,17 +32,14 @@ public class RecoveryController : CustomControllerBase
     /// Initializes a new instance of the <see cref="RecoveryController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
-    /// <param name="userManager">Custom user manager for user operations.</param>
-    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="dbContext">Database context for accessing user data.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="settings">Application settings.</param>
-    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomSignInManager signInManager, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, CustomDbContext dbContext, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
+    public RecoveryController(ILogger<RecoveryController> logger, CustomDbContext dbContext, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
     {
-        _userManager = userManager;
-        _signInManager = signInManager;
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _emailService = emailService;

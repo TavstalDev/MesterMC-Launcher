@@ -10,10 +10,12 @@ using Newtonsoft.Json;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Bodies.Yggdrasil;
 using Tavstal.MesterMC.Api.Models.Common;
+using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.Server;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
@@ -27,7 +29,9 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 public class SessionServerController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
-    private readonly CustomDbContext _dbContext;
+    private readonly IRepository<Cape> _capeRepo;
+    private readonly IRepository<FileData> _fileDataRepository;
+    private readonly IRepository<ServerJoin> _serverJoinRepo;
     private readonly Settings _settings;
     private readonly MemoryCacheService _cacheService;
     private static readonly TimeSpan SignedTtl = TimeSpan.FromMinutes(10);
@@ -39,13 +43,19 @@ public class SessionServerController : CustomControllerBase
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="userManager">The user manager for handling user-related operations.</param>
-    /// <param name="dbContext">The database context for accessing data.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="serverJoinRepo">Repository for recording server join events.</param>
+    /// <param name="fileDataRepository">Repository for managing file data (skins, capes, etc.).</param>
+    /// <param name="capeRepo">Repository for managing cape entities.</param>
     /// <param name="cacheService">The memory cache service for caching data.</param>
     /// <param name="settings">The application settings.</param>
-    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService cacheService, Settings settings) : base(logger, settings)
+    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomUserStore userStore, IRepository<ServerJoin> serverJoinRepo,
+        IRepository<FileData> fileDataRepository, IRepository<Cape> capeRepo, MemoryCacheService cacheService, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
-        _dbContext = dbContext;
+        _fileDataRepository = fileDataRepository;
+        _capeRepo = capeRepo;
+        _serverJoinRepo = serverJoinRepo;
         _settings = settings;
         _cacheService = cacheService;
     }
@@ -103,7 +113,7 @@ public class SessionServerController : CustomControllerBase
             }
 
             string dashedUuid = Guid.Parse(request.selectedProfile).ToString("D");
-            CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
+            CustomUser? user = await UserStore.FindUserByIdAsync(dashedUuid);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound,
                     "User not found for the provided selectedProfile UUID");
@@ -111,7 +121,7 @@ public class SessionServerController : CustomControllerBase
             if (!await _userManager.VerifyJwtTokenAsync(request.accessToken))
                 return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid access token");
             
-            UserPlaySession? session = await _dbContext.FindUserPlaySessionAsync(x => x.Token == request.accessToken);
+            UserPlaySession? session = await UserStore.UserPlaySessions.FindAsync(x => x.Token == request.accessToken);
             if (session == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound,
                     "No active session found for the provided access token");
@@ -125,7 +135,7 @@ public class SessionServerController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Forbidden,
                     "The IP address associated with the access token does not match the IP address of the request");
 
-            await _dbContext.AddServerJoinAsync(new ServerJoin
+            await _serverJoinRepo.AddAsync(new ServerJoin
             {
                 ServerId = request.serverId,
                 UserId = user.Id,
@@ -170,12 +180,12 @@ public class SessionServerController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await _userManager.FindByNameAsync(username);
+            CustomUser? user = await UserStore.FindUserAsync(x => x.UserName == username);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
 
             ServerJoin? join =
-                await _dbContext.FindServerJoinAsync(x => x.ServerId == serverId && (x.UserIp == ip || ip == null));
+                await _serverJoinRepo.FindAsync(x => x.ServerId == serverId && (x.UserIp == ip || ip == null));
             if (join == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound,
                     "No matching server join found for the provided serverId and IP address");
@@ -224,7 +234,7 @@ public class SessionServerController : CustomControllerBase
             }
             
             string dashedUuid = Guid.Parse(uuid).ToString("D");
-            CustomUser? user = await _userManager.FindByIdAsync(dashedUuid);
+            CustomUser? user = await UserStore.FindUserByIdAsync(dashedUuid);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
 
@@ -276,7 +286,7 @@ public class SessionServerController : CustomControllerBase
             if (_cacheService.TryGetValue<string>(key, out var cachedAfterLock))
                 return cachedAfterLock!;
             Dictionary<string, object> textures = new Dictionary<string, object>();
-            var skin = await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
+            var skin = await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
             if (skin != null)
             {
                 textures.Add("SKIN", new Dictionary<string, object>
@@ -293,13 +303,13 @@ public class SessionServerController : CustomControllerBase
                 });
             }
 
-            var userCape = await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.IsSelected);
+            var userCape = await UserStore.UserCapes.FindAsync(x => x.UserId == user.Id && x.IsSelected);
             if (userCape != null)
             {
-                var cape = await _dbContext.FindCapeAsync(x => x.Id == userCape.CapeId);
+                var cape = await _capeRepo.FindByIdAsync(userCape.CapeId);
                 if (cape != null)
                 {
-                    var capeData = await _dbContext.FindFileDataAsync(x => x.Id == cape.FileId);
+                    var capeData = await _fileDataRepository.FindByIdAsync(cape.FileId);
                     if (capeData != null)
                     {
                         textures.Add("CAPE", new Dictionary<string, object>

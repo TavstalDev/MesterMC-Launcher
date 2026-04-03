@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Common;
+using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 
@@ -17,7 +19,7 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [Tags("Yggdrasil")]
 public class TexturesController : CustomControllerBase
 {
-    private readonly CustomDbContext _dbContext;
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly MemoryCacheService _memoryCache;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(1);
 
@@ -25,12 +27,14 @@ public class TexturesController : CustomControllerBase
     /// Initializes a new instance of the <see cref="TexturesController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
-    /// <param name="dbContext">The database context for accessing texture data.</param>
+    /// <param name="userStore">The <see cref="CustomUserStore"/> used by the base controller for user operations.</param>
+    /// <param name="fileDataRepo">Repository for <see cref="FileData"/> entities.</param>
     /// <param name="memoryCache">The memory cache service for caching texture data.</param>
     /// <param name="settings">Application settings.</param>
-    public TexturesController(ILogger<TexturesController> logger, CustomDbContext dbContext, MemoryCacheService memoryCache, Settings settings) : base(logger, settings)
+    public TexturesController(ILogger<TexturesController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepo,
+        MemoryCacheService memoryCache, Settings settings) : base(logger, userStore, settings)
     {
-        _dbContext = dbContext;
+        _fileDataRepo = fileDataRepo;
         _memoryCache = memoryCache;
     }
     
@@ -65,7 +69,7 @@ public class TexturesController : CustomControllerBase
             string contentType;
             if (!_memoryCache.TryGetValue<(byte[], string)>(cacheKey, out var fd))
             {
-                var fileData = await _dbContext.FindFileDataAsync(x =>
+                var fileData = await _fileDataRepo.FindAsync(x =>
                     x.Hash == hash && (x.Type == EFileDataType.SKIN || x.Type == EFileDataType.CAPE));
                 if (fileData == null)
                     return ReturnResponseCode(HttpStatusCode.NotFound, "Texture not found.");

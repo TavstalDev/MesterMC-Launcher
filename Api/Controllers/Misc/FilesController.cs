@@ -19,8 +19,7 @@ namespace Tavstal.MesterMC.Api.Controllers.Misc;
 [Route("files")]
 public class FilesController : CustomControllerBase
 {
-    private readonly CustomDbContext _dbContext;
-    private readonly IRepository<FileData> _fileDataRepository;
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly MemoryCacheService _memoryCache;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(1);
     
@@ -28,14 +27,14 @@ public class FilesController : CustomControllerBase
     /// Initializes a new instance of the <see cref="FilesController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
-    /// <param name="dbContext">Database context for accessing file data.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="fileDataRepo">Repository for managing file data.</param>
     /// <param name="memoryCache">Service for caching file data.</param>
     /// <param name="settings">Application settings.</param>
-    public FilesController(ILogger<FilesController> logger, CustomDbContext dbContext, CustomUserStore userStore, IRepository<FileData> fileDataRepository, MemoryCacheService memoryCache, Settings settings) :
+    public FilesController(ILogger<FilesController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepo, MemoryCacheService memoryCache, Settings settings) :
         base(logger, userStore, settings)
     {
-        _dbContext = dbContext;
-        _fileDataRepository = fileDataRepository;
+        _fileDataRepo = fileDataRepo;
         _memoryCache = memoryCache;
     }
     
@@ -71,7 +70,7 @@ public class FilesController : CustomControllerBase
             string contentType;
             if (!_memoryCache.TryGetValue<(byte[], string)>(cacheKey, out var fd))
             {
-                var fileData = await _fileDataRepository.FindAsync(x =>
+                var fileData = await _fileDataRepo.FindAsync(x =>
                     x.Hash == hash && (x.Type == EFileDataType.CAPE || x.Type == EFileDataType.SKIN ||
                                        x.Type == EFileDataType.PROFILE_PICTURE || x.Type == EFileDataType.NEWS_BANNER));
                 if (fileData == null)

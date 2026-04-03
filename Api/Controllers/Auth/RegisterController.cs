@@ -9,7 +9,6 @@ using SixLabors.ImageSharp;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
-using Tavstal.MesterMC.Api.Models.Claims;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
@@ -32,7 +31,7 @@ public class RegisterController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly IEmailService _emailService;
-    private readonly IRepository<FileData> _fileDataRepository;
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly Settings _settings;
 
@@ -40,20 +39,20 @@ public class RegisterController : CustomControllerBase
     /// Initializes a new instance of the <see cref="RegisterController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
-    /// <param name="fileDataRepository">Repository for managing file data, such as user avatars.</param>
+    /// <param name="fileDataRepo">Repository for managing file data, such as user avatars.</param>
     /// <param name="settings">Application settings.</param>
-    public RegisterController(ILogger<RegisterController> logger, CustomDbContext dbContext, CustomUserManager userManager, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepository, Settings settings) : base(logger, userStore, settings)
+    public RegisterController(ILogger<RegisterController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepo, Settings settings) : base(logger, userStore, settings)
     {
         _dbContext = dbContext;
         _userManager = userManager;
         _emailService = emailService;
         _passwordHasher = passwordHasher;
-        _fileDataRepository = fileDataRepository;
+        _fileDataRepo = fileDataRepo;
         _settings = settings;
     }
 
@@ -123,7 +122,7 @@ public class RegisterController : CustomControllerBase
                     return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
                 }
                 
-                avatarData = await _fileDataRepository.AddAsync(new FileData
+                avatarData = await _fileDataRepo.AddAsync(new FileData
                 {
                     Hash = fileHash,
                     FileName = $"{Guid.NewGuid():N}.png",
@@ -145,7 +144,7 @@ public class RegisterController : CustomControllerBase
             if (avatarData != null)
             {
                 avatarData.UserId = user.Id;
-                await _fileDataRepository.UpdateAsync(avatarData);
+                await _fileDataRepo.UpdateAsync(avatarData);
             }
             
             // Add the user to the default role

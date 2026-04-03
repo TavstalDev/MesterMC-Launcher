@@ -14,6 +14,7 @@ using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Controllers.Misc;
 
@@ -25,7 +26,8 @@ namespace Tavstal.MesterMC.Api.Controllers.Misc;
 public class NewsController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
-    private readonly CustomDbContext _dbContext;
+    private readonly IRepository<News> _newsRepo;
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly Settings _settings;
     private readonly MemoryCacheService _cacheService;
     private readonly TimeSpan CacheTTL = TimeSpan.FromMinutes(10);
@@ -35,13 +37,17 @@ public class NewsController : CustomControllerBase
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
-    /// <param name="dbContext">Database context for accessing news data.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="newsRepo">Repository for managing news entities.</param>
+    /// <param name="fileDataRepo">Repository for managing file data (news banners).</param>
     /// <param name="cacheService">Service for caching news data.</param>
     /// <param name="settings">Application settings.</param>
-    public NewsController(ILogger<NewsController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService cacheService, Settings settings) : base(logger, settings)
+    public NewsController(ILogger<NewsController> logger, CustomUserManager userManager, CustomUserStore userStore,
+        IRepository<News> newsRepo, IRepository<FileData> fileDataRepo, MemoryCacheService cacheService, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
-        _dbContext = dbContext;
+        _newsRepo = newsRepo;
+        _fileDataRepo = fileDataRepo;
         _settings = settings;
         _cacheService = cacheService;
     }
@@ -64,13 +70,13 @@ public class NewsController : CustomControllerBase
             }
 
 
-            List<News> news = await _dbContext.GetNewsAsync();
+            var news = await _newsRepo.QueryAsync(null);
             List<NewsResponseBody> newsResponse = [];
             foreach (News n in news)
             {
                 string bannerUrl = string.Empty;
                 FileData? fd =
-                    await _dbContext.FindFileDataAsync(x => x.Id == n.BannerId && x.Type == EFileDataType.NEWS_BANNER);
+                    await _fileDataRepo.FindAsync(x => x.Id == n.BannerId && x.Type == EFileDataType.NEWS_BANNER);
                 if (fd != null)
                     bannerUrl = fd.GetUrl(_settings.ApiUrl);
                 newsResponse.Add(new NewsResponseBody
@@ -120,13 +126,15 @@ public class NewsController : CustomControllerBase
                 return ReturnJson(cachedNews);
             }
 
-            List<News> news = await _dbContext.GetLatestNewsAsync(count);
+            var news = await _newsRepo.QueryAsync(null);
+            news = news.OrderByDescending(x => x.CreatedAt);
+            news = news.Take(count);
             List<NewsResponseBody> newsResponse = [];
             foreach (News n in news)
             {
                 string bannerUrl = string.Empty;
                 FileData? fd =
-                    await _dbContext.FindFileDataAsync(x => x.Id == n.BannerId && x.Type == EFileDataType.NEWS_BANNER);
+                    await _fileDataRepo.FindAsync(x => x.Id == n.BannerId && x.Type == EFileDataType.NEWS_BANNER);
                 if (fd != null)
                     bannerUrl = fd.GetUrl(_settings.ApiUrl);
                 newsResponse.Add(new NewsResponseBody
@@ -178,13 +186,13 @@ public class NewsController : CustomControllerBase
                 return ReturnJson(cachedNews);
             }
 
-            News? news = await _dbContext.FindNewsAsync(x => x.Id == id);
+            News? news = await _newsRepo.FindByIdAsync(id);
             if (news == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "News article not found.");
 
             string bannerUrl = string.Empty;
             FileData? fd =
-                await _dbContext.FindFileDataAsync(x => x.Id == news.BannerId && x.Type == EFileDataType.NEWS_BANNER);
+                await _fileDataRepo.FindAsync(x => x.Id == news.BannerId && x.Type == EFileDataType.NEWS_BANNER);
             if (fd != null)
                 bannerUrl = fd.GetUrl(_settings.ApiUrl);
 
@@ -270,7 +278,7 @@ public class NewsController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
             }
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -279,7 +287,7 @@ public class NewsController : CustomControllerBase
             }, true);
             fd.SaveFile(stream);
 
-            await _dbContext.AddNewsAsync(new News
+            await _newsRepo.AddAsync(new News
             {
                 Title = requestBody.Title,
                 Content = requestBody.Content,
@@ -332,7 +340,7 @@ public class NewsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Update))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            News? news = await _dbContext.FindNewsAsync(x => x.Id == id);
+            News? news = await _newsRepo.FindByIdAsync(id);
             if (news == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "News article not found.");
 
@@ -374,15 +382,15 @@ public class NewsController : CustomControllerBase
                 }
 
                 FileData? existingBanner =
-                    await _dbContext.FindFileDataAsync(x =>
+                    await _fileDataRepo.FindAsync(x =>
                         x.Id == news.BannerId && x.Type == EFileDataType.NEWS_BANNER);
                 if (existingBanner != null)
                 {
                     existingBanner.DeleteFile();
-                    await _dbContext.RemoveFileDataAsync(existingBanner, true);
+                    await _fileDataRepo.RemoveAsync(existingBanner, true);
                 }
 
-                FileData fd = await _dbContext.AddFileDataAsync(new FileData
+                FileData fd = await _fileDataRepo.AddAsync(new FileData
                 {
                     Hash = fileHash,
                     FileName = $"{Guid.NewGuid():N}.png",
@@ -393,7 +401,7 @@ public class NewsController : CustomControllerBase
                 news.BannerId = fd.Id;
             }
 
-            await _dbContext.UpdateNewsAsync(news, true);
+            await _newsRepo.UpdateAsync(news, true);
             return ReturnResponseCode(HttpStatusCode.OK, "News article updated successfully.");
         }
         catch (Exception ex)
@@ -436,19 +444,19 @@ public class NewsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Delete))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            News? news = await _dbContext.FindNewsAsync(x => x.Id == id);
+            News? news = await _newsRepo.FindAsync(x => x.Id == id);
             if (news == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "News article not found.");
 
             FileData? file =
-                await _dbContext.FindFileDataAsync(x => x.Id == news.BannerId && x.Type == EFileDataType.NEWS_BANNER);
+                await _fileDataRepo.FindAsync(x => x.Id == news.BannerId && x.Type == EFileDataType.NEWS_BANNER);
             if (file != null)
             {
                 file.DeleteFile();
-                await _dbContext.RemoveFileDataAsync(file);
+                await _fileDataRepo.RemoveAsync(file);
             }
 
-            await _dbContext.RemoveNewsAsync(news, true);
+            await _newsRepo.RemoveAsync(news, true);
             return ReturnResponseCode(HttpStatusCode.OK, "News article deleted successfully.");
         }
         catch (Exception ex)

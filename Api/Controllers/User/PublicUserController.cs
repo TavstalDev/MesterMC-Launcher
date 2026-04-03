@@ -8,6 +8,7 @@ using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
@@ -18,21 +19,19 @@ namespace Tavstal.MesterMC.Api.Controllers.User;
 public class PublicUserController : CustomControllerBase
 {
     private readonly Settings _settings;
-    private readonly CustomUserManager _userManager;
-    private readonly CustomDbContext _dbContext;
+    private readonly IRepository<FileData> _fileDataRepository;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="PublicUserController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    /// <param name="userManager">The custom user manager.</param>
-    /// <param name="dbContext">The database context.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="fileDataRepository">Repository for managing file data.</param>
     /// <param name="settings">The application settings.</param>
-    public PublicUserController(ILogger<PublicUserController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger, settings)
+    public PublicUserController(ILogger<PublicUserController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepository, Settings settings) : base(logger, userStore, settings)
     {
         _settings = settings;
-        _userManager = userManager;
-        _dbContext = dbContext;
+        _fileDataRepository = fileDataRepository;
     }
 
     /// <summary>
@@ -58,7 +57,7 @@ public class PublicUserController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await _userManager.FindByIdAsync(userId);
+            CustomUser? user = await UserStore.FindUserByIdAsync(userId);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
@@ -110,12 +109,12 @@ public class PublicUserController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            CustomUser? user = await _userManager.FindByIdAsync(userId);
+            CustomUser? user = await UserStore.FindUserByIdAsync(userId);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
 
             FileData? existingAvatar =
-                await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
+                await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found.");
 

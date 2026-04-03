@@ -1,14 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Attributes;
 using Tavstal.MesterMC.Api.Models.Database.User;
-using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Utils.Helpers;
 
 namespace Tavstal.MesterMC.Api.Controllers.Auth;
 
@@ -21,28 +18,17 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 public class TwoFactorController : CustomControllerBase {
     
     private readonly CustomUserManager _userManager;
-    private readonly CustomSignInManager _signInManager;
-    private readonly CustomDbContext _dbContext;
-    private readonly IEmailService _emailService;
-    private readonly Settings _settings;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="TwoFactorController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
-    /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="dbContext">Database context for accessing user data.</param>
-    /// <param name="emailService">Service for sending emails.</param>
     /// <param name="settings">Application settings.</param>
-    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomSignInManager signInManager, CustomUserStore userStore, CustomDbContext dbContext, IEmailService emailService, Settings settings) : base(logger, userStore, settings)
+    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomUserStore userStore, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
-        _signInManager = signInManager;
-        _dbContext = dbContext;
-        _emailService = emailService;
-        _settings = settings;
     }
     
     /// <summary>

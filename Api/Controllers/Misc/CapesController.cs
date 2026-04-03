@@ -24,8 +24,8 @@ namespace Tavstal.MesterMC.Api.Controllers.Misc;
 public class CapesController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
-    private readonly IRepository<Cape> _capeRepository;
-    private readonly IRepository<FileData> _fileDataRepository;
+    private readonly IRepository<Cape> _capeRepo;
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly CustomDbContext _dbContext;
     
     /// <summary>
@@ -34,13 +34,16 @@ public class CapesController : CustomControllerBase
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="dbContext">Database context for accessing cape data.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="capeRepo">Repository for <see cref="Cape"/> entities.</param>
+    /// <param name="fileDataRepo">Repository for <see cref="FileData"/> entities.</param>
     /// <param name="settings">Application settings.</param>
-    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomUserStore userStore, IRepository<Cape> capeRepository, IRepository<FileData> fileDataRepository, CustomDbContext dbContext, Settings settings) 
+    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, IRepository<Cape> capeRepo, IRepository<FileData> fileDataRepo, Settings settings) 
         : base(logger, userStore, settings)
     {
         _userManager = userManager;
-        _capeRepository = capeRepository;
-        _fileDataRepository = fileDataRepository;
+        _capeRepo = capeRepo;
+        _fileDataRepo = fileDataRepo;
         _dbContext = dbContext;
     }
     
@@ -91,7 +94,7 @@ public class CapesController : CustomControllerBase
             stream.Position = 0;
 
             FileData? existingCape =
-                await _fileDataRepository.FindAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE);
+                await _fileDataRepo.FindAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE);
             if (existingCape != null)
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape with the same content already exists.");
 
@@ -120,7 +123,7 @@ public class CapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
             }
 
-            FileData fd = await _fileDataRepository.AddAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -128,7 +131,7 @@ public class CapesController : CustomControllerBase
                 Type = EFileDataType.CAPE,
             }, true);
             fd.SaveFile(stream);
-            Cape cape = await _capeRepository.AddAsync(new Cape
+            Cape cape = await _capeRepo.AddAsync(new Cape
             {
                 Name = file.FileName.Split('.')[0],
                 FileId = fd.Id,
@@ -188,22 +191,22 @@ public class CapesController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Delete))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            Cape? cape = await _capeRepository.FindByIdAsync(capeId);
+            Cape? cape = await _capeRepo.FindByIdAsync(capeId);
             if (cape == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found");
 
-            var fileData = await _fileDataRepository.FindByIdAsync(cape.FileId);
+            var fileData = await _fileDataRepo.FindByIdAsync(cape.FileId);
             if (fileData != null)
             {
                 fileData.DeleteFile();
-                await _fileDataRepository.RemoveAsync(fileData);
+                await _fileDataRepo.RemoveAsync(fileData);
             }
             
             var userCapes = await UserStore.UserCapes.QueryAsync(x => x.CapeId == capeId);
             foreach (var userCape in userCapes)
                 await UserStore.UserCapes.RemoveAsync(userCape);
             
-            await _capeRepository.RemoveAsync(cape);
+            await _capeRepo.RemoveAsync(cape);
 
             await _dbContext.SaveChangesAsync();
             return ReturnResponseCode(HttpStatusCode.OK, "Cape deleted successfully");

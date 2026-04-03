@@ -14,6 +14,7 @@ using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Controllers.User;
 
@@ -25,7 +26,7 @@ namespace Tavstal.MesterMC.Api.Controllers.User;
 public class AvatarController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
-    private readonly CustomDbContext _dbContext;
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly MemoryCacheService _memoryCache;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(1);
     
@@ -34,13 +35,15 @@ public class AvatarController : CustomControllerBase
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Service for managing users.</param>
-    /// <param name="dbContext">Database context for accessing data.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="fileDataRepo">Repository for managing file data (avatars).</param>
     /// <param name="cacheService">Service for caching data in memory.</param>
     /// <param name="settings">Application settings.</param>
-    public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomDbContext dbContext, MemoryCacheService cacheService, Settings settings) : base(logger, settings)
+    public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomUserStore userStore,
+        IRepository<FileData> fileDataRepo, MemoryCacheService cacheService, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
-        _dbContext = dbContext;
+        _fileDataRepo = fileDataRepo;
         _memoryCache = cacheService;
     }
     
@@ -74,7 +77,7 @@ public class AvatarController : CustomControllerBase
             if (!_memoryCache.TryGetValue(cacheKey, out (byte[], string, string) cachedAvatar))
             {
                 FileData? existingAvatar =
-                    await _dbContext.FindFileDataAsync(x =>
+                    await _fileDataRepo.FindAsync(x =>
                         x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
                 if (existingAvatar == null)
                     return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found.");
@@ -171,15 +174,15 @@ public class AvatarController : CustomControllerBase
             }
 
             FileData? existingAvatar =
-                await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
+                await _fileDataRepo.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar != null)
             {
                 existingAvatar.DeleteFile();
-                await _dbContext.RemoveFileDataAsync(existingAvatar, true);
+                await _fileDataRepo.RemoveAsync(existingAvatar, true);
                 _memoryCache.RemoveValue("avatar:" + user.Id);
             }
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -225,12 +228,12 @@ public class AvatarController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingAvatar =
-                await _dbContext.FindFileDataAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
+                await _fileDataRepo.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found to delete.");
 
             existingAvatar.DeleteFile();
-            await _dbContext.RemoveFileDataAsync(existingAvatar, true);
+            await _fileDataRepo.RemoveAsync(existingAvatar, true);
             _memoryCache.RemoveValue($"avatar:{user.Id}");
             return ReturnResponseCode(HttpStatusCode.OK, "Avatar deleted successfully.");
         }
@@ -286,11 +289,11 @@ public class AvatarController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.AvatarOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
@@ -322,16 +325,16 @@ public class AvatarController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
             }
 
-            FileData? existingAvatar = await _dbContext.FindFileDataAsync(x =>
+            FileData? existingAvatar = await _fileDataRepo.FindAsync(x =>
                 x.UserId == targetUser.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar != null)
             {
                 existingAvatar.DeleteFile();
-                await _dbContext.RemoveFileDataAsync(existingAvatar, true);
+                await _fileDataRepo.RemoveAsync(existingAvatar, true);
                 _memoryCache.RemoveValue("avatar:" + user.Id);
             }
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -387,20 +390,20 @@ public class AvatarController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.AvatarOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
-            FileData? existingAvatar = await _dbContext.FindFileDataAsync(x =>
+            FileData? existingAvatar = await _fileDataRepo.FindAsync(x =>
                 x.UserId == targetUser.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found to delete.");
 
             existingAvatar.DeleteFile();
-            await _dbContext.RemoveFileDataAsync(existingAvatar, true);
+            await _fileDataRepo.RemoveAsync(existingAvatar, true);
             _memoryCache.RemoveValue($"avatar:{user.Id}");
             return ReturnResponseCode(HttpStatusCode.OK, "Avatar deleted successfully.");
         }

@@ -16,23 +16,18 @@ namespace Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 [Tags("Yggdrasil")]
 public class StatusController : CustomControllerBase
 {
-    private readonly CustomDbContext _dbContext;
-    private readonly CustomUserManager _userManager;
     private readonly MemoryCacheService _cacheService;
     private readonly Settings _settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StatusController"/> class.
     /// </summary>
-    /// <param name="cacheService">Service for caching data in memory.</param>
     /// <param name="logger">The logger instance for logging information.</param>
+    /// <param name="userStore">The <see cref="CustomUserStore"/> used by the base controller for user operations.</param>
+    /// <param name="cacheService">Service for caching data in memory.</param>
     /// <param name="settings">The application settings.</param>
-    /// <param name="userManager">Service for managing users.</param>
-    /// <param name="dbContext">Database context for accessing data.</param>
-    public StatusController(CustomDbContext dbContext, CustomUserManager userManager, MemoryCacheService cacheService, ILogger<StatusController> logger, Settings settings) : base(logger, settings)
+    public StatusController(ILogger<StatusController> logger, CustomUserStore userStore, MemoryCacheService cacheService, Settings settings) : base(logger, userStore, settings)
     {
-        _dbContext = dbContext;
-        _userManager = userManager;
         _cacheService = cacheService;
         _settings = settings;
     }
@@ -85,25 +80,28 @@ public class StatusController : CustomControllerBase
     /// </returns>
     /// <response code="200">Returns the status counts.</response>
     [HttpGet("status")]
-    public Task<IActionResult> Status()
+    public async Task<IActionResult> Status()
     {
         if (_cacheService.TryGetValue("yggdrasil_status", out string? cachedResult) && !string.IsNullOrEmpty(cachedResult))
-            return Task.FromResult(ReturnJson(cachedResult));
+            return ReturnJson(cachedResult);
         
         try
         {
+            var users = await UserStore.QueryUserAsync(null);
+            var tokens = await UserStore.UserTokens.QueryAsync(null);
             var result = JsonConvert.SerializeObject(new Dictionary<string, object>
             {
-                { "user.count", _userManager.Users.Count() },
-                { "token.count", _dbContext.UserTokens.Count() },
+                { "user.count", users.Count() },
+                { "token.count", tokens.Count() },
                 { "pendingAuthentication.count", 0 } // Not implemented
             }, Formatting.Indented);
             _cacheService.SetValue("yggdrasil_status", result, TimeSpan.FromMinutes(5));
-            return Task.FromResult(ReturnJson(result));
+            return ReturnJson(result);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            return Task.FromException<IActionResult>(exception);
+           Logger.LogCritical(ex, "Error retrieving yggdrasil status counts");
+           return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     

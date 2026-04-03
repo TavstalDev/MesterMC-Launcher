@@ -20,19 +20,17 @@ namespace Tavstal.MesterMC.Api.Controllers.User;
 public class UserCapesController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
-    private readonly CustomDbContext _dbContext;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="UserCapesController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="userManager">The custom user manager.</param>
-    /// <param name="dbContext">The database context.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="settings">Application settings.</param>
-    public UserCapesController(ILogger<UserCapesController> logger, CustomUserManager userManager, CustomDbContext dbContext, Settings settings) : base(logger, settings)
+    public UserCapesController(ILogger<UserCapesController> logger, CustomUserManager userManager, CustomUserStore userStore, Settings settings) : base(logger, userStore, settings)
     {
         _userManager = userManager;
-        _dbContext = dbContext;
     }
     
     /// <summary>
@@ -72,7 +70,7 @@ public class UserCapesController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Select))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            UserCape? cape = await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.CapeId == capeId);
+            UserCape? cape = await UserStore.UserCapes.FindAsync(x => x.UserId == user.Id && x.CapeId == capeId);
             if (cape == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found for the user");
 
@@ -80,15 +78,15 @@ public class UserCapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape is already selected");
 
             UserCape? currentlySelectedCape =
-                await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.IsSelected);
+                await UserStore.UserCapes.FindAsync(x => x.UserId == user.Id && x.IsSelected);
             if (currentlySelectedCape != null)
             {
                 currentlySelectedCape.IsSelected = false;
-                await _dbContext.UpdateUserCapeAsync(currentlySelectedCape);
+                await UserStore.UserCapes.UpdateAsync(currentlySelectedCape);
             }
 
             cape.IsSelected = true;
-            await _dbContext.UpdateUserCapeAsync(cape, true);
+            await UserStore.UserCapes.UpdateAsync(cape, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Cape selected successfully");
         }
         catch (Exception ex)
@@ -123,12 +121,12 @@ public class UserCapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? currentlySelectedCape =
-                await _dbContext.FindUserCapeAsync(x => x.UserId == user.Id && x.IsSelected);
+                await UserStore.UserCapes.FindAsync(x => x.UserId == user.Id && x.IsSelected);
             if (currentlySelectedCape == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No cape is currently selected for the user");
 
             currentlySelectedCape.IsSelected = false;
-            await _dbContext.UpdateUserCapeAsync(currentlySelectedCape);
+            await UserStore.UserCapes.UpdateAsync(currentlySelectedCape, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Selected cape cleared successfully");
         }
         catch (Exception ex)
@@ -178,14 +176,14 @@ public class UserCapesController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.SelectOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
-            UserCape? cape = await _dbContext.FindUserCapeAsync(x => x.UserId == targetUser.Id && x.CapeId == capeId);
+            UserCape? cape = await UserStore.UserCapes.FindAsync(x => x.UserId == targetUser.Id && x.CapeId == capeId);
             if (cape == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found for the user");
 
@@ -193,15 +191,15 @@ public class UserCapesController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape is already selected");
 
             UserCape? currentlySelectedCape =
-                await _dbContext.FindUserCapeAsync(x => x.UserId == targetUser.Id && x.IsSelected);
+                await UserStore.UserCapes.FindAsync(x => x.UserId == targetUser.Id && x.IsSelected);
             if (currentlySelectedCape != null)
             {
                 currentlySelectedCape.IsSelected = false;
-                await _dbContext.UpdateUserCapeAsync(currentlySelectedCape);
+                await UserStore.UserCapes.UpdateAsync(currentlySelectedCape);
             }
 
             cape.IsSelected = true;
-            await _dbContext.UpdateUserCapeAsync(cape, true);
+            await UserStore.UserCapes.UpdateAsync(cape, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Cape selected successfully");
         }
         catch (Exception ex) 
@@ -247,20 +245,20 @@ public class UserCapesController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.UnselectOther))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            CustomUser? targetUser = await _userManager.FindByIdAsync(userId);
+            CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!_userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             UserCape? currentlySelectedCape =
-                await _dbContext.FindUserCapeAsync(x => x.UserId == targetUser.Id && x.IsSelected);
+                await UserStore.UserCapes.FindAsync(x => x.UserId == targetUser.Id && x.IsSelected);
             if (currentlySelectedCape == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "No cape is currently selected for the user");
 
             currentlySelectedCape.IsSelected = false;
-            await _dbContext.UpdateUserCapeAsync(currentlySelectedCape);
+            await UserStore.UserCapes.UpdateAsync(currentlySelectedCape, true);
             return ReturnResponseCode(HttpStatusCode.OK, "Selected cape cleared successfully");
         }
         catch (Exception ex)

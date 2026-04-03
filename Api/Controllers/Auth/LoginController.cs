@@ -22,27 +22,20 @@ namespace Tavstal.MesterMC.Api.Controllers.Auth;
 [Tags("Authentication: Login")]
 public class LoginController : CustomControllerBase
 {
-    private readonly CustomUserManager _userManager;
     private readonly CustomSignInManager _signInManager;
-    private readonly IEmailService _emailService;
     private readonly MemoryCacheService _memoryCacheService;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="LoginController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for logging operations.</param>
-    /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="userManager">The user manager for managing user authentication and roles.</param>
     /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
-    /// <param name="emailService">The email service for sending emails.</param>
+    /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="settings">The application settings.</param>
-    public LoginController(ILogger<LoginController> logger, CustomUserStore userStore,
-        CustomUserManager userManager, CustomSignInManager signInManager, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
+    public LoginController(ILogger<LoginController> logger, CustomSignInManager signInManager, CustomUserStore userStore, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
     {
         _signInManager = signInManager;
-        _userManager = userManager;
-        _emailService = emailService;
         _memoryCacheService = memoryCacheService;
     }
     
