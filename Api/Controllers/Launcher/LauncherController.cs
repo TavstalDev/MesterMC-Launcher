@@ -235,7 +235,7 @@ public class LauncherController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
                 return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
 
-            LauncherVersion? existingVersion = await _launcherVersionRepo.FindByIdAsync(request.Version);
+            LauncherVersion? existingVersion = await _launcherVersionRepo.FindAsync(x => x.Version == request.Version);
             if (existingVersion != null)
                 return ReturnResponseCode(HttpStatusCode.BadRequest,
                     "A launcher version with the same version number already exists.");

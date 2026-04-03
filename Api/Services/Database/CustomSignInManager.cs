@@ -30,7 +30,7 @@ public class CustomSignInManager
 
     public async Task<SignInResult> UsernameSignInAsync(string username, string password, bool rememberMe, HttpContext httpContext)
     {
-        string normalizedUsername = username.Normalize().ToUpper();
+        string normalizedUsername = username.Normalize();
         CustomUser? user = await _userStore.FindUserAsync(x => x.NormalizedUserName == normalizedUsername);
         if (user == null)
             return new SignInResult
@@ -45,7 +45,7 @@ public class CustomSignInManager
     public async Task<SignInResult> EmailSignInAsync(string email, string password, bool rememberMe,
         HttpContext httpContext)
     {
-        string normalizedEmail = email.Normalize().ToUpper();
+        string normalizedEmail = email.Normalize();
         CustomUser? user = await _userStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
         if (user == null)
             return new SignInResult
@@ -81,7 +81,7 @@ public class CustomSignInManager
                 return new SignInResult
                 {
                     Succeeded = false,
-                    Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
+                    Message = user.LockoutEnabled ? $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}" :  "Invalid credentials."
                 };
             case PasswordVerificationResult.SuccessRehashNeeded:
                 user.PasswordHash = _passwordHasher.HashPassword(user, password);
@@ -229,7 +229,7 @@ public class CustomSignInManager
     
     public async Task<LauncherSignInResult> LauncherSignInAsync(string username, string password, HttpContext httpContext)
     {
-        string normalizedUsername = username.Normalize().ToUpper();
+        string normalizedUsername = username.Normalize();
         CustomUser? user = await _userStore.FindUserAsync(x => x.NormalizedUserName == normalizedUsername);
         if (user == null)
             return new LauncherSignInResult
@@ -260,7 +260,7 @@ public class CustomSignInManager
                 return new LauncherSignInResult
                 {
                     Succeeded = false,
-                    Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
+                    Message = user.LockoutEnabled ? $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}" :  "Invalid credentials."
                 };
             case PasswordVerificationResult.SuccessRehashNeeded:
                 user.PasswordHash = _passwordHasher.HashPassword(user, password);

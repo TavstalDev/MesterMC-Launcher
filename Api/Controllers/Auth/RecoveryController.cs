@@ -73,7 +73,7 @@ public class RecoveryController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            string normalizedEmail = email.Normalize().ToUpper();
+            string normalizedEmail = email.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
@@ -135,7 +135,7 @@ public class RecoveryController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            string normalizedEmail = request.Email.Normalize().ToUpper();
+            string normalizedEmail = request.Email.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
@@ -205,7 +205,7 @@ public class RecoveryController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            string normalizedEmail = email.Normalize().ToUpper();
+            string normalizedEmail = email.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
@@ -267,7 +267,7 @@ public class RecoveryController : CustomControllerBase
                 return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            string normalizedEmail = request.Email.Normalize().ToUpper();
+            string normalizedEmail = request.Email.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
                 return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
