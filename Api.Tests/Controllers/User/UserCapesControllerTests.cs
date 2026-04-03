@@ -10,6 +10,7 @@ using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,6 +21,8 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.User;
 /// </summary>
 public class UserCapesControllerTests : ControllerTestBase
 {
+    private readonly IRepository<FileData> _fileDataRepo;
+    private readonly IRepository<Cape> _capeRepo;
     private readonly Mock<ILogger<UserCapesController>> _loggerMock = new();
     private readonly UserCapesController _controller;
     
@@ -30,7 +33,9 @@ public class UserCapesControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper forwarded to base class for logging test output.</param>
     public UserCapesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new UserCapesController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _settings);
+        _fileDataRepo = new Repository<FileData>(_dbContext);
+        _capeRepo = new Repository<Cape>(_dbContext);
+        _controller = new UserCapesController(_loggerMock.Object, _userManager, _userStore, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -51,8 +56,7 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Select cape")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             var db = await FillDatabase(user.Id);
             var result = await _controller.SelectCape(db.cape.Id);
             
@@ -68,8 +72,7 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Cape already selected")]
         public async Task ReturnsBadRequest()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             var db = await FillDatabase(user.Id);
             await _controller.SelectCape(db.cape.Id);
             var result = await _controller.SelectCape(db.cape.Id);
@@ -123,11 +126,10 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Clear selected cape")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             var db = await FillDatabase(user.Id);
             db.userCape.IsSelected = true;
-            await _dbContext.UpdateUserCapeAsync(db.userCape, true);
+            await _userStore.UserCapes.UpdateAsync(db.userCape, true);
             var result = await _controller.ClearSelectedCape();
             
             result.Should().BeOfType<ObjectResult>();
@@ -142,8 +144,7 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: No cape selected")]
         public async Task ReturnsBadRequest()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user =  await CreateUserAsync(_controller);
             var db = await FillDatabase(user.Id);
             var result = await _controller.ClearSelectedCape();
             
@@ -181,8 +182,7 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Select cape")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             var db = await FillDatabase(user.Id);
             var result = await _controller.SelectCapeAdmin(user.Id, db.cape.Id);
@@ -199,8 +199,7 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Cape already selected")]
         public async Task ReturnsBadRequest()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             var db = await FillDatabase(user.Id);
             await _controller.SelectCapeAdmin(user.Id, db.cape.Id);
@@ -218,8 +217,7 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Cape not found")]
         public async Task ReturnsNotFound()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             var result = await _controller.SelectCapeAdmin(user.Id, 1);
             
@@ -235,8 +233,7 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.SelectCapeAdmin(user.Id, 1);
             
@@ -260,12 +257,11 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Clear selected cape")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             var db = await FillDatabase(user.Id);
             db.userCape.IsSelected = true;
-            await _dbContext.UpdateUserCapeAsync(db.userCape, true);
+            await _userStore.UserCapes.UpdateAsync(db.userCape, true);
             var result = await _controller.ClearSelectedCapeAdmin(user.Id);
             
             result.Should().BeOfType<ObjectResult>();
@@ -280,8 +276,7 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: No cape selected")]
         public async Task ReturnsBadRequest()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             var db = await FillDatabase(user.Id);
             var result = await _controller.ClearSelectedCapeAdmin(user.Id);
@@ -298,8 +293,7 @@ public class UserCapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.ClearSelectedCapeAdmin(user.Id);
             
@@ -328,7 +322,7 @@ public class UserCapesControllerTests : ControllerTestBase
         byte[] hashBytes = await sha256.ComputeHashAsync(stream);
         string fileHash = Convert.ToHexStringLower(hashBytes);
             
-        var fd = await _dbContext.AddFileDataAsync(new FileData
+        var fd = await _fileDataRepo.AddAsync(new FileData
         {
             Hash = fileHash,
             FileName = "skin.png",
@@ -337,13 +331,13 @@ public class UserCapesControllerTests : ControllerTestBase
             Type = EFileDataType.CAPE,
         }, true);
         fd.SaveFile(stream);
-        var cape = await _dbContext.AddCapeAsync(new Cape
+        var cape = await _capeRepo.AddAsync(new Cape
         {
             Name = "Test Cape",
             FileId = fd.Id,
             IsPublic = true
         }, true);
-        var userCape = await _dbContext.AddUserCapeAsync(new UserCape
+        var userCape = await _userStore.UserCapes.AddAsync(new UserCape
         {
             UserId = userId,
             CapeId = cape.Id,

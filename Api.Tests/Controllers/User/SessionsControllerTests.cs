@@ -25,7 +25,7 @@ public class SessionsControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">xUnit test output helper used to capture test logs.</param>
     public SessionsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new SessionsController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _settings);
+        _controller = new SessionsController(_loggerMock.Object, _userManager, _dbContext, _userStore, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -81,9 +81,8 @@ public class SessionsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Revoke session")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
-            var session = await _dbContext.AddUserLoginAsync(new CustomUserLogin
+            var user = await CreateUserAsync(_controller);
+            var session = await _userStore.UserLogins.AddAsync(new CustomUserLogin
             {
                 UserId = user.Id,
                 LoginProvider = "TestProvider",
@@ -199,8 +198,7 @@ public class SessionsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Return sessions")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.GetSessionsAdmin(user.Id);
             result.Should().BeOfType<ContentResult>();
@@ -215,8 +213,7 @@ public class SessionsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.GetSessionsAdmin(user.Id);
             result.Should().BeOfType<ObjectResult>();
@@ -239,10 +236,9 @@ public class SessionsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Revoke session")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
-            var session = await _dbContext.AddUserLoginAsync(new CustomUserLogin
+            var session = await _userStore.UserLogins.AddAsync(new CustomUserLogin
             {
                 UserId = user.Id,
                 LoginProvider = "TestProvider",
@@ -270,8 +266,7 @@ public class SessionsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Missing sessionId")]
         public async Task ReturnsBadRequest()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             _controller.ModelState.AddModelError("sessionId", "Invalid session ID");
             
@@ -289,8 +284,7 @@ public class SessionsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, 1);
             result.Should().BeOfType<ObjectResult>();
@@ -305,8 +299,7 @@ public class SessionsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Session not found")]
         public async Task ReturnsNotFound()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, 9999);
             result.Should().BeOfType<ObjectResult>();
@@ -329,8 +322,7 @@ public class SessionsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Revoke all sessions")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeAllSessionsAdmin(user.Id);
 
@@ -346,8 +338,7 @@ public class SessionsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.RevokeAllSessionsAdmin(user.Id);
 

@@ -10,6 +10,7 @@ using Tavstal.MesterMC.Api.Controllers.User;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,6 +21,7 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.User;
 /// </summary>
 public class SkinsControllerTests : ControllerTestBase
 {
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly Mock<ILogger<SkinsController>> _loggerMock = new();
     private readonly SkinsController _controller;
     
@@ -31,7 +33,8 @@ public class SkinsControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper used by the base class.</param>
     public SkinsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new SkinsController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _settings);
+        _fileDataRepo = new Repository<FileData>(_dbContext);
+        _controller = new SkinsController(_loggerMock.Object, _userManager, _userStore, _fileDataRepo, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -52,14 +55,13 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Get existing skin")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             using var stream = CreateTestImage(64, 64);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
             
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = "skin.png",
@@ -134,7 +136,7 @@ public class SkinsControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var files = await _dbContext.GetFileDatasAsync();
+            var files = await _fileDataRepo.QueryAsync(null);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -213,14 +215,13 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Delete skin")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             using var stream = CreateTestImage(64, 64);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
             
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = "skin.png",
@@ -280,15 +281,14 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Get existing skin")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             using var stream = CreateTestImage(64, 64);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
             
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = "skin.png",
@@ -313,8 +313,7 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: No permissions")]
         public async Task ReturnsUnauthorized()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.GetSkinAdmin(user.Id);
             result.Should().BeOfType<ObjectResult>();
@@ -329,8 +328,7 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: No skin found")]
         public async Task ReturnsNotFound()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             var result = await _controller.GetSkinAdmin(user.Id);
             result.Should().BeOfType<ObjectResult>();
@@ -353,8 +351,7 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Upload skin")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, givePermissions: false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, givePermissions: false);
             await CreateUserAsync(_controller);
             using var stream = CreateTestImage(64, 64);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
@@ -370,7 +367,7 @@ public class SkinsControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var files = await _dbContext.GetFileDatasAsync();
+            var files = await _fileDataRepo.QueryAsync(null);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -381,8 +378,7 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
-            await CreateUserAsync(_controller, _userMock2, givePermissions: false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, givePermissions: false);
             await CreateUserAsync(_controller, givePermissions: false);
             using var stream = CreateTestImage(64, 64);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
@@ -403,8 +399,7 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: File too large")]
         public async Task ReturnsBadRequest_WhenFileTooLarge()
         {
-            await CreateUserAsync(_controller, _userMock2, givePermissions: false);
-            var user = _dbContext.Users.First();
+            var user =  await CreateUserAsync(_controller, _userMock2, givePermissions: false);
             await CreateUserAsync(_controller);
             using var stream = new MemoryStream(new byte[1024 * 512]);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
@@ -425,8 +420,7 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Invalid dimensions")]
         public async Task ReturnsBadRequest_WhenInvalidDimensions()
         {
-            await CreateUserAsync(_controller, _userMock2, givePermissions: false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, givePermissions: false);
             await CreateUserAsync(_controller);
             using var stream = CreateTestImage(64, 65);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
@@ -455,15 +449,14 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Delete skin")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, givePermissions: false);
-            var user = _dbContext.Users.First();
+            var user =  await CreateUserAsync(_controller, _userMock2, givePermissions: false);
             await CreateUserAsync(_controller);
             using var stream = CreateTestImage(64, 64);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
             
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = "skin.png",
@@ -488,8 +481,7 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
-            await CreateUserAsync(_controller, _userMock2, givePermissions: false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, givePermissions: false);
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.DeleteSkinAdmin(user.Id);
             result.Should().BeOfType<ObjectResult>();
@@ -504,8 +496,7 @@ public class SkinsControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: No skin found")]
         public async Task ReturnsNotFound()
         {
-            await CreateUserAsync(_controller, _userMock2, givePermissions: false);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller, _userMock2, givePermissions: false);
             await CreateUserAsync(_controller);
             var result = await _controller.DeleteSkinAdmin(user.Id);
             result.Should().BeOfType<ObjectResult>();

@@ -11,7 +11,9 @@ using Xunit.Abstractions;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.User;
+using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Tests.Models;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.Auth;
@@ -37,11 +39,13 @@ public class RegisterControllerTests
         _testOutputHelper = testOutputHelper;
         var loggerMock = new Mock<ILogger<RegisterController>>();
         var dbContext = TestHelper.CreateInMemoryDbContext();
-        var userManager = TestHelper.CreateCustomUserManager(dbContext);
+        var userStore = TestHelper.CreateCustomUserStore(dbContext);
+        var userManager = TestHelper.CreateCustomUserManager(dbContext, userStore);
         _passwordHasher = TestHelper.PasswordHasher;
         _emailService = TestHelper.FakeEmailService;
         var settings = TestHelper.CreateTestSettings();
-        _controller = new RegisterController(loggerMock.Object, dbContext, userManager, _passwordHasher, _emailService, settings);
+        var fileDataRepo = new Repository<FileData>(dbContext);
+        _controller = new RegisterController(loggerMock.Object, userManager, dbContext, userStore, _passwordHasher, _emailService, fileDataRepo, settings);
         
         _controllerHttpContext = new DefaultHttpContext
         {

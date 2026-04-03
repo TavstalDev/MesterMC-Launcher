@@ -5,6 +5,8 @@ using Moq;
 using Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
+using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Tavstal.MesterMC.Api.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,6 +18,7 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.Yggdrasil;
 /// </summary>
 public class TexturesControllerTests : ControllerTestBase
 {
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly Mock<ILogger<TexturesController>> _loggerMock = new();
     private readonly TexturesController _controller;
     
@@ -27,7 +30,8 @@ public class TexturesControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit output helper forwarded to the base class for logging test output.</param>
     public TexturesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new TexturesController(_loggerMock.Object, _dbContext, _memoryCacheService, _settings);
+        _fileDataRepo = new Repository<FileData>(_dbContext);
+        _controller = new TexturesController(_loggerMock.Object, _userStore, _fileDataRepo, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -131,7 +135,7 @@ public class TexturesControllerTests : ControllerTestBase
             ContentType = "image/png",
             Type = EFileDataType.SKIN
         };
-        await _dbContext.AddFileDataAsync(fileData, true);
+        await _fileDataRepo.AddAsync(fileData, true);
 
         IActionResult result = await _controller.GetTexture(hash);
 

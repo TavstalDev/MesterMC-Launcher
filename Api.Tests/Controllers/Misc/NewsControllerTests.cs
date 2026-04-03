@@ -12,6 +12,8 @@ using Tavstal.MesterMC.Api.Models.Bodies.News;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
+using Tavstal.MesterMC.Api.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,6 +24,8 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.Misc;
 /// </summary>
 public class NewsControllerTests : ControllerTestBase
 {
+    private readonly IRepository<News> _newsRepo;
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly Mock<ILogger<NewsController>> _loggerMock = new();
     private readonly NewsController _controller;
 
@@ -32,7 +36,9 @@ public class NewsControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper forwarded to the base class.</param>
     public NewsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new NewsController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _memoryCacheService, _settings);
+        _newsRepo = new Repository<News>(_dbContext);
+        _fileDataRepo = new Repository<FileData>(_dbContext);
+        _controller = new NewsController(_loggerMock.Object, _userManager, _userStore, _newsRepo, _fileDataRepo, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -63,7 +69,7 @@ public class NewsControllerTests : ControllerTestBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -72,7 +78,7 @@ public class NewsControllerTests : ControllerTestBase
             }, true);
             fd.SaveFile(stream);
 
-            await _dbContext.AddNewsAsync(new News
+            await _newsRepo.AddAsync(new News
             {
                 Title = "Test Title",
                 Content = "Test Content",
@@ -89,7 +95,7 @@ public class NewsControllerTests : ControllerTestBase
             list.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
             
-            var files = await _dbContext.GetFileDatasAsync();
+            var files = await _fileDataRepo.QueryAsync(null);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -138,7 +144,7 @@ public class NewsControllerTests : ControllerTestBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -147,7 +153,7 @@ public class NewsControllerTests : ControllerTestBase
             }, true);
             fd.SaveFile(stream);
 
-            await _dbContext.AddNewsAsync(new News
+            await _newsRepo.AddAsync(new News
             {
                 Title = "Test Title",
                 Content = "Test Content",
@@ -164,7 +170,7 @@ public class NewsControllerTests : ControllerTestBase
             list.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
             
-            var files = await _dbContext.GetFileDatasAsync();
+            var files = await _fileDataRepo.QueryAsync(null);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -212,7 +218,7 @@ public class NewsControllerTests : ControllerTestBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -221,7 +227,7 @@ public class NewsControllerTests : ControllerTestBase
             }, true);
             fd.SaveFile(stream);
 
-            var news = await _dbContext.AddNewsAsync(new News
+            var news = await _newsRepo.AddAsync(new News
             {
                 Title = "Test Title",
                 Content = "Test Content",
@@ -238,7 +244,7 @@ public class NewsControllerTests : ControllerTestBase
             list.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
             
-            var files = await _dbContext.GetFileDatasAsync();
+            var files = await _fileDataRepo.QueryAsync(null);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -300,7 +306,7 @@ public class NewsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
             
             // Clean-up
-            var files = await _dbContext.GetFileDatasAsync();
+            var files = await _fileDataRepo.QueryAsync(null);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -384,7 +390,7 @@ public class NewsControllerTests : ControllerTestBase
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -393,7 +399,7 @@ public class NewsControllerTests : ControllerTestBase
             }, true);
             fd.SaveFile(stream);
 
-            var news = await _dbContext.AddNewsAsync(new News
+            var news = await _newsRepo.AddAsync(new News
             {
                 Title = "Test title",
                 Content = "This is a test news item.",
@@ -426,7 +432,7 @@ public class NewsControllerTests : ControllerTestBase
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -435,7 +441,7 @@ public class NewsControllerTests : ControllerTestBase
             }, true);
             fd.SaveFile(stream);
 
-            var news = await _dbContext.AddNewsAsync(new News
+            var news = await _newsRepo.AddAsync(new News
             {
                 Title = "Test title",
                 Content = "This is a test news item.",
@@ -495,7 +501,7 @@ public class NewsControllerTests : ControllerTestBase
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -504,7 +510,7 @@ public class NewsControllerTests : ControllerTestBase
             }, true);
             fd.SaveFile(stream);
 
-            var news = await _dbContext.AddNewsAsync(new News
+            var news = await _newsRepo.AddAsync(new News
             {
                 Title = "Test title",
                 Content = "This is a test news item.",
@@ -532,7 +538,7 @@ public class NewsControllerTests : ControllerTestBase
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -541,7 +547,7 @@ public class NewsControllerTests : ControllerTestBase
             }, true);
             fd.SaveFile(stream);
 
-            var news = await _dbContext.AddNewsAsync(new News
+            var news = await _newsRepo.AddAsync(new News
             {
                 Title = "Test title",
                 Content = "This is a test news item.",

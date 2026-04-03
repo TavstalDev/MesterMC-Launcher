@@ -12,6 +12,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.User;
 
@@ -22,6 +23,7 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.User;
 /// </summary>
 public class AvatarControllerTests : ControllerTestBase
 {
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly Mock<ILogger<AvatarController>> _loggerMock = new();
     private readonly AvatarController _controller;
     
@@ -32,7 +34,8 @@ public class AvatarControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper for logging test information.</param>
     public AvatarControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new AvatarController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _memoryCacheService, _settings);
+        _fileDataRepo = new Repository<FileData>(_dbContext);
+        _controller = new AvatarController(_loggerMock.Object, _userManager, _userStore, _fileDataRepo, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -53,8 +56,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Avatar exists")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.GetUsersAsync().First();
+            var user = await CreateUserAsync(_controller);
             string cacheKey = $"avatar:{user.Id}";
             using var stream = CreateTestImage(256, 256);
             using var sha256 = SHA256.Create();
@@ -132,7 +134,7 @@ public class AvatarControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var fds = await _dbContext.GetFileDatasAsync();
+            var fds = await _fileDataRepo.QueryAsync(null);
             foreach (var fd in fds)
                 fd.DeleteFile();
         }
@@ -235,15 +237,14 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Delete avatar")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.GetUsersAsync().First();
+            var user = await CreateUserAsync(_controller);
             
             using var stream = CreateTestImage(256, 256);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
 
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 ContentType = "image/png",
@@ -303,8 +304,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Upload avatar")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user  = _dbContext.GetUsersAsync().First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             using var stream = CreateTestImage(256, 256);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
@@ -320,7 +320,7 @@ public class AvatarControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var fds = await _dbContext.GetFileDatasAsync();
+            var fds = await _fileDataRepo.QueryAsync(null);
             foreach (var fd in fds)
                 fd.DeleteFile();
         }
@@ -331,8 +331,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Missing file")]
         public async Task ReturnsBadRequest_MissingFile()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user  = _dbContext.GetUsersAsync().First();
+            var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             _controller.ModelState.AddModelError("file", "File is required.");
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, null!);
@@ -348,8 +347,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: File too large")]
         public async Task ReturnsBadRequsest_FileTooLarge()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user  = _dbContext.GetUsersAsync().First();
+            var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             using var stream = new MemoryStream(new byte[1024 * 512]);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
@@ -372,8 +370,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Invalid file type")]
         public async Task ReturnsBadRequest_InvalidFileType()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user  = _dbContext.GetUsersAsync().First();
+            var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             using var stream = CreateTestImage(256, 256);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.jpg")
@@ -396,8 +393,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user  = _dbContext.GetUsersAsync().First();
+            var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             using var stream = CreateTestImage(256, 256);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.jpg")
@@ -428,8 +424,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Delete avatar")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user  = _dbContext.GetUsersAsync().First();
+            var user =    await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             
             using var stream = CreateTestImage(256, 256);
@@ -437,7 +432,7 @@ public class AvatarControllerTests : ControllerTestBase
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
 
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 ContentType = "image/png",
@@ -460,8 +455,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: No avatar to delete")]
         public async Task ReturnsNotFound()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user  = _dbContext.GetUsersAsync().First();
+            var user =   await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.DeleteAvatarAdmin(user.Id);
 
@@ -477,8 +471,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Not enough permissions")]
         public async Task ReturnsForbidden()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user  = _dbContext.GetUsersAsync().First();
+            var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.DeleteAvatarAdmin(user.Id);
 

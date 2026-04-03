@@ -30,9 +30,10 @@ public class TwoFactorControllerTests : ControllerTestBase
     /// xUnit's <see cref="Xunit.Abstractions.ITestOutputHelper"/> provided by the test runner.
     /// This is forwarded to the base test class (via <c>base(testOutputHelper)</c>) to enable logging in the shared fixture.
     /// </param>
-    public TwoFactorControllerTests(ITestOutputHelper testOutputHelper) :  base(testOutputHelper)
-    {
-        _controller = new TwoFactorController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, TestHelper.FakeEmailService, _settings);
+        public TwoFactorControllerTests(ITestOutputHelper testOutputHelper) :  base(testOutputHelper)
+        {
+            // Controller now expects (logger, userManager, userStore, settings)
+            _controller = new TwoFactorController(_loggerMock.Object, _userManager, _userStore, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -53,10 +54,10 @@ public class TwoFactorControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Enable 2FA")]
         public async Task ReturnsOk()
         {
-            _userMock.TwoFactorSecret =  _userManager.Generate;
-            await CreateUserAsync(_controller, _userMock);
+            var user = await CreateUserAsync(_controller, _userMock);
+            var secret = await _userManager.GenerateTwoFactorTokenAsync(user);
 
-            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret);
+            byte[] secretBytes = Encoding.UTF8.GetBytes(secret);
             var totp = new Totp(secretBytes);
             string code = totp.ComputeTotp();
             
@@ -74,8 +75,8 @@ public class TwoFactorControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Invalid code")]
         public async Task ReturnsUnauthorized_ForInvalidCode()
         {
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await CreateUserAsync(_controller, _userMock);
+            var user = await CreateUserAsync(_controller, _userMock);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
 
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
             
@@ -106,8 +107,8 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsForbidden()
         {
             _userMock.TwoFactorEnabled = true;
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await CreateUserAsync(_controller, _userMock);
+            var user = await CreateUserAsync(_controller, _userMock);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
 
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
             
@@ -132,10 +133,10 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             _userMock.TwoFactorEnabled = true;
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await CreateUserAsync(_controller, _userMock);
+            var user = await CreateUserAsync(_controller, _userMock);
+            var secret = await _userManager.GenerateTwoFactorTokenAsync(user);
 
-            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret);
+            byte[] secretBytes = Encoding.UTF8.GetBytes(secret);
             var totp = new Totp(secretBytes);
             string code = totp.ComputeTotp();
             
@@ -154,8 +155,8 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized_ForInvalidCode()
         {
             _userMock.TwoFactorEnabled = true;
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await CreateUserAsync(_controller, _userMock);
+            var user = await CreateUserAsync(_controller, _userMock);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
             
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
 
@@ -185,8 +186,8 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsForbidden()
         {
             _userMock.TwoFactorEnabled = false;
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await CreateUserAsync(_controller, _userMock);
+            var user = await CreateUserAsync(_controller, _userMock);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
             
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
 
@@ -240,8 +241,8 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsForbidden()
         {
             _userMock.TwoFactorEnabled = true;
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await CreateUserAsync(_controller, _userMock);
+            var user = await CreateUserAsync(_controller, _userMock);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
             
             IActionResult result = await _controller.GenerateCodeAsync();
             result.Should().BeOfType<ObjectResult>();

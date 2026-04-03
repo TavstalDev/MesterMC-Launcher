@@ -12,6 +12,7 @@ using Xunit;
 using Xunit.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Tavstal.MesterMC.Api.Models.Bodies.Launcher;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers.Launcher;
 
@@ -20,6 +21,9 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.Launcher;
 /// </summary>
 public class LauncherControllerTests : ControllerTestBase
 {
+    private readonly IRepository<LauncherVersion> _launcherVersionRepo;
+    private readonly IRepository<LauncherVersionData> _launcherVersionDataRepo;
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly Mock<ILogger<LauncherController>> _loggerMock = new();
     private readonly LauncherController _controller;
 
@@ -27,9 +31,12 @@ public class LauncherControllerTests : ControllerTestBase
     /// Initializes a new instance of the LauncherControllerTests class.
     /// </summary>
     /// <param name="testOutputHelper">Helper for test output.</param>
-    public LauncherControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
-    {
-        _controller = new LauncherController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _memoryCacheService, _settings);
+        public LauncherControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+            _launcherVersionRepo = new Repository<LauncherVersion>(_dbContext);
+            _launcherVersionDataRepo = new Repository<LauncherVersionData>(_dbContext);
+            _fileDataRepo = new Repository<FileData>(_dbContext);
+            _controller = new LauncherController(_loggerMock.Object, _userManager, _userStore, _launcherVersionRepo, _launcherVersionDataRepo, _fileDataRepo, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -49,7 +56,7 @@ public class LauncherControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Returns a list of versions")]
         public async Task ReturnsOk()
         {
-            await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
@@ -91,7 +98,7 @@ public class LauncherControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Returns the latest version")]
         public async Task ReturnsOk()
         {
-            await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
@@ -133,7 +140,7 @@ public class LauncherControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Returns version details")]
         public async Task ReturnsOk()
         {
-            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var version = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
@@ -148,7 +155,7 @@ public class LauncherControllerTests : ControllerTestBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             
             
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = "test.zip",
@@ -156,7 +163,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Type = EFileDataType.LAUNCHER,
             }, true);
             
-            await _dbContext.AddLauncherVersionDataAsync(new LauncherVersionData
+            await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
             {
                 VersionId = version.Id,
                 FileId = fd.Id,
@@ -199,7 +206,7 @@ public class LauncherControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Returns file")]
         public async Task ReturnsOk()
         {
-            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var version = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
@@ -214,7 +221,7 @@ public class LauncherControllerTests : ControllerTestBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             
             
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = "test.zip",
@@ -222,7 +229,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Type = EFileDataType.LAUNCHER,
             }, true);
             fd.SaveFile(stream);
-            await _dbContext.AddLauncherVersionDataAsync(new LauncherVersionData
+            await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
             {
                 VersionId = version.Id,
                 FileId = fd.Id,
@@ -259,7 +266,7 @@ public class LauncherControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: No version file exists")]
         public async Task ReturnsNotFound_WhenVersionDataDoesNotExist()
         {
-            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var version = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
@@ -309,7 +316,7 @@ public class LauncherControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "Initial",
@@ -382,7 +389,7 @@ public class LauncherControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var version = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "Initial",
@@ -428,7 +435,7 @@ public class LauncherControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            var v1 = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var v1 = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "v1",
@@ -436,7 +443,7 @@ public class LauncherControllerTests : ControllerTestBase
                 UpdatedAt = DateTime.UtcNow
             }, true);
 
-            await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.1",
                 Changelog = "Patch",
@@ -460,7 +467,7 @@ public class LauncherControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Unauthorized")]
         public async Task ReturnsUnauthorized_WhenNoUser()
         {
-            var v1 = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var v1 = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "v1",
@@ -486,7 +493,7 @@ public class LauncherControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller, givePermissions: false);
 
-            var v1 = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var v1 = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "1.0.0",
                 Changelog = "v1",
@@ -520,7 +527,7 @@ public class LauncherControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var version = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "8.0.0",
                 Changelog = "to delete",
@@ -581,7 +588,7 @@ public class LauncherControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var version = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "9.0.0",
                 Changelog = "with data",
@@ -707,7 +714,7 @@ public class LauncherControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            var version = await _dbContext.AddLauncherVersionAsync(new LauncherVersion
+            var version = await _launcherVersionRepo.AddAsync(new LauncherVersion
             {
                 Version = "10.0.0",
                 Changelog = "to delete data",
@@ -721,7 +728,7 @@ public class LauncherControllerTests : ControllerTestBase
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
 
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = "test.zip",
@@ -731,7 +738,7 @@ public class LauncherControllerTests : ControllerTestBase
             stream.Position = 0;
             fd.SaveFile(stream);
 
-            var versionData = await _dbContext.AddLauncherVersionDataAsync(new LauncherVersionData
+            var versionData = await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
             {
                 VersionId = version.Id,
                 FileId = fd.Id,

@@ -34,7 +34,9 @@ public class RecoveryControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit output helper passed by the test framework.</param>
     public RecoveryControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new RecoveryController(_loggerMock.Object, (CustomUserManager)_userManager, _passwordHasher, _dbContext, TestHelper.FakeEmailService, _memoryCacheService, _settings);
+        // Controller expects: (logger, dbContext, userStore, passwordHasher, emailService, memoryCacheService, settings)
+        _controller = new RecoveryController(_loggerMock.Object, _dbContext, _userStore, _passwordHasher,
+            TestHelper.FakeEmailService, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -57,7 +59,7 @@ public class RecoveryControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             _userMock.EmailConfirmed = true;
-            await _userManager.CreateAsync(_userMock, _passwordMock);
+            await _userStore.AddUserAsync(_userMock, true);
             IActionResult result = await _controller.RequestRecoveryAsync(_userMock.Email);
 
             result.Should().BeOfType<ObjectResult>();
@@ -87,8 +89,8 @@ public class RecoveryControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Email not confirmed")]
         public async Task ReturnsForbidden_WhenEmailNotConfirmed()
         {
-            _userMock.EmailConfirmed = false;
-            await _userManager.CreateAsync(_userMock, _passwordMock);
+             _userMock.EmailConfirmed = false;
+             await _userStore.AddUserAsync(_userMock, true);
 
             IActionResult result = await _controller.RequestRecoveryAsync(_userMock.Email);
             result.Should().BeOfType<ObjectResult>();
@@ -105,10 +107,9 @@ public class RecoveryControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Already requested recovery recently")]
         public async Task ReturnsForbidden_WhenRequestTooFrequent()
         {
-            await _userManager.CreateAsync(_userMock, _passwordMock);
-            string userId = _userManager.Users.First().Id;
+            var user = await _userStore.AddUserAsync(_userMock, true);
             var memoryService = TestHelper.MemoryCacheService;
-            string fingerprint = TestHelper.GetFingerprint(userId);
+            string fingerprint = TestHelper.GetFingerprint(user.Id);
             string cacheKey = $"recovery:{fingerprint}:password:token";
             memoryService.SetValue(cacheKey, "existing-token", TimeSpan.FromMinutes(15));
 
@@ -135,9 +136,9 @@ public class RecoveryControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Reset password")]
         public async Task ReturnsOk()
         {
-            await _userManager.CreateAsync(_userMock, _passwordMock);
+            var user = await _userStore.AddUserAsync(_userMock, true);
             string token = TokenHelper.GenerateRecoverySessionToken();
-            string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
+            string fingerprint = TestHelper.GetFingerprint(user.Id);
             TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:password:token", token, TimeSpan.FromMinutes(15));
             TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:password:attempt", 0, TimeSpan.FromMinutes(15));
 
@@ -162,7 +163,7 @@ public class RecoveryControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Invalid recovery token")]
         public async Task ReturnsUnauthorized_ForInvalidToken()
         {
-            await _userManager.CreateAsync(_userMock, _passwordMock);
+            await _userStore.AddUserAsync(_userMock, true);
             IActionResult result = await _controller.RecoverPasswordAsync(new RecoverPasswordRequestBody
             {
                 Email = _userMock.Email,
@@ -184,7 +185,7 @@ public class RecoveryControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Expired recovery token")]
         public async Task ReturnsBadRequest_WhenTokenExpired()
         {
-            await _userManager.CreateAsync(_userMock, _passwordMock);
+            await _userStore.AddUserAsync(_userMock, true);
             string token = TokenHelper.GenerateRecoverySessionToken();
             
             IActionResult result = await _controller.RecoverPasswordAsync(new RecoverPasswordRequestBody
@@ -209,9 +210,9 @@ public class RecoveryControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Too many attempts")]
         public async Task ReturnsForbidden_WhenTooManyAttempts()
         {
-            await _userManager.CreateAsync(_userMock, _passwordMock);
+            var user = await _userStore.AddUserAsync(_userMock, true);
             string token = TokenHelper.GenerateRecoverySessionToken();
-            string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
+            string fingerprint = TestHelper.GetFingerprint(user.Id);
             TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:password:token", token, TimeSpan.FromMinutes(15));
             TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:password:attempt", 4, TimeSpan.FromMinutes(15));
             
@@ -246,7 +247,7 @@ public class RecoveryControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             _userMock.EmailConfirmed = true;
-            await _userManager.CreateAsync(_userMock, _passwordMock);
+             await _userStore.AddUserAsync(_userMock, true);
             IActionResult result = await _controller.RequestTFARecoveryAsync(_userMock.Email);
 
             result.Should().BeOfType<ObjectResult>();
@@ -275,8 +276,8 @@ public class RecoveryControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Email not confirmed")]
         public async Task ReturnsForbidden_WhenEmailNotConfirmed()
         {
-            _userMock.EmailConfirmed = false;
-            await _userManager.CreateAsync(_userMock, _passwordMock);
+             _userMock.EmailConfirmed = false;
+             await _userStore.AddUserAsync(_userMock, true);
 
             IActionResult result = await _controller.RequestTFARecoveryAsync(_userMock.Email);
             result.Should().BeOfType<ObjectResult>();
@@ -292,10 +293,9 @@ public class RecoveryControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Already requested recovery recently")]
         public async Task ReturnsForbidden_WhenRequestTooFrequent()
         {
-            await _userManager.CreateAsync(_userMock, _passwordMock);
-            string userId = _userManager.Users.First().Id;
+            var user = await _userStore.AddUserAsync(_userMock, true);
             var memoryService = TestHelper.MemoryCacheService;
-            string fingerprint = TestHelper.GetFingerprint(userId);
+            string fingerprint = TestHelper.GetFingerprint(user.Id);
             string cacheKey = $"recovery:{fingerprint}:tfa:token";
             memoryService.SetValue(cacheKey, "existing-token", TimeSpan.FromMinutes(15));
 
@@ -323,11 +323,10 @@ public class RecoveryControllerTests : ControllerTestBase
         public async Task ReturnsOk_WhenValidBackupCode()
         {
             _userMock.TwoFactorEnabled = true;
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _userManager.CreateAsync(_userMock);
-            var user = _userManager.Users.First();
+            var user = await _userStore.AddUserAsync(_userMock, true);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
             string backup = "backup-code-123";
-            await _dbContext.AddUserBackupCodeAsync(new UserBackupCode
+            await _userStore.UserBackupCodes.AddAsync(new UserBackupCode
             {
                 UserId = user.Id,
                 HashedCode = StringChiper.GetEncryptedHash(backup, _settings.EncryptionKey),
@@ -359,8 +358,8 @@ public class RecoveryControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized_ForInvalidBackupCode()
         {
             _userMock.TwoFactorEnabled = true;
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _userManager.CreateAsync(_userMock);
+            var user = await _userStore.AddUserAsync(_userMock, true);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
 
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
             string token = TokenHelper.GenerateRecoverySessionToken();
@@ -389,8 +388,8 @@ public class RecoveryControllerTests : ControllerTestBase
         public async Task ReturnsForbidden_WhenTooManyAttempts()
         {
             _userMock.TwoFactorEnabled = true;
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-            await _userManager.CreateAsync(_userMock);
+            var user = await _userStore.AddUserAsync(_userMock, true);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
             
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
             string token = TokenHelper.GenerateRecoverySessionToken();

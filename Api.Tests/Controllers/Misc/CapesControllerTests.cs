@@ -10,6 +10,7 @@ using Tavstal.MesterMC.Api.Controllers.Misc;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,6 +23,8 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.Misc;
 /// </summary>
 public class CapesControllerTests : ControllerTestBase
 {
+    private readonly IRepository<Cape> _capeRepo;
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly Mock<ILogger<CapesController>> _loggerMock = new();
     private readonly CapesController _controller;
 
@@ -33,7 +36,9 @@ public class CapesControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">xUnit output helper injected by the test runner.</param>
     public CapesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new CapesController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _settings);
+        _capeRepo = new Repository<Cape>(_dbContext);
+        _fileDataRepo = new Repository<FileData>(_dbContext);
+        _controller = new CapesController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _userStore, _capeRepo, _fileDataRepo, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -74,7 +79,7 @@ public class CapesControllerTests : ControllerTestBase
             finally
             {
                 // Clean-up
-                var files = await _dbContext.GetFileDatasAsync();
+                var files = await _fileDataRepo.QueryAsync(null);
                 foreach (var file in files)
                     file.DeleteFile();
             }
@@ -178,7 +183,7 @@ public class CapesControllerTests : ControllerTestBase
             finally
             {
                 // Clean-up
-                var files = await _dbContext.GetFileDatasAsync();
+                var files = await _fileDataRepo.QueryAsync(null);
                 foreach (var file in files)
                     file.DeleteFile();
             }
@@ -231,7 +236,7 @@ public class CapesControllerTests : ControllerTestBase
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
             
-            FileData fd = await _dbContext.AddFileDataAsync(new FileData
+            FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
@@ -239,7 +244,7 @@ public class CapesControllerTests : ControllerTestBase
                 Type = EFileDataType.CAPE,
             }, true);
             fd.SaveFile(stream);
-            Cape cape = await _dbContext.AddCapeAsync(new Cape
+            Cape cape = await _capeRepo.AddAsync(new Cape
             {
                 Name = "test",
                 FileId = fd.Id,

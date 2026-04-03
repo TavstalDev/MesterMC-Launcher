@@ -25,7 +25,7 @@ public class StatusControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper forwarded to the base class for logging test output.</param>
     public StatusControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new StatusController(_dbContext, (CustomUserManager)_userManager, _memoryCacheService, _loggerMock.Object, _settings);
+        _controller = new StatusController(_loggerMock.Object, _userStore, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

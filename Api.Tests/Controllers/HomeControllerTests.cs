@@ -12,23 +12,15 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers;
 /// <summary>
 /// Unit tests for <see cref="HomeController"/>.
 /// </summary>
-public class HomeControllerTests
+public class HomeControllerTests : ControllerTestBase
 {
-    /// <summary>
-    /// Test output helper provided by xUnit. Use this to write diagnostics that appear in test logs.
-    /// </summary>
-    private readonly ITestOutputHelper _testOutputHelper;
-
     /// <summary>
     /// Creates a new instance of <see cref="HomeControllerTests"/>.
     /// </summary>
     /// <param name="testOutputHelper">
     /// xUnit-provided test output helper; useful for writing trace information for failing tests.
     /// </param>
-    public HomeControllerTests(ITestOutputHelper testOutputHelper)
-    {
-        _testOutputHelper = testOutputHelper;
-    }
+    public HomeControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) {}
 
     /// <summary>
     /// Verifies that the <see cref="HomeController.Index"/> action returns an HTTP 200 response
@@ -38,7 +30,7 @@ public class HomeControllerTests
     public void Index_ReturnsOkWithMessage()
     {
         var loggerMock = new Mock<ILogger<HomeController>>();
-        var controller = new HomeController(loggerMock.Object, TestHelper.CreateTestSettings());
+        var controller = new HomeController(loggerMock.Object, _userStore, TestHelper.CreateTestSettings());
         
         IActionResult result = controller.Index();
         

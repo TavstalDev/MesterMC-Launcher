@@ -9,6 +9,7 @@ using Tavstal.MesterMC.Api.Controllers.User;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,6 +21,7 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.User;
 /// </summary>
 public class PublicUserControllerTests : ControllerTestBase
 {
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly Mock<ILogger<PublicUserController>> _loggerMock = new();
     private readonly PublicUserController _controller;
 
@@ -30,7 +32,8 @@ public class PublicUserControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper for logging test information.</param>
     public PublicUserControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new PublicUserController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _settings);
+        _fileDataRepo = new Repository<FileData>(_dbContext);
+        _controller = new PublicUserController(_loggerMock.Object, _userStore, _fileDataRepo, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -51,8 +54,7 @@ public class PublicUserControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Returns user info")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.GetUsersAsync().First();
+            var user =await CreateUserAsync(_controller);
             
             IActionResult result = await _controller.GetUserInfo(user.Id);
             
@@ -91,15 +93,13 @@ public class PublicUserControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Returns avatar")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.GetUsersAsync().First();
-
+            var user =await CreateUserAsync(_controller);
             using var stream = CreateTestImage(128, 128);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream);
             string fileHash = Convert.ToHexStringLower(hashBytes);
 
-            var fd = await _dbContext.AddFileDataAsync(new FileData
+            var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
                 ContentType = "image/png",
@@ -115,6 +115,8 @@ public class PublicUserControllerTests : ControllerTestBase
             var fileStreamResult = result as FileStreamResult;
             fileStreamResult.Should().NotBeNull();
             _testOutputHelper.WriteLine("Result: " + fileStreamResult.ContentType);
+            
+            fd.DeleteFile();
         }
         
         /// <summary>
@@ -138,8 +140,7 @@ public class PublicUserControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: User has no avatar")]
         public async Task ReturnsNotFound_WhenAvatarNotFound()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.GetUsersAsync().First();
+            var user = await CreateUserAsync(_controller);
 
             IActionResult result = await _controller.GetAvatar(user.Id);
             result.Should().BeOfType<ObjectResult>();

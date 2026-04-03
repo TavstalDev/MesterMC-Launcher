@@ -5,6 +5,8 @@ using Moq;
 using Tavstal.MesterMC.Api.Controllers.Misc;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
+using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Tavstal.MesterMC.Api.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,6 +23,7 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.Misc;
 /// </summary>
 public class FilesControllerTests : ControllerTestBase
 {
+    private readonly IRepository<FileData> _fileDataRepo;
     private readonly Mock<ILogger<FilesController>> _loggerMock = new();
     private readonly FilesController _controller;
 
@@ -34,7 +37,8 @@ public class FilesControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit-provided output helper for logging.</param>
     public FilesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new FilesController(_loggerMock.Object, _dbContext, _memoryCacheService, _settings);
+        _fileDataRepo = new Repository<FileData>(_dbContext);
+        _controller = new FilesController(_loggerMock.Object, _userStore, _fileDataRepo, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -143,7 +147,7 @@ public class FilesControllerTests : ControllerTestBase
             ContentType = "image/png",
             Type = EFileDataType.SKIN
         };
-        await _dbContext.AddFileDataAsync(fileData, true);
+        await _fileDataRepo.AddAsync(fileData, true);
 
         IActionResult result = await _controller.GetFile(hash);
 

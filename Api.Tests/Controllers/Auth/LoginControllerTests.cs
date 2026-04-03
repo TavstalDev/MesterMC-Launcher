@@ -29,8 +29,9 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.Auth;
 public class LoginControllerTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private readonly CustomDbContext _dbContext;
-    private readonly IPasswordHasher<CustomUser> _passwordHasher;
+    protected readonly CustomUserStore _userStore;
+    protected readonly CustomUserManager _userManager;
+    protected readonly CustomSignInManager _signInManager;
     private readonly LoginController _controller;
     private readonly DefaultHttpContext _controllerHttpContext;
     private readonly CustomUser _userMock;
@@ -49,13 +50,13 @@ public class LoginControllerTests
     {
         _testOutputHelper = testOutputHelper;
         var loggerMock = new Mock<ILogger<LoginController>>();
-        _dbContext = TestHelper.CreateInMemoryDbContext();
-        var userManager = TestHelper.CreateCustomUserManager(_dbContext);
-        _passwordHasher = TestHelper.PasswordHasher;
-        var emailService = TestHelper.FakeEmailService;
+        var dbContext = TestHelper.CreateInMemoryDbContext();
+        _userStore = TestHelper.CreateCustomUserStore(dbContext);
+        _userManager = TestHelper.CreateCustomUserManager(dbContext, _userStore);
         var settings = TestHelper.CreateTestSettings();
         var memoryCache = TestHelper.MemoryCacheService;
-        _controller = new LoginController(loggerMock.Object, _dbContext, userManager, _passwordHasher, emailService, memoryCache, settings);
+        _signInManager = TestHelper.CreateSignInManager(_userStore, _userManager, settings);
+        _controller = new LoginController(loggerMock.Object, _signInManager, _userStore, memoryCache, settings);
         _controllerHttpContext = new DefaultHttpContext
         {
             Connection =
@@ -85,7 +86,7 @@ public class LoginControllerTests
             LastUpdate = DateTimeOffset.UtcNow,
             SkinModel = ESkinType.WIDE
         };
-        _userMock.PasswordHash = _passwordHasher.HashPassword(_userMock, _passwordMock);
+        _userMock.PasswordHash = TestHelper.PasswordHasher.HashPassword(_userMock, _passwordMock);
     }
 
     /// <summary>
@@ -146,7 +147,7 @@ public class LoginControllerTests
         [Fact(DisplayName = "Failure: Incorrect password")]
         public async Task ReturnsUnauthorized()
         {
-            await _dbContext.AddUserAsync(_userMock, true);
+            await _userStore.AddUserAsync(_userMock, true);
             IActionResult result = await _controller.LoginAsync(new LoginRequestBody
             {
                 Email = _userMock.Email,
@@ -320,7 +321,7 @@ public class LoginControllerTests
         [Fact(DisplayName = "Failure: Incorrect password")]
         public async Task ReturnsUnauthorized()
         {
-            await _dbContext.AddUserAsync(_userMock, true);
+            await _userStore.AddUserAsync(_userMock, true);
             IActionResult result = await _controller.LoginLauncherAsync(new LauncherLoginRequestBody
             {
                 Username = _userMock.UserName,
@@ -517,10 +518,9 @@ public class LoginControllerTests
     private async Task<(string userId, string? content)> AddMockUserAndLoginAsync(bool enableTwoFactor = false, bool performLogin = true)
     {
         _userMock.TwoFactorEnabled = enableTwoFactor;
+        var user = await _userStore.AddUserAsync(_userMock, true);
         if (enableTwoFactor)
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-        
-        var user = await _dbContext.AddUserAsync(_userMock, true);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
 
         if (!performLogin)
             return (user.Id, null);
@@ -555,10 +555,9 @@ public class LoginControllerTests
     private async Task<(string userId, string? content)> AddMockUserAndLoginLauncherAsync(bool enableTwoFactor = false, bool performLogin = true)
     {
         _userMock.TwoFactorEnabled = enableTwoFactor;
+        var user = await _userStore.AddUserAsync(_userMock, true);
         if (enableTwoFactor)
-            _userMock.TwoFactorSecret = TokenHelper.GenerateTwoFactorToken();
-        
-        var user = await _dbContext.AddUserAsync(_userMock, true);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
 
         if (!performLogin)
             return (user.Id, null); 

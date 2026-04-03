@@ -5,9 +5,11 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.MesterMC.Api.Controllers.Yggdrasil;
 using Tavstal.MesterMC.Api.Models.Bodies.Yggdrasil;
+using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.Server;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database;
+using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Tavstal.MesterMC.Api.Tests.Helpers;
 using Tavstal.MesterMC.Api.Utils.Helpers;
 using Xunit;
@@ -20,6 +22,9 @@ namespace Tavstal.MesterMC.Api.Tests.Controllers.Yggdrasil;
 /// </summary>
 public class SessionServerControllerTests : ControllerTestBase
 {
+    private readonly IRepository<ServerJoin> _serverJoinRepo;
+    private readonly IRepository<FileData> _fileDataRepo;
+    private readonly IRepository<Cape> _capeRepo;
     private readonly Mock<ILogger<SessionServerController>> _loggerMock = new();
     private readonly SessionServerController _controller;
     
@@ -32,7 +37,10 @@ public class SessionServerControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper (injected by the test runner).</param>
     public SessionServerControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new SessionServerController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _memoryCacheService, _settings);
+        _serverJoinRepo = new Repository<ServerJoin>(_dbContext);
+        _fileDataRepo = new Repository<FileData>(_dbContext);
+        _capeRepo = new Repository<Cape>(_dbContext);
+        _controller = new SessionServerController(_loggerMock.Object, _userManager, _userStore, _serverJoinRepo, _fileDataRepo, _capeRepo, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -73,10 +81,9 @@ public class SessionServerControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Successful join")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -103,10 +110,9 @@ public class SessionServerControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Invalid uuid")]
         public async Task ReturnsNotFound_WhenInvalidUuid()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -134,10 +140,9 @@ public class SessionServerControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failed: Invalid ip")]
         public async Task ReturnsForbidden_WhenIpDoesNotMatch()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString("192.168.0.1");
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -164,10 +169,9 @@ public class SessionServerControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failed: Expired session")]
         public async Task ReturnsUnauthorized_WhenExpiredSession()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -202,10 +206,9 @@ public class SessionServerControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: User has joined")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -214,7 +217,7 @@ public class SessionServerControllerTests : ControllerTestBase
                 ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             }, true);
             string serverId = Guid.NewGuid().ToString();
-            await _dbContext.AddServerJoinAsync(new ServerJoin
+            await _serverJoinRepo.AddAsync(new ServerJoin
             {
                 ServerId = serverId,
                 UserId = user.Id,
@@ -237,10 +240,9 @@ public class SessionServerControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Join does not exist")]
         public async Task ReturnsNotFound_WhenJoinDoesNotExist()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user =  await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -264,10 +266,9 @@ public class SessionServerControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Join expired")]
         public async Task ReturnsUnauthorized_WhenJoinExpired()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -276,7 +277,7 @@ public class SessionServerControllerTests : ControllerTestBase
                 ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             }, true);
             string serverId = Guid.NewGuid().ToString();
-            await _dbContext.AddServerJoinAsync(new ServerJoin
+            await _serverJoinRepo.AddAsync(new ServerJoin
             {
                 ServerId = serverId,
                 UserId = user.Id,
@@ -300,12 +301,10 @@ public class SessionServerControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: User id does not match")]
         public async Task ReturnsBadRequest_WhenUserIdDoesNotMatch()
         {
-            await CreateUserAsync(_controller, _userMock2, false);
-            var user = _dbContext.Users.First();
-            await CreateUserAsync(_controller);
-            var admin = _dbContext.Users.First(u => u.Id != user.Id);
+            var user = await CreateUserAsync(_controller, _userMock2, false);
+            var admin = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _dbContext.AddUserPlaySessionAsync(new UserPlaySession
+            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -314,7 +313,7 @@ public class SessionServerControllerTests : ControllerTestBase
                 ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             }, true);
             string serverId = Guid.NewGuid().ToString();
-            await _dbContext.AddServerJoinAsync(new ServerJoin
+            await _serverJoinRepo.AddAsync(new ServerJoin
             {
                 ServerId = serverId,
                 UserId = admin.Id,
@@ -346,8 +345,7 @@ public class SessionServerControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Get profile by uuid")]
         public async Task ReturnsOk()
         {
-            await CreateUserAsync(_controller);
-            var user = _dbContext.Users.First();
+            var user = await CreateUserAsync(_controller);
             var result = await _controller.GetProfile(user.Id);
             
             result.Should().BeOfType<ContentResult>();

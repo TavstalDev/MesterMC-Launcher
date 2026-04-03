@@ -23,7 +23,7 @@ public class ProfilesControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper forwarded to the base test class.</param>
     public ProfilesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new ProfilesController(_loggerMock.Object, _dbContext, _settings);
+        _controller = new ProfilesController(_loggerMock.Object, _userStore, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -37,10 +37,10 @@ public class ProfilesControllerTests : ControllerTestBase
     [Fact(DisplayName = "Success: Retrieve profiles")]
     public async Task ReturnsOk()
     {
-        var user1 = await _dbContext.AddUserAsync(_userMock, true);
-        var user2 = await _dbContext.AddUserAsync(_userMock2, true);
+        var user1 = await _userStore.AddUserAsync(_userMock, true);
+        var user2 = await _userStore.AddUserAsync(_userMock2, true);
         
-        var result = _controller.MinecraftProfile([user1.UserName, user2.UserName]);
+        var result = await _controller.MinecraftProfile([user1.UserName, user2.UserName]);
         result.Should().BeOfType<ContentResult>();
         var contentResult = result as ContentResult;
         contentResult.Should().NotBeNull();
@@ -54,7 +54,7 @@ public class ProfilesControllerTests : ControllerTestBase
     [Fact(DisplayName = "Failure: Profiles not found")]
     public async Task ReturnsNotFound()
     {
-        var result = _controller.MinecraftProfile(["user1", "user2"]);
+        var result = await _controller.MinecraftProfile(["user1", "user2"]);
         result.Should().BeOfType<ObjectResult>();
         var objectResult = result as ObjectResult;
         objectResult!.StatusCode.Should().Be(404);
