@@ -37,14 +37,11 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("RoleId")
-                        .IsRequired()
-                        .HasColumnType("varchar(36)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("AspNetRoleClaims", (string)null);
+                    b.ToTable("RoleClaims");
                 });
 
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.Cape", b =>
@@ -125,7 +122,7 @@ namespace Tavstal.MesterMC.Api.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Version")
@@ -158,7 +155,7 @@ namespace Tavstal.MesterMC.Api.Migrations
                     b.Property<int>("Os")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<ulong>("VersionId")
@@ -248,7 +245,6 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasColumnType("varchar(36)");
 
                     b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(36)
                         .HasColumnType("varchar(36)");
@@ -258,21 +254,17 @@ namespace Tavstal.MesterMC.Api.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
 
                     b.Property<string>("NormalizedName")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex");
-
-                    b.ToTable("AspNetRoles", (string)null);
+                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.CustomUser", b =>
@@ -286,7 +278,6 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
                         .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset>("CreateDate")
@@ -301,8 +292,8 @@ namespace Tavstal.MesterMC.Api.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasMaxLength(320)
+                        .HasColumnType("varchar(320)");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("tinyint(1)");
@@ -325,13 +316,13 @@ namespace Tavstal.MesterMC.Api.Migrations
 
                     b.Property<string>("NormalizedEmail")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasMaxLength(320)
+                        .HasColumnType("varchar(320)");
 
                     b.Property<string>("NormalizedUserName")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -359,19 +350,12 @@ namespace Tavstal.MesterMC.Api.Migrations
 
                     b.Property<string>("UserName")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
-
-                    b.ToTable("AspNetUsers", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.CustomUserClaim", b =>
@@ -396,7 +380,7 @@ namespace Tavstal.MesterMC.Api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserClaims", (string)null);
+                    b.ToTable("UserClaims");
                 });
 
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.CustomUserLogin", b =>
@@ -434,6 +418,7 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasColumnType("varchar(40)");
 
                     b.Property<string>("LoginProvider")
+                        .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("varchar(64)");
 
@@ -442,11 +427,11 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasColumnType("varchar(256)");
 
                     b.Property<string>("ProviderDisplayName")
-                        .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
 
                     b.Property<string>("ProviderKey")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
@@ -493,10 +478,12 @@ namespace Tavstal.MesterMC.Api.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("LoginProvider")
+                        .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
 
@@ -516,7 +503,38 @@ namespace Tavstal.MesterMC.Api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserTokens", (string)null);
+                    b.ToTable("UserTokens");
+                });
+
+            modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.UserBackupCode", b =>
+                {
+                    b.Property<ulong>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint unsigned");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<ulong>("Id"));
+
+                    b.Property<DateTimeOffset>("CreateAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("HashedCode")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserBackupCodes");
                 });
 
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.UserBillingInformation", b =>
@@ -636,15 +654,6 @@ namespace Tavstal.MesterMC.Api.Migrations
                     b.ToTable("UserPlaySessions");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                {
-                    b.HasOne("Tavstal.MesterMC.Api.Models.Database.User.CustomRole", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.Cape", b =>
                 {
                     b.HasOne("Tavstal.MesterMC.Api.Models.Database.FileData", "FileData")
@@ -751,6 +760,17 @@ namespace Tavstal.MesterMC.Api.Migrations
                 {
                     b.HasOne("Tavstal.MesterMC.Api.Models.Database.User.CustomUser", "User")
                         .WithMany("Tokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Tavstal.MesterMC.Api.Models.Database.User.UserBackupCode", b =>
+                {
+                    b.HasOne("Tavstal.MesterMC.Api.Models.Database.User.CustomUser", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
