@@ -333,7 +333,7 @@ public class CustomUserManager(
         string cacheKey = $"pwned:{prefix}";
         if (!memoryCacheService.TryGetValue(cacheKey, out string? response))
         {
-            using var client = httpClientFactory.CreateClient();
+            using var client = new HttpClient();
             response = await client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
             if (!string.IsNullOrEmpty(cacheKey))
                 memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
@@ -361,7 +361,7 @@ public class CustomUserManager(
 
     public async Task<CustomUser?> VerifyPasswordAsync(string username, string password)
     {
-        string normalizedUsername = username.Normalize().ToUpper();
+        string normalizedUsername = username.Normalize();
         CustomUser? user = await userStore.FindUserAsync(x => x.NormalizedEmail == normalizedUsername || x.NormalizedUserName == normalizedUsername);
         if (user == null)
             return null;
