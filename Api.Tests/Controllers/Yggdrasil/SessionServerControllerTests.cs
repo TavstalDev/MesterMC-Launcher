@@ -83,11 +83,12 @@ public class SessionServerControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
+            string token = _userManager.CreateJwtToken(TimeSpan.FromMinutes(30));
             var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
-                Token = TokenHelper.GenerateToken(),
+                Token = token,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             }, true);
@@ -142,11 +143,12 @@ public class SessionServerControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString("192.168.0.1");
+            string token = _userManager.CreateJwtToken(TimeSpan.FromMinutes(30));
             var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
-                Token = TokenHelper.GenerateToken(),
+                Token = token,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             }, true);

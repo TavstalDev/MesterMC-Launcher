@@ -9,6 +9,7 @@ using Moq;
 using Newtonsoft.Json.Linq;
 using OtpNet;
 using Tavstal.MesterMC.Api.Controllers.Auth;
+using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Bodies.Auth;
 using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database.User;
@@ -32,6 +33,7 @@ public class LoginControllerTests
     protected readonly CustomUserStore _userStore;
     protected readonly CustomUserManager _userManager;
     protected readonly CustomSignInManager _signInManager;
+    private readonly Settings _settings;
     private readonly LoginController _controller;
     private readonly DefaultHttpContext _controllerHttpContext;
     private readonly CustomUser _userMock;
@@ -53,10 +55,10 @@ public class LoginControllerTests
         var dbContext = TestHelper.CreateInMemoryDbContext();
         _userStore = TestHelper.CreateCustomUserStore(dbContext);
         _userManager = TestHelper.CreateCustomUserManager(dbContext, _userStore);
-        var settings = TestHelper.CreateTestSettings();
+        _settings = TestHelper.CreateTestSettings();
         var memoryCache = TestHelper.MemoryCacheService;
-        _signInManager = TestHelper.CreateSignInManager(_userStore, _userManager, settings);
-        _controller = new LoginController(loggerMock.Object, _signInManager, _userStore, memoryCache, settings);
+        _signInManager = TestHelper.CreateSignInManager(_userStore, _userManager, _settings);
+        _controller = new LoginController(loggerMock.Object, _signInManager, _userStore, memoryCache, _settings);
         _controllerHttpContext = new DefaultHttpContext
         {
             Connection =
@@ -84,7 +86,10 @@ public class LoginControllerTests
             CreateDate = DateTimeOffset.UtcNow,
             LastLogin = DateTimeOffset.UtcNow,
             LastUpdate = DateTimeOffset.UtcNow,
-            SkinModel = ESkinType.WIDE
+            SkinModel = ESkinType.WIDE,
+            LockoutEnabled = false,
+            LockoutEnd = null,
+            LockoutReason = null
         };
         _userMock.PasswordHash = TestHelper.PasswordHasher.HashPassword(_userMock, _passwordMock);
     }
@@ -126,7 +131,7 @@ public class LoginControllerTests
         /// Failure case: attempting to login for a non-existent user returns 404 NotFound.
         /// </summary>
         [Fact(DisplayName = "Failure: Non-existent user")]
-        public async Task ReturnsNotFound()
+        public async Task ReturnsBadRequest_WhenUserDoesNotExist()
         {
             IActionResult result = await _controller.LoginAsync(new LoginRequestBody
             {
@@ -137,7 +142,7 @@ public class LoginControllerTests
             result.Should().BeOfType<ObjectResult>();
 
             ObjectResult? contentResult = result as ObjectResult;
-            contentResult!.StatusCode.Should().Be(404);
+            contentResult!.StatusCode.Should().Be(400);
             _testOutputHelper.WriteLine("Result: " + contentResult.Value);
         }
         
@@ -145,7 +150,7 @@ public class LoginControllerTests
         /// Failure case: existing user with incorrect password should return 401 Unauthorized.
         /// </summary>
         [Fact(DisplayName = "Failure: Incorrect password")]
-        public async Task ReturnsUnauthorized()
+        public async Task ReturnsBadRequest_WhenPasswordIncorrect()
         {
             await _userStore.AddUserAsync(_userMock, true);
             IActionResult result = await _controller.LoginAsync(new LoginRequestBody
@@ -156,7 +161,7 @@ public class LoginControllerTests
 
             result.Should().BeOfType<ObjectResult>();
             ObjectResult? contentResult = result as ObjectResult;
-            contentResult!.StatusCode.Should().Be(401);
+            contentResult!.StatusCode.Should().Be(400);
             _testOutputHelper.WriteLine("Result: " + contentResult.Value);
         }
         
@@ -165,13 +170,24 @@ public class LoginControllerTests
         /// Expected behaviour: login returns a ContentResult (controller may return lockout-specific response).
         /// </summary>
         [Fact(DisplayName = "Failure: Locked out user")]
-        public async Task ReturnsLocked()
+        public async Task ReturnsBadRequest_WhenUserLockedOut()
         {
             _userMock.LockoutEnabled = true;
             _userMock.LockoutEnd = DateTime.UtcNow.AddDays(30);
             _userMock.LockoutReason = "Too many failed login attempts";
-            var result = await AddMockUserAndLoginAsync();
-            _testOutputHelper.WriteLine("Result: " + result.content);
+            await _userStore.AddUserAsync(_userMock, true);
+            
+            IActionResult result = await _controller.LoginAsync(new LoginRequestBody
+            {
+                Email = _userMock.Email,
+                Password = _passwordMock
+            });
+
+            result.Should().BeOfType<ObjectResult>();
+
+            ObjectResult? contentResult = result as ObjectResult;
+            contentResult!.StatusCode.Should().Be(400);
+            _testOutputHelper.WriteLine("Result: " + contentResult.Value);
         }
     }
 
@@ -196,7 +212,7 @@ public class LoginControllerTests
             setCookie.Should().Contain("mmc-userId=");
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
-            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret);
+            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_settings.EncryptionKey));
             var totpGenerator = new Totp(secretBytes);
             string expectedCode = totpGenerator.ComputeTotp();
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
@@ -236,7 +252,7 @@ public class LoginControllerTests
         /// Failure case: submitting an invalid TFA code returns 401 Unauthorized.
         /// </summary>
         [Fact(DisplayName = "Failure: Invalid TFA code")]
-        public async Task ReturnsUnauthorized_ForInvalidCode()
+        public async Task ReturnsBadRequest_ForInvalidCode()
         {
             await AddMockUserAndLoginAsync(true);
             
@@ -247,7 +263,7 @@ public class LoginControllerTests
             
             result.Should().BeOfType<ObjectResult>();
             var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
+            objectResult!.StatusCode.Should().Be(400);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
@@ -296,10 +312,17 @@ public class LoginControllerTests
         [Fact(DisplayName = "Success: Launcher login with valid credentials")]
         public async Task ReturnsOk()
         { 
-            var result = await AddMockUserAndLoginLauncherAsync();
-            var content = result.content;
-            content.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + content);
+            await _userStore.AddUserAsync(_userMock, true);
+            IActionResult result = await _controller.LoginLauncherAsync(new LauncherLoginRequestBody
+            {
+                Username = _userMock.UserName,
+                Password = _passwordMock
+            });
+            
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
         
         /// <summary>
@@ -309,17 +332,26 @@ public class LoginControllerTests
         [Fact(DisplayName = "Redirect: Launcher login with TFA")]
         public async Task ReturnsRedirect_WhenTwoFactorEnabled()
         {
-            var result = await AddMockUserAndLoginLauncherAsync(true);
-            var content = result.content;
-            content.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + content);
+            _userMock.TwoFactorEnabled = true;
+            var user = await _userStore.AddUserAsync(_userMock, true);
+            await _userManager.GenerateTwoFactorTokenAsync(user);
+            IActionResult result = await _controller.LoginLauncherAsync(new LauncherLoginRequestBody
+            {
+                Username = _userMock.UserName,
+                Password = _passwordMock
+            });
+            
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
 
         /// <summary>
         /// Failure case: launcher login with incorrect password returns 401 Unauthorized.
         /// </summary>
         [Fact(DisplayName = "Failure: Incorrect password")]
-        public async Task ReturnsUnauthorized()
+        public async Task ReturnsBadRequest_ForIncorrectPassword()
         {
             await _userStore.AddUserAsync(_userMock, true);
             IActionResult result = await _controller.LoginLauncherAsync(new LauncherLoginRequestBody
@@ -330,7 +362,7 @@ public class LoginControllerTests
             
             result.Should().BeOfType<ObjectResult>();
             var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
+            objectResult!.StatusCode.Should().Be(400);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
     }
@@ -359,7 +391,7 @@ public class LoginControllerTests
             sessionToken.Should().NotBeNullOrEmpty();
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
-            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret);
+            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_settings.EncryptionKey));
             var totpGenerator = new Totp(secretBytes);
             string expectedCode = totpGenerator.ComputeTotp();
 
@@ -402,7 +434,7 @@ public class LoginControllerTests
         /// Failure case: invalid two-factor code for launcher confirmation returns 401 Unauthorized.
         /// </summary>
         [Fact(DisplayName = "Failure: Invalid two-factor code")]
-        public async Task ReturnsUnauthorized_ForInvalidCode()
+        public async Task ReturnsBadRequest_ForInvalidCode()
         {
             var loginResult = await AddMockUserAndLoginLauncherAsync(true);
             var content = loginResult.content;
@@ -420,7 +452,7 @@ public class LoginControllerTests
 
             secondResult.Should().BeOfType<ObjectResult>();
             var objectResult = secondResult as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
+            objectResult!.StatusCode.Should().Be(400);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
 
