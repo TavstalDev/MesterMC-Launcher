@@ -133,7 +133,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, ex.ToString());
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -209,7 +209,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, ex.ToString());
+            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
