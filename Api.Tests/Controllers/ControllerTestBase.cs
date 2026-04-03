@@ -20,7 +20,8 @@ public abstract class ControllerTestBase
 {
     protected readonly ITestOutputHelper _testOutputHelper;
     protected readonly CustomDbContext _dbContext;
-    protected readonly UserManager<CustomUser> _userManager;
+    protected readonly CustomUserStore _userStore;
+    protected readonly CustomUserManager _userManager;
     protected readonly IPasswordHasher<CustomUser> _passwordHasher;
     protected readonly DefaultHttpContext _controllerHttpContext;
     protected readonly MemoryCacheService _memoryCacheService;
@@ -36,7 +37,8 @@ public abstract class ControllerTestBase
         TestHelper.InitTestServices();
 
         _dbContext = TestHelper.CreateInMemoryDbContext();
-        _userManager = TestHelper.CreateCustomUserManager(_dbContext);
+        _userStore = TestHelper.CreateCustomUserStore(_dbContext);
+        _userManager = TestHelper.CreateCustomUserManager(_dbContext, _userStore);
         _passwordHasher = TestHelper.PasswordHasher;
         _memoryCacheService = TestHelper.MemoryCacheService;
         _settings = TestHelper.CreateTestSettings();
@@ -88,17 +90,16 @@ public abstract class ControllerTestBase
             SkinModel = ESkinType.WIDE,
             LockoutEnabled = false,
         };
-        _userMock2.PasswordHash = _passwordHasher.HashPassword(_userMock, _passwordMock);
+        _userMock2.PasswordHash = _passwordHasher.HashPassword(_userMock2, _passwordMock);
     }
     
-    protected async Task CreateUserAsync(Controller controller, CustomUser? user = null, bool givePermissions = true)
+    protected async Task<CustomUser> CreateUserAsync(Controller controller, CustomUser? user = null, bool givePermissions = true)
     {
-        user ??= _userMock;
-        await _userManager.CreateAsync(user, _passwordMock);
+        user = await _userStore.AddUserAsync(user ?? _userMock, true);
         if (givePermissions)
         {
-            var adminRole = await _dbContext.AddRoleAsync(new CustomRole(3, "admin", "ADMIN"), true);
-            await _dbContext.AddUserRoleAsync(new CustomUserRole
+            var adminRole = await _userStore.Roles.AddAsync(new CustomRole(3, "admin", "ADMIN"), true);
+            await _userStore.UserRoles.AddAsync(new CustomUserRole
             {
                 UserId = user.Id,
                 RoleId = adminRole.Id
@@ -106,7 +107,7 @@ public abstract class ControllerTestBase
 
             var adminClaims = CustomRoleClaims.Claims["Admin"];
             foreach (var claim in adminClaims)
-                await _dbContext.AddRoleClaimAsync(new IdentityRoleClaim<string>()
+                await _userStore.RoleClaims.AddAsync(new IdentityRoleClaim<string>()
                 {
                     RoleId = adminRole.Id,
                     ClaimType = claim.Key,
@@ -114,8 +115,8 @@ public abstract class ControllerTestBase
                 }, true);
         }
         
-        var role = await _dbContext.AddRoleAsync(new CustomRole(1, "default", "DEFAULT"), true);
-        await _dbContext.AddUserRoleAsync(new CustomUserRole
+        var role = await _userStore.Roles.AddAsync(new CustomRole(1, "default", "DEFAULT"), true);
+        await _userStore.UserRoles.AddAsync(new CustomUserRole
         {
             UserId = user.Id,
             RoleId = role.Id
@@ -123,7 +124,7 @@ public abstract class ControllerTestBase
         
         var defaultClaims = CustomRoleClaims.Claims["Default"];
         foreach (var claim in defaultClaims)
-            await _dbContext.AddRoleClaimAsync(new IdentityRoleClaim<string>()
+            await _userStore.RoleClaims.AddAsync(new IdentityRoleClaim<string>()
             {
                 RoleId = role.Id,
                 ClaimType = claim.Key,
@@ -138,5 +139,6 @@ public abstract class ControllerTestBase
         };
         _controllerHttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
         controller.ControllerContext.HttpContext = _controllerHttpContext;
+        return user;
     }
 }
