@@ -97,4 +97,7 @@ public class Repository<T> : IRepository<T> where T : class
     {
         return await _set.FindAsync(id);
     }
+
+    /// <inheritdoc />
+    public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 }

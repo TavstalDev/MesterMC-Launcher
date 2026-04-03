@@ -98,4 +98,9 @@ public interface IRepository<T> where T : class
     /// A task that represents the asynchronous find-by-id operation. The task result is the found entity if present; otherwise <c>null</c>.
     /// </returns>
     Task<T?> FindByIdAsync(object id);
+
+    /// <summary>
+    /// Persists any pending changes tracked by the repository to the underlying data store asynchronously.
+    /// </summary>
+    Task SaveChangesAsync();
 }
