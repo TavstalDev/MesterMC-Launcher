@@ -29,75 +29,78 @@ public class Repository<T> : IRepository<T> where T : class
     }
 
     /// <inheritdoc />
-    public async Task<T> AddAsync(T value, bool shouldSave = false)
+    public async Task<T> AddAsync(T value, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
-        var result = await _set.AddAsync(value);
+        var result = await _set.AddAsync(value, cancellationToken);
         if (shouldSave)
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(cancellationToken);
         return result.Entity;
     }
 
     /// <inheritdoc />
-    public async Task AddRangeAsync(IEnumerable<T> values, bool shouldSave = false)
+    public async Task AddRangeAsync(IEnumerable<T> values, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
-        await _set.AddRangeAsync(values);
+        await _set.AddRangeAsync(values, cancellationToken);
         if (shouldSave)
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(cancellationToken);
     }
     
     /// <inheritdoc />
-    public async Task<T> UpdateAsync(T value, bool shouldSave = false)
+    public async Task<T> UpdateAsync(T value, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
         var result = _set.Update(value);
         if (shouldSave)
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(cancellationToken);
         return result.Entity;
     }
 
     /// <inheritdoc />
-    public async Task RemoveAsync(T value, bool shouldSave = false)
+    public async Task RemoveAsync(T value, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
         _set.Remove(value);
         if (shouldSave)
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task RemoveRangeAsync(IEnumerable<T> values, bool shouldSave = false)
+    public async Task RemoveRangeAsync(IEnumerable<T> values, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
         _set.RemoveRange(values);
         if (shouldSave)
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<T>> QueryAsync(Expression<Func<T, bool>>? predicate)
+    public async Task<IEnumerable<T>> QueryAsync(Expression<Func<T, bool>>? predicate, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes)
+    {
+        var query = _set.AsQueryable();
+        foreach (var include in includes)
+            query = query.Include(include);
+        if (predicate != null)
+            query = query.Where(predicate);
+        return await query.ToListAsync(cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<T?> FindAsync(Expression<Func<T, bool>>? predicate, CancellationToken cancellationToken = default)
     {
         if (predicate != null)
-            return await _set.Where(predicate).ToListAsync();
-        return await _set.ToListAsync();
+            return await _set.FirstOrDefaultAsync(predicate, cancellationToken: cancellationToken);
+        return await _set.FirstOrDefaultAsync(cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<T?> FindAsync(Expression<Func<T, bool>>? predicate)
+    public async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
-        if (predicate != null)
-            return await _set.FirstOrDefaultAsync(predicate);
-        return await _set.FirstOrDefaultAsync();
+        return await _set.AnyAsync(predicate, cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate)
+    public async Task<T?> FindByIdAsync(object id, CancellationToken cancellationToken = default)
     {
-        return await _set.AnyAsync(predicate);
+        return await _set.FindAsync(id, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<T?> FindByIdAsync(object id)
-    {
-        return await _set.FindAsync(id);
-    }
-
-    /// <inheritdoc />
-    public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default) => await _db.SaveChangesAsync(cancellationToken);
 }
