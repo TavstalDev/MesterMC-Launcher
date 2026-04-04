@@ -124,13 +124,11 @@ public class TestHelper
 
     public static Settings CreateTestSettings()
     {
-        var pfxResult = CreateSelfSignedPfx();
+        var (pfxFilePath, password) = CreateSelfSignedPfxFile();
         
         return new Settings(
             "http://localhost",
             "http://localhost",
-            "root",
-            "ascent",
             "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6",
             "test-issuer",
             "test-audience",
@@ -141,13 +139,24 @@ public class TestHelper
             1025,
             "example@localhost",
             "12345678",
-            new string[] { "localhost" },
-            pfxResult.password,
-            pfxResult.pfxBytes,
+            ["localhost"],
+            pfxFilePath,
+            password,
             "MesterMC Development",
             "yggdrasil-mock-server",
             "1.0.0"
             );
+    }
+    
+    public static (string filePath, string password) CreateSelfSignedPfxFile(string subjectName = "CN=localhost", string password = "changeit")
+    {
+        var (pfxBytes, _) = CreateSelfSignedPfx(subjectName, password);
+        
+        // Save to a temporary file with .pfx extension
+        var tempFilePath = Path.Combine(Path.GetTempPath(), $"test-cert-{Guid.NewGuid():N}.pfx");
+        File.WriteAllBytes(tempFilePath, pfxBytes);
+        
+        return (tempFilePath, password);
     }
     
     public static (byte[] pfxBytes, string password) CreateSelfSignedPfx(string subjectName = "CN=localhost", string password = "changeit")

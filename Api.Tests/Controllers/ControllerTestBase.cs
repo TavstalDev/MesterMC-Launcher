@@ -52,7 +52,7 @@ public abstract class ControllerTestBase
         {
             ["UploadDirectory"] = uploadTempDir
         }).Build();
-        _ = new Startup(config);
+        Program.UploadDir = uploadTempDir;
         
         _controllerHttpContext = new DefaultHttpContext
         {

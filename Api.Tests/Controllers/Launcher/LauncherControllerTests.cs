@@ -31,8 +31,8 @@ public class LauncherControllerTests : ControllerTestBase
     /// Initializes a new instance of the LauncherControllerTests class.
     /// </summary>
     /// <param name="testOutputHelper">Helper for test output.</param>
-        public LauncherControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
-        {
+    public LauncherControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+    {
             _launcherVersionRepo = new Repository<LauncherVersion>(_dbContext);
             _launcherVersionDataRepo = new Repository<LauncherVersionData>(_dbContext);
             _fileDataRepo = new Repository<FileData>(_dbContext);
