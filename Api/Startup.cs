@@ -320,7 +320,7 @@ public class Startup
         #region Rate Limiting
 
         var rules = _configuration
-            .GetSection("RateLimiting:Rules")
+            .GetSection(Constants.ConfigurationKeys.RateLimitingRules)
             .Get<Dictionary<string, RateLimitRule>>();
         if (rules == null)
             throw new InvalidOperationException("Rate limiting rules are missing from the configuration.");
@@ -329,19 +329,14 @@ public class Startup
             options.RejectionStatusCode = _configuration.GetValue(Constants.ConfigurationKeys.RateLimitingStatusCode, 429);
             foreach (var rule in rules)
             {
-                JObject jObject = JObject.FromObject(rule.Value);
-                if (jObject.TryGetValue("PermitLimit", out JToken? permitLimitToken) &&
-                    jObject.TryGetValue("WindowSeconds", out JToken? windowToken) &&
-                    jObject.TryGetValue("QueueLimit", out JToken? queueLimitToken))
+                var value = rule.Value;
+                options.AddFixedWindowLimiter(rule.Key, config =>
                 {
-                    options.AddFixedWindowLimiter(rule.Key, config =>
-                    {
-                        config.PermitLimit = permitLimitToken.Value<int>();
-                        config.Window = TimeSpan.FromSeconds(windowToken.Value<int>());
-                        config.QueueLimit = queueLimitToken.Value<int>();
-                        config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                    });
-                }
+                    config.PermitLimit = value.PermitLimit;
+                    config.Window = TimeSpan.FromSeconds(value.WindowSeconds);
+                    config.QueueLimit = value.QueueLimit;
+                    config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                });
             }
         });
         #endregion

@@ -120,6 +120,9 @@ public class Settings
         DatabasePassword = configuration[Constants.ConfigurationKeys.DatabasePassword] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.DatabasePassword);
         
         EncryptionKey = configuration[Constants.ConfigurationKeys.JwtEncryptionKey] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.JwtEncryptionKey);
+        if (string.IsNullOrWhiteSpace(EncryptionKey) || EncryptionKey.Length < 32)
+            throw new ArgumentException("Encryption key must be at least 32 characters.", nameof(EncryptionKey));
+        
         Issuer = configuration[Constants.ConfigurationKeys.JwtIssuer] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.JwtIssuer);
         Audience = configuration[Constants.ConfigurationKeys.JwtAudience] ?? throw new ArgumentNullException(Constants.ConfigurationKeys.JwtAudience);
         ClockSkew = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtClockSkew, 5));
