@@ -70,22 +70,22 @@ public class CapesController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Create))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
+                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 512) // 500 KB limit
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+                return CodeResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+                return CodeResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();
@@ -96,7 +96,7 @@ public class CapesController : CustomControllerBase
             FileData? existingCape =
                 await _fileDataRepo.FindAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE);
             if (existingCape != null)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape with the same content already exists.");
+                return CodeResult(HttpStatusCode.BadRequest, "Cape with the same content already exists.");
 
             try
             {
@@ -105,14 +105,14 @@ public class CapesController : CustomControllerBase
                 var info = image.Metadata.DecodedImageFormat;
 
                 if (info?.Name != "PNG")
-                    return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
                 int width = image.Width;
                 int height = image.Height;
 
                 if (!((width == 64 && (height == 32 || height == 64)) ||
                       (width == 512 && (height == 256 || height == 512))))
-                    return ReturnResponseCode(HttpStatusCode.BadRequest,
+                    return CodeResult(HttpStatusCode.BadRequest,
                         "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
 
                 stream.Position = 0;
@@ -120,7 +120,7 @@ public class CapesController : CustomControllerBase
             catch (Exception)
             {
                 Logger.LogError($"Failed to upload cape file: {fileHash}");
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
             }
 
             FileData fd = await _fileDataRepo.AddAsync(new FileData
@@ -146,12 +146,12 @@ public class CapesController : CustomControllerBase
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow
             }, true);
-            return ReturnResponseCode(HttpStatusCode.OK, "Cape uploaded successfully");
+            return CodeResult(HttpStatusCode.OK, "Cape uploaded successfully");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error uploading cape");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -180,20 +180,20 @@ public class CapesController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Delete))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
+                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             Cape? cape = await _capeRepo.FindByIdAsync(capeId);
             if (cape == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found");
+                return CodeResult(HttpStatusCode.NotFound, "Cape not found");
 
             var fileData = await _fileDataRepo.FindByIdAsync(cape.FileId);
             if (fileData != null)
@@ -209,12 +209,12 @@ public class CapesController : CustomControllerBase
             await _capeRepo.RemoveAsync(cape);
 
             await _dbContext.SaveChangesAsync();
-            return ReturnResponseCode(HttpStatusCode.OK, "Cape deleted successfully");
+            return CodeResult(HttpStatusCode.OK, "Cape deleted successfully");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, $"Failed to delete cape with ID {capeId}");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 }

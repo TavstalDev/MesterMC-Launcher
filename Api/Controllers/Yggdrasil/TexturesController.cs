@@ -60,7 +60,7 @@ public class TexturesController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
@@ -72,10 +72,10 @@ public class TexturesController : CustomControllerBase
                 var fileData = await _fileDataRepo.FindAsync(x =>
                     x.Hash == hash && (x.Type == EFileDataType.SKIN || x.Type == EFileDataType.CAPE));
                 if (fileData == null)
-                    return ReturnResponseCode(HttpStatusCode.NotFound, "Texture not found.");
+                    return CodeResult(HttpStatusCode.NotFound, "Texture not found.");
                 bytes = fileData.GetFileData();
                 if (bytes == null)
-                    return ReturnResponseCode(HttpStatusCode.InternalServerError, "Failed to retrieve texture data.");
+                    return CodeResult(HttpStatusCode.InternalServerError, "Failed to retrieve texture data.");
                 contentType = fileData.ContentType;
                 _memoryCache.SetValue(cacheKey, (bytes, contentType), CacheTtl);
             }
@@ -92,7 +92,7 @@ public class TexturesController : CustomControllerBase
                 {
                     HttpContext.Response.Headers.ETag = etag;
                     HttpContext.Response.Headers.CacheControl = "public,max-age=86400,immutable";
-                    return ReturnResponseCode(HttpStatusCode.NotModified);
+                    return CodeResult(HttpStatusCode.NotModified);
                 }
             }
 
@@ -103,7 +103,7 @@ public class TexturesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error retrieving texture with hash {Hash}", hash);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 }

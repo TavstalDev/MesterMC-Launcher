@@ -67,7 +67,7 @@ public class LoginController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             SignInResult result;
@@ -77,7 +77,7 @@ public class LoginController : CustomControllerBase
                 result = await _signInManager.UsernameSignInAsync(request.Email, request.Password, request.RememberMe, HttpContext);
 
             if (!result.Succeeded && !result.RequiresTwoFactor)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
+                return CodeResult(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
 
             if (result.RequiresTwoFactor)
             {
@@ -99,7 +99,7 @@ public class LoginController : CustomControllerBase
                     Expires = expiry
                 });
                     
-                return ReturnJson(new
+                return JsonResult(new
                 {
                     statusCode = HttpStatusCode.Redirect,
                     message = "Redirect to 2FA page",
@@ -109,7 +109,7 @@ public class LoginController : CustomControllerBase
             }
             
             if (!result.Succeeded)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
+                return CodeResult(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
 
             var userToken = result.UserToken!;
             var userLogin = result.UserLogin!;
@@ -122,7 +122,7 @@ public class LoginController : CustomControllerBase
                 Expires = userLogin.ExpireDate
             });
             
-            return ReturnJson(new
+            return JsonResult(new
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
@@ -133,7 +133,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -164,27 +164,27 @@ public class LoginController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             if (!Request.Cookies.TryGetValue("mmc-twofactor-session", out var sessionCookie)  || string.IsNullOrEmpty(sessionCookie))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
+                return CodeResult(HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
             
             if (!Request.Cookies.TryGetValue("mmc-userId", out var userIdCookie) || string.IsNullOrEmpty(userIdCookie))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or missing userId cookie.");
+                return CodeResult(HttpStatusCode.Unauthorized, "Invalid or missing userId cookie.");
             
             string fingerprint = GetMachineFingerprint(userIdCookie);
             string tokenKey = $"auth:{fingerprint}:tfa:token";
             if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != sessionCookie)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
+                return CodeResult(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
 
             CustomUser? user = await UserStore.FindUserByIdAsync(userIdCookie);
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return CodeResult(HttpStatusCode.NotFound, "User not found.");
 
             var result = await _signInManager.TwoFactorSignInAsync(user, request.TwoFactorCode, request.RememberMe, HttpContext);
             if (!result.Succeeded)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid two-factor code.");
+                return CodeResult(HttpStatusCode.BadRequest, result.Message ?? "Invalid two-factor code.");
             
             var userToken = result.UserToken!;
             var userLogin = result.UserLogin!;
@@ -197,7 +197,7 @@ public class LoginController : CustomControllerBase
                 Expires = userLogin.ExpireDate
             });
             
-            return ReturnJson(new
+            return JsonResult(new
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
@@ -209,7 +209,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -239,19 +239,19 @@ public class LoginController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             LauncherSignInResult result = await _signInManager.LauncherSignInAsync(request.Username, request.Password, HttpContext);
 
             if (!result.Succeeded && !result.RequiresTwoFactor)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
+                return CodeResult(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
 
             if (result.RequiresTwoFactor)
             {
                 var user = result.User!;
                 string sessionToken = result.SessionToken!;
-                return ReturnJson(new
+                return JsonResult(new
                 {
                     statusCode = HttpStatusCode.Redirect,
                     message = "Redirect to 2FA",
@@ -262,10 +262,10 @@ public class LoginController : CustomControllerBase
             }
             
             if (!result.Succeeded)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
+                return CodeResult(HttpStatusCode.BadRequest, result.Message ?? "Invalid credentials.");
             
             var userPlaySession = result.UserPlaySession!;
-            return ReturnJson(new
+            return JsonResult(new
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
@@ -277,7 +277,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -307,24 +307,24 @@ public class LoginController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             string fingerprint = GetMachineFingerprint(request.UserId);
             string tokenKey = $"auth:{fingerprint}:tfa-launcher:token";
             if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != request.SessionToken)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
+                return CodeResult(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
 
             CustomUser? user = await UserStore.FindUserByIdAsync(request.UserId);
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return CodeResult(HttpStatusCode.NotFound, "User not found.");
 
             var result = await _signInManager.LauncherTwoFactorSignInAsync(user, request.TwoFactorCode, HttpContext);
             if (!result.Succeeded)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, result.Message ?? "Invalid two-factor code.");
+                return CodeResult(HttpStatusCode.BadRequest, result.Message ?? "Invalid two-factor code.");
 
             var userPlaySession = result.UserPlaySession!;
-            return ReturnJson(new
+            return JsonResult(new
             {
                 statusCode = HttpStatusCode.OK,
                 Message = "Login successful",
@@ -336,7 +336,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -372,17 +372,17 @@ public class LoginController : CustomControllerBase
             }
             
             if (string.IsNullOrEmpty(token))
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid token.");
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid token.");
             
             if (!await _signInManager.SignOutAsync(token))
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid token.");
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid token.");
             
             return SignOut();
         }
         catch (Exception ex)
         {
             Logger.LogCritical("Error during logout: {Message}", ex.Message);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 }

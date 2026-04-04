@@ -26,6 +26,6 @@ public class HomeController : CustomControllerBase
     [Route("/"), ApiExplorerSettings(IgnoreApi = true)]
     public IActionResult Index()
     {
-        return ReturnResponseCode(HttpStatusCode.OK, "The API is running.");
+        return CodeResult(HttpStatusCode.OK, "The API is running.");
     }
 }

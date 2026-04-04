@@ -48,11 +48,11 @@ public class StatusController : CustomControllerBase
             var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, _settings.CertPassword);
             var rsa = cert.GetRSAPrivateKey();
             if (rsa == null)
-                return ReturnResponseCode(HttpStatusCode.InternalServerError,
+                return CodeResult(HttpStatusCode.InternalServerError,
                     "Failed to load RSA private key from certificate");
 
             string signature = rsa.ExportSubjectPublicKeyInfoPem();
-            return ReturnJson(new
+            return JsonResult(new
             {
                 skinDomains = _settings.SkinDomains,
                 signaturePublickey = signature,
@@ -68,7 +68,7 @@ public class StatusController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error retrieving yggdrasil status");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -83,7 +83,7 @@ public class StatusController : CustomControllerBase
     public async Task<IActionResult> Status()
     {
         if (_cacheService.TryGetValue("yggdrasil_status", out string? cachedResult) && !string.IsNullOrEmpty(cachedResult))
-            return ReturnJson(cachedResult);
+            return JsonResult(cachedResult);
         
         try
         {
@@ -96,12 +96,12 @@ public class StatusController : CustomControllerBase
                 { "pendingAuthentication.count", 0 } // Not implemented
             }, Formatting.Indented);
             _cacheService.SetValue("yggdrasil_status", result, TimeSpan.FromMinutes(5));
-            return ReturnJson(result);
+            return JsonResult(result);
         }
         catch (Exception ex)
         {
            Logger.LogCritical(ex, "Error retrieving yggdrasil status counts");
-           return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+           return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -116,6 +116,6 @@ public class StatusController : CustomControllerBase
     [HttpGet("minecraftservices/publickeys")]
     public IActionResult GetPublicKeys()
     {
-        return ReturnJson(new { profileKeys = Array.Empty<object>() });
+        return JsonResult(new { profileKeys = Array.Empty<object>() });
     }
 }

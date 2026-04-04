@@ -78,12 +78,12 @@ public class SessionServerController : CustomControllerBase
             if (incomingEtag.ToString().Equals(etag, StringComparison.Ordinal))
             {
                 HttpContext.Response.Headers.ETag = etag;
-                return ReturnResponseCode(HttpStatusCode.NotModified);
+                return CodeResult(HttpStatusCode.NotModified);
             }
         }
 
         HttpContext.Response.Headers.ETag = etag;
-        return ReturnJson(finalJson);
+        return JsonResult(finalJson);
     }
 
     /// <summary>
@@ -108,31 +108,31 @@ public class SessionServerController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             string dashedUuid = Guid.Parse(request.selectedProfile).ToString("D");
             CustomUser? user = await UserStore.FindUserByIdAsync(dashedUuid);
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound,
+                return CodeResult(HttpStatusCode.NotFound,
                     "User not found for the provided selectedProfile UUID");
 
             if (!await _userManager.VerifyJwtTokenAsync(request.accessToken))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid access token");
+                return CodeResult(HttpStatusCode.Unauthorized, "Invalid access token");
             
             UserPlaySession? session = await UserStore.UserPlaySessions.FindAsync(x => x.Token == request.accessToken);
             if (session == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound,
+                return CodeResult(HttpStatusCode.NotFound,
                     "No active session found for the provided access token");
 
             DateTimeOffset now = DateTimeOffset.UtcNow;
             if (now > session.ExpiresAt)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "The access token has expired");
+                return CodeResult(HttpStatusCode.Unauthorized, "The access token has expired");
 
             string host = HttpContext.Request.Host.Host;
             if (session.UserIp != host)
-                return ReturnResponseCode(HttpStatusCode.Forbidden,
+                return CodeResult(HttpStatusCode.Forbidden,
                     "The IP address associated with the access token does not match the IP address of the request");
 
             await _serverJoinRepo.AddAsync(new ServerJoin
@@ -143,12 +143,12 @@ public class SessionServerController : CustomControllerBase
                 CreatedAt = now,
                 ExpiresAt = now.AddDays(1)
             }, true);
-            return ReturnResponseCode(HttpStatusCode.NoContent);
+            return CodeResult(HttpStatusCode.NoContent);
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Unknown error while processing join request for selectedProfile: {SelectedProfile}, serverId: {ServerId}.", request.selectedProfile, request.serverId);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -176,35 +176,35 @@ public class SessionServerController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await UserStore.FindUserAsync(x => x.UserName == username);
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
+                return CodeResult(HttpStatusCode.NotFound, "User not found");
 
             ServerJoin? join =
                 await _serverJoinRepo.FindAsync(x => x.ServerId == serverId && (x.UserIp == ip || ip == null));
             if (join == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound,
+                return CodeResult(HttpStatusCode.NotFound,
                     "No matching server join found for the provided serverId and IP address");
 
             DateTimeOffset now = DateTimeOffset.UtcNow;
             if (now > join.ExpiresAt)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "The server join has expired");
+                return CodeResult(HttpStatusCode.Unauthorized, "The server join has expired");
 
             if (user.Id != join.UserId)
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     "The provided username does not match the user associated with the server join");
 
             string json = await GetProfileResponseJsonAsync(user);
-            return ReturnJson(json);
+            return JsonResult(json);
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Unknown error while processing hasJoined request for serverId: {ServerId}, username: {Username}.", serverId, username);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -230,13 +230,13 @@ public class SessionServerController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             string dashedUuid = Guid.Parse(uuid).ToString("D");
             CustomUser? user = await UserStore.FindUserByIdAsync(dashedUuid);
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found");
+                return CodeResult(HttpStatusCode.NotFound, "User not found");
 
             string json = await GetProfileResponseJsonAsync(user, unsigned);
             string etag = ComputeETag(json);
@@ -245,17 +245,17 @@ public class SessionServerController : CustomControllerBase
                 if (incomingEtag.ToString().Equals(etag, StringComparison.Ordinal))
                 {
                     HttpContext.Response.Headers.ETag = etag;
-                    return ReturnResponseCode(HttpStatusCode.NotModified);
+                    return CodeResult(HttpStatusCode.NotModified);
                 }
             }
 
             HttpContext.Response.Headers.ETag = etag;
-            return ReturnJson(json);
+            return JsonResult(json);
         }
         catch (Exception ex)
         {
             Logger.LogCritical("Unknown error while processing profile request for uuid: {Uuid}, unsigned: {Unsigned}. Error: {ErrorMessage}", uuid, unsigned, ex);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     

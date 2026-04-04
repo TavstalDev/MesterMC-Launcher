@@ -52,28 +52,28 @@ public class TwoFactorController : CustomControllerBase {
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (user.TwoFactorEnabled)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
+                return CodeResult(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
             
             if (!_userManager.VerifyTwoFactorCode(user, twoFactorCode))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                return CodeResult(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
             user.TwoFactorEnabled = true;
             await UserStore.UpdateUserAsync(user, true);
             
-            return ReturnResponseCode(HttpStatusCode.OK, "Two-factor authentication enabled.");
+            return CodeResult(HttpStatusCode.OK, "Two-factor authentication enabled.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to enable 2FA.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -98,28 +98,28 @@ public class TwoFactorController : CustomControllerBase {
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!user.TwoFactorEnabled)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
+                return CodeResult(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
             
             if (!_userManager.VerifyTwoFactorCode(user, twoFactorCode))
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
+                return CodeResult(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
             
             user.TwoFactorEnabled = false;
             await UserStore.UpdateUserAsync(user, true);
             
-            return ReturnResponseCode(HttpStatusCode.OK, "Two-factor authentication disabled.");
+            return CodeResult(HttpStatusCode.OK, "Two-factor authentication disabled.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to disable 2FA.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -139,14 +139,14 @@ public class TwoFactorController : CustomControllerBase {
         {
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (user.TwoFactorEnabled)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
+                return CodeResult(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
 
             string rawSecret = await _userManager.GenerateTwoFactorTokenAsync(user);
             
-            return ReturnJson(new
+            return JsonResult(new
             {
                 statusCode = HttpStatusCode.OK,
                 userId = user.Id,
@@ -157,7 +157,7 @@ public class TwoFactorController : CustomControllerBase {
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to generate 2FA secret.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -177,14 +177,14 @@ public class TwoFactorController : CustomControllerBase {
         {
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             var recoveryCodes = await UserStore.UserBackupCodes.QueryAsync(x => x.UserId == user.Id);
             foreach (var code in recoveryCodes) 
                 await UserStore.UserBackupCodes.RemoveAsync(code);
             var newCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 6);
             
-            return ReturnJson(new
+            return JsonResult(new
             {
                 statusCode = HttpStatusCode.OK,
                 userId = user.Id,
@@ -195,7 +195,7 @@ public class TwoFactorController : CustomControllerBase {
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to regenerate recovery codes.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 }

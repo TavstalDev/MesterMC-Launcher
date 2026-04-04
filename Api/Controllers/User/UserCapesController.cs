@@ -59,23 +59,23 @@ public class UserCapesController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Select))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
+                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? cape = await UserStore.UserCapes.FindAsync(x => x.UserId == user.Id && x.CapeId == capeId);
             if (cape == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found for the user");
+                return CodeResult(HttpStatusCode.NotFound, "Cape not found for the user");
 
             if (cape.IsSelected)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape is already selected");
+                return CodeResult(HttpStatusCode.BadRequest, "Cape is already selected");
 
             UserCape? currentlySelectedCape =
                 await UserStore.UserCapes.FindAsync(x => x.UserId == user.Id && x.IsSelected);
@@ -87,12 +87,12 @@ public class UserCapesController : CustomControllerBase
 
             cape.IsSelected = true;
             await UserStore.UserCapes.UpdateAsync(cape, true);
-            return ReturnResponseCode(HttpStatusCode.OK, "Cape selected successfully");
+            return CodeResult(HttpStatusCode.OK, "Cape selected successfully");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error while selecting cape.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -115,24 +115,24 @@ public class UserCapesController : CustomControllerBase
         {
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Unselect))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
+                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? currentlySelectedCape =
                 await UserStore.UserCapes.FindAsync(x => x.UserId == user.Id && x.IsSelected);
             if (currentlySelectedCape == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "No cape is currently selected for the user");
+                return CodeResult(HttpStatusCode.NotFound, "No cape is currently selected for the user");
 
             currentlySelectedCape.IsSelected = false;
             await UserStore.UserCapes.UpdateAsync(currentlySelectedCape, true);
-            return ReturnResponseCode(HttpStatusCode.OK, "Selected cape cleared successfully");
+            return CodeResult(HttpStatusCode.OK, "Selected cape cleared successfully");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error while clearing selected cape.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -165,30 +165,30 @@ public class UserCapesController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.SelectOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
+                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
+                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             UserCape? cape = await UserStore.UserCapes.FindAsync(x => x.UserId == targetUser.Id && x.CapeId == capeId);
             if (cape == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "Cape not found for the user");
+                return CodeResult(HttpStatusCode.NotFound, "Cape not found for the user");
 
             if (cape.IsSelected)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Cape is already selected");
+                return CodeResult(HttpStatusCode.BadRequest, "Cape is already selected");
 
             UserCape? currentlySelectedCape =
                 await UserStore.UserCapes.FindAsync(x => x.UserId == targetUser.Id && x.IsSelected);
@@ -200,12 +200,12 @@ public class UserCapesController : CustomControllerBase
 
             cape.IsSelected = true;
             await UserStore.UserCapes.UpdateAsync(cape, true);
-            return ReturnResponseCode(HttpStatusCode.OK, "Cape selected successfully");
+            return CodeResult(HttpStatusCode.OK, "Cape selected successfully");
         }
         catch (Exception ex) 
         {
             Logger.LogCritical(ex, "Error while selecting cape for another user.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -234,37 +234,37 @@ public class UserCapesController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.UnselectOther))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
+                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "Target user not found");
+                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             UserCape? currentlySelectedCape =
                 await UserStore.UserCapes.FindAsync(x => x.UserId == targetUser.Id && x.IsSelected);
             if (currentlySelectedCape == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "No cape is currently selected for the user");
+                return CodeResult(HttpStatusCode.NotFound, "No cape is currently selected for the user");
 
             currentlySelectedCape.IsSelected = false;
             await UserStore.UserCapes.UpdateAsync(currentlySelectedCape, true);
-            return ReturnResponseCode(HttpStatusCode.OK, "Selected cape cleared successfully");
+            return CodeResult(HttpStatusCode.OK, "Selected cape cleared successfully");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error while clearing selected cape for another user.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     #endregion

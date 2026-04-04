@@ -46,14 +46,14 @@ public class ProfilesController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             // Retrieve users from the database whose usernames match the provided list.
             List<CustomUser> users = (await UserStore.QueryUserAsync(x => names.Contains(x.UserName))).ToList();
             if (users.Count == 0)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "No users found with the provided usernames.");
+                return CodeResult(HttpStatusCode.NotFound, "No users found with the provided usernames.");
 
             // Prepare the response containing user IDs and usernames.
             List<Dictionary<string, string>> response = new List<Dictionary<string, string>>();
@@ -68,12 +68,12 @@ public class ProfilesController : CustomControllerBase
             }
 
             // Return the response as JSON.
-            return ReturnJson(response);
+            return JsonResult(response);
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error retrieving Minecraft profiles for usernames: {Usernames}", string.Join(", ", names));
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 }

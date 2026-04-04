@@ -81,20 +81,20 @@ public class RegisterController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             if (await _userManager.IsCompromisedPasswordAsync(request.Password)) 
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Password is compromised.");
+                return CodeResult(HttpStatusCode.Forbidden, "Password is compromised.");
             
             if (!request.EmailAddress.IsValidEmail())
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid email address.");
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid email address.");
                 
             var normalizedEmail = request.EmailAddress.Normalize();
             var normalizedUsername = request.Username.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail || x.NormalizedUserName == normalizedUsername);
             if (user != null)
-                return ReturnResponseCode(HttpStatusCode.Conflict, "User already exists.");
+                return CodeResult(HttpStatusCode.Conflict, "User already exists.");
             
             FileData? avatarData = null;
             if (request.Avatar is { Length: > 0 })
@@ -112,14 +112,14 @@ public class RegisterController : CustomControllerBase
                     var info = image.Metadata.DecodedImageFormat;
 
                     if (info?.Name != "PNG") 
-                        return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+                        return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
                     stream.Position = 0;
                 }
                 catch (Exception)
                 {
                     Logger.LogError($"Failed to upload avatar file: {fileHash}");
-                    return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
+                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
                 }
                 
                 avatarData = await _fileDataRepo.AddAsync(new FileData
@@ -168,12 +168,12 @@ public class RegisterController : CustomControllerBase
                 Logger.LogCritical("Failed to send confirmation email: {Message}", eex);
             }
 
-            return ReturnResponseCode(HttpStatusCode.Created, "User registered successfully");
+            return CodeResult(HttpStatusCode.Created, "User registered successfully");
         }
         catch (Exception ex)
         {
             Logger.LogCritical("Error during registration: {Message}", ex);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred");
+            return CodeResult(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
     
@@ -202,25 +202,25 @@ public class RegisterController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             // Find the user by ID
             CustomUser? user = await UserStore.FindUserByIdAsync(request.UserId);
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "User does not exist.");
+                return CodeResult(HttpStatusCode.BadRequest, "User does not exist.");
 
             // Check if the user's email is already confirmed
             if (user.EmailConfirmed)
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "The user is already confirmed.");
+                return CodeResult(HttpStatusCode.Forbidden, "The user is already confirmed.");
 
             // Validate the confirmation token
             var confirmationToken = await UserStore.UserTokens.FindAsync(x => x.UserId == user.Id && x.Name == "EmailConfirmationToken");
             if (confirmationToken == null)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid confirmation token");
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid confirmation token");
 
             if (confirmationToken.Value != request.ConfirmationToken)
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid confirmation token");
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid confirmation token");
             
             await UserStore.UserTokens.RemoveAsync(confirmationToken);
             user.EmailConfirmed = true;
@@ -231,13 +231,13 @@ public class RegisterController : CustomControllerBase
             await _emailService.SendEmailAsync(user.Email, user.UserName, "Account Confirmation",
                 "Your account has been confirmed<br/>Thank you for confirming your account. You can now log in.");
 
-            return ReturnResponseCode(HttpStatusCode.OK, "User confirmed successfully");
+            return CodeResult(HttpStatusCode.OK, "User confirmed successfully");
         }
         catch (Exception ex)
         {
             // Log critical errors and return an internal server error response
             Logger.LogCritical("Error during email confirmation: {Message}", ex);
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "Unexpected error occurred");
+            return CodeResult(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
 

@@ -66,7 +66,7 @@ public class NewsController : CustomControllerBase
             {
                 Response.Headers.CacheControl =
                     "public,max-age=3600,immutable";
-                return ReturnJson(cachedNews);
+                return JsonResult(cachedNews);
             }
 
 
@@ -90,12 +90,12 @@ public class NewsController : CustomControllerBase
             _cacheService.SetValue("news:all", newsResponse, CacheTTL);
             Response.Headers.CacheControl =
                 "public,max-age=3600,immutable";
-            return ReturnJson(newsResponse);
+            return JsonResult(newsResponse);
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to retrieve news articles.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     
@@ -115,7 +115,7 @@ public class NewsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
@@ -123,7 +123,7 @@ public class NewsController : CustomControllerBase
             {
                 Response.Headers.CacheControl =
                     "public,max-age=3600,immutable";
-                return ReturnJson(cachedNews);
+                return JsonResult(cachedNews);
             }
 
             var news = await _newsRepo.QueryAsync(null);
@@ -148,12 +148,12 @@ public class NewsController : CustomControllerBase
             _cacheService.SetValue("news:latest", newsResponse, CacheTTL);
             Response.Headers.CacheControl =
                 "public,max-age=3600,immutable";
-            return ReturnJson(newsResponse);
+            return JsonResult(newsResponse);
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to retrieve latest news articles.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -175,7 +175,7 @@ public class NewsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
@@ -183,12 +183,12 @@ public class NewsController : CustomControllerBase
             {
                 Response.Headers.CacheControl =
                     "public,max-age=3600,immutable";
-                return ReturnJson(cachedNews);
+                return JsonResult(cachedNews);
             }
 
             News? news = await _newsRepo.FindByIdAsync(id);
             if (news == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "News article not found.");
+                return CodeResult(HttpStatusCode.NotFound, "News article not found.");
 
             string bannerUrl = string.Empty;
             FileData? fd =
@@ -205,12 +205,12 @@ public class NewsController : CustomControllerBase
             _cacheService.SetValue($"news:{id}", responseBody, CacheTTL);
             Response.Headers.CacheControl =
                 "public,max-age=3600,immutable";
-            return ReturnJson(responseBody);
+            return JsonResult(responseBody);
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to retrieve news article.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -238,22 +238,22 @@ public class NewsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             var user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Create))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
+                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (requestBody.Banner.Length > 1024 * 500) // 500 KB limit
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+                return CodeResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!requestBody.Banner.FileName.EndsWith(".png"))
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+                return CodeResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
             await using var stream = requestBody.Banner.OpenReadStream();
             using var sha256 = SHA256.Create();
@@ -268,14 +268,14 @@ public class NewsController : CustomControllerBase
                 var info = image.Metadata.DecodedImageFormat;
 
                 if (info?.Name != "PNG")
-                    return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
                 stream.Position = 0;
             }
             catch (Exception)
             {
                 Logger.LogError($"Failed to upload banner file: {fileHash}");
-                return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
             }
 
             FileData fd = await _fileDataRepo.AddAsync(new FileData
@@ -295,12 +295,12 @@ public class NewsController : CustomControllerBase
                 CreatedAt = DateTimeOffset.UtcNow
             }, true);
 
-            return ReturnResponseCode(HttpStatusCode.Created, "News article created successfully.");
+            return CodeResult(HttpStatusCode.Created, "News article created successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to create new article.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -329,20 +329,20 @@ public class NewsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             var user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Update))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
+                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             News? news = await _newsRepo.FindByIdAsync(id);
             if (news == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "News article not found.");
+                return CodeResult(HttpStatusCode.NotFound, "News article not found.");
 
             if (!string.IsNullOrEmpty(requestBody.Title))
                 news.Title = requestBody.Title;
@@ -353,10 +353,10 @@ public class NewsController : CustomControllerBase
             if (requestBody.Banner != null)
             {
                 if (requestBody.Banner.Length > 1024 * 500) // 500 KB limit
-                    return ReturnResponseCode(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+                    return CodeResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
                 if (!requestBody.Banner.FileName.EndsWith(".png"))
-                    return ReturnResponseCode(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+                    return CodeResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
                 await using var stream = requestBody.Banner.OpenReadStream();
                 using var sha256 = SHA256.Create();
@@ -371,14 +371,14 @@ public class NewsController : CustomControllerBase
                     var info = image.Metadata.DecodedImageFormat;
 
                     if (info?.Name != "PNG")
-                        return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+                        return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
                     stream.Position = 0;
                 }
                 catch (Exception)
                 {
                     Logger.LogError($"Failed to upload banner file: {fileHash}");
-                    return ReturnResponseCode(HttpStatusCode.BadRequest, "Invalid image format.");
+                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
                 }
 
                 FileData? existingBanner =
@@ -402,12 +402,12 @@ public class NewsController : CustomControllerBase
             }
 
             await _newsRepo.UpdateAsync(news, true);
-            return ReturnResponseCode(HttpStatusCode.OK, "News article updated successfully.");
+            return CodeResult(HttpStatusCode.OK, "News article updated successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to update news article.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -433,20 +433,20 @@ public class NewsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             var user = await GetCurrentUserAsync();
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.Unauthorized, "User not authenticated");
+                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Delete))
-                return ReturnResponseCode(HttpStatusCode.Forbidden, "Permission denied.");
+                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             News? news = await _newsRepo.FindAsync(x => x.Id == id);
             if (news == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "News article not found.");
+                return CodeResult(HttpStatusCode.NotFound, "News article not found.");
 
             FileData? file =
                 await _fileDataRepo.FindAsync(x => x.Id == news.BannerId && x.Type == EFileDataType.NEWS_BANNER);
@@ -457,12 +457,12 @@ public class NewsController : CustomControllerBase
             }
 
             await _newsRepo.RemoveAsync(news, true);
-            return ReturnResponseCode(HttpStatusCode.OK, "News article deleted successfully.");
+            return CodeResult(HttpStatusCode.OK, "News article deleted successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to delete news article.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
     #endregion

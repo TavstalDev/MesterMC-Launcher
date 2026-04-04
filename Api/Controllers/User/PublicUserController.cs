@@ -53,19 +53,19 @@ public class PublicUserController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await UserStore.FindUserByIdAsync(userId);
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return CodeResult(HttpStatusCode.NotFound, "User not found.");
 
             string avatarUrl = string.Empty;
             if (user.Avatar != null && !string.IsNullOrEmpty(_settings.ApiUrl))
                 avatarUrl = user.Avatar.GetUrl(_settings.ApiUrl);
             
-            return ReturnJson(new
+            return JsonResult(new
             {
                 user.Id,
                 AvatarUrl = avatarUrl,
@@ -81,7 +81,7 @@ public class PublicUserController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving user information.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 
@@ -105,24 +105,24 @@ public class PublicUserController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return ReturnResponseCode(HttpStatusCode.BadRequest,
+                return CodeResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await UserStore.FindUserByIdAsync(userId);
             if (user == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "User not found.");
+                return CodeResult(HttpStatusCode.NotFound, "User not found.");
 
             FileData? existingAvatar =
                 await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar == null)
-                return ReturnResponseCode(HttpStatusCode.NotFound, "No avatar found.");
+                return CodeResult(HttpStatusCode.NotFound, "No avatar found.");
 
             string etag = $"\"{existingAvatar.Hash}\"";
             if (Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) &&
                 incomingEtag == etag)
             {
-                return ReturnResponseCode(HttpStatusCode.NotModified);
+                return CodeResult(HttpStatusCode.NotModified);
             }
 
             Response.Headers.CacheControl =
@@ -133,7 +133,7 @@ public class PublicUserController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving the user's avatar.");
-            return ReturnResponseCode(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
         }
     }
 }
