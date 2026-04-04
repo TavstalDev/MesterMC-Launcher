@@ -363,6 +363,8 @@ public static class Program
         #region Services
         // Configure identity options for claims
         services.Configure<IdentityOptions>(options => options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier);
+        // Configure antiforgery options to use a custom header name for CSRF tokens
+        services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
         // Add HTTP client factory for making HTTP requests
         services.AddHttpClient();
         // Add memory caching services
@@ -483,6 +485,11 @@ public static class Program
             
         // Configure CORS.
         app.UseCors("Default");
+        app.Use(async (context, next) =>
+        {
+            context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'none';");
+            await next();
+        });
 
         app.UseRouting();
 
