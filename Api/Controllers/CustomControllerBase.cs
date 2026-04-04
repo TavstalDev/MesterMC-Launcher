@@ -62,67 +62,48 @@ public abstract class CustomControllerBase : Controller
     }
 
     /// <summary>
-    /// Returns an HTTP response with the specified status code.
-    /// </summary>
-    /// <param name="status">The HTTP status code to return.</param>
-    /// <returns>An IActionResult representing the HTTP response.</returns>
-    protected IActionResult ReturnResponseCode(HttpStatusCode status) => StatusCode((int)status);
-
-    /// <summary>
-    /// Returns an HTTP response with the specified status code, message, and value.
-    /// </summary>
-    /// <param name="status">The HTTP status code to return.</param>
-    /// <param name="message">The message to include in the response.</param>
-    /// <param name="value">The value to include in the response.</param>
-    /// <returns>An IActionResult representing the HTTP response.</returns>
-    protected IActionResult ReturnResponseCode(HttpStatusCode status, string message, object value) => StatusCode(
-        (int)status, JObject.FromObject(new { Message = message, Value = value }).ToString(Formatting.None));
-
-    /// <summary>
     /// Returns an HTTP response with the specified status code and message.
     /// </summary>
     /// <param name="status">The HTTP status code to return.</param>
     /// <param name="message">The message to include in the response.</param>
     /// <returns>An IActionResult representing the HTTP response.</returns>
-    protected IActionResult ReturnResponseCode(HttpStatusCode status, string message) => StatusCode((int)status, message);
-
-    /// <summary>
-    /// Returns a JSON response with the specified JSON string.
-    /// </summary>
-    /// <param name="json">The JSON string to include in the response.</param>
-    /// <returns>An IActionResult representing the JSON response.</returns>
-    protected IActionResult ReturnJson(string json) => Content(json, "application/json");
-
+    protected IActionResult CodeResult(HttpStatusCode status, string? message = null)
+    {
+        if (string.IsNullOrEmpty(message))
+            return StatusCode((int)status);
+        return StatusCode((int)status, message);
+    }
+    
     /// <summary>
     /// Returns a JSON response with the specified object serialized to JSON.
+    /// This method intelligently handles different input types to optimize serialization.
     /// </summary>
-    /// <param name="json">The object to serialize and include in the response.</param>
-    /// <returns>An IActionResult representing the JSON response.</returns>
-    protected IActionResult ReturnJson(object json) =>
-        Content(JsonConvert.SerializeObject(json, Formatting.None), "application/json");
-
-    /// <summary>
-    /// Returns a JSON response with the specified JObject.
-    /// </summary>
-    /// <param name="json">The JObject to include in the response.</param>
-    /// <returns>An IActionResult representing the JSON response.</returns>
-    protected IActionResult ReturnJson(JObject json) => Content(json.ToString(Formatting.None), "application/json");
-
-    /// <summary>
-    /// Returns a JSON response with the specified JArray.
-    /// </summary>
-    /// <param name="json">The JArray to include in the response.</param>
-    /// <returns>An IActionResult representing the JSON response.</returns>
-    protected IActionResult ReturnJson(JArray json) => Content(json.ToString(Formatting.None), "application/json");
-
-    /// <summary>
-    /// Redirects to an error page with the specified status code and message.
-    /// </summary>
-    /// <param name="status">The HTTP status code to include in the redirect.</param>
-    /// <param name="message">The error message to include in the redirect.</param>
-    /// <returns>An IActionResult representing the redirect response.</returns>
-    protected IActionResult RedirectError(HttpStatusCode status, string message) =>
-        Redirect($"/oops?id={(int)status}&message={message}");
+    /// <param name="obj">
+    /// The object to serialize and include in the response. Supported types include:
+    /// <list type="bullet">
+    /// <item><description><see cref="string"/> - Raw JSON string (returned as-is)</description></item>
+    /// <item><description><see cref="JObject"/> - Newtonsoft.Json object (converted to compact JSON string)</description></item>
+    /// <item><description><see cref="JArray"/> - Newtonsoft.Json array (converted to compact JSON string)</description></item>
+    /// <item><description>Any other object - Serialized using <see cref="JsonConvert.SerializeObject(object, Newtonsoft.Json.Formatting)"/></description></item>
+    /// </list>
+    /// </param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> containing the JSON-formatted response with content type "application/json".
+    /// </returns>
+    protected IActionResult JsonResult(object obj)
+    {
+        switch (obj)
+        {
+            case string str:
+                return Content(str, "application/json");
+            case JObject jobj:
+                return Content(jobj.ToString(Formatting.None), "application/json");
+            case JArray jarray:
+                return Content(jarray.ToString(Formatting.None), "application/json");
+            default:
+               return Content(JsonConvert.SerializeObject(obj, Formatting.None), "application/json");
+        }
+    }
     
     /// <summary>
     /// Computes a stable ETag (Entity Tag) for the given JSON string.
