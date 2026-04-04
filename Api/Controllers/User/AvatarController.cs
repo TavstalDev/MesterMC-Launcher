@@ -101,7 +101,7 @@ public class AvatarController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while retrieving the user's avatar.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -196,7 +196,7 @@ public class AvatarController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while uploading the user's avatar.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -240,7 +240,7 @@ public class AvatarController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while deleting the user's avatar.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -348,7 +348,7 @@ public class AvatarController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while uploading an avatar for another user.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -410,7 +410,7 @@ public class AvatarController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while deleting an avatar for another user.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     #endregion

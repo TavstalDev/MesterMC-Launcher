@@ -74,7 +74,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving launcher versions.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -102,7 +102,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving the latest launcher version.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -139,7 +139,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving launcher version details.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -195,7 +195,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving the launcher version download link.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -254,7 +254,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while creating a new launcher version.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -321,7 +321,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while updating the launcher version.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -380,7 +380,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while deleting the launcher version.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -466,7 +466,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while adding launcher version data.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -522,7 +522,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while deleting launcher version data.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     #endregion

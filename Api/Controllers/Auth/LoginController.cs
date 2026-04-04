@@ -133,7 +133,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -209,7 +209,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -277,7 +277,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -336,7 +336,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during login: {Message}", ex.Message);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -382,7 +382,7 @@ public class LoginController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Error during logout: {Message}", ex.Message);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 }

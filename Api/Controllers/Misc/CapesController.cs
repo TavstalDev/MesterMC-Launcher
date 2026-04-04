@@ -151,7 +151,7 @@ public class CapesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error uploading cape");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -214,7 +214,7 @@ public class CapesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, $"Failed to delete cape with ID {capeId}");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 }

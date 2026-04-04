@@ -95,7 +95,7 @@ public class NewsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to retrieve news articles.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -153,7 +153,7 @@ public class NewsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to retrieve latest news articles.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -210,7 +210,7 @@ public class NewsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to retrieve news article.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -300,7 +300,7 @@ public class NewsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to create new article.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -407,7 +407,7 @@ public class NewsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to update news article.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -462,7 +462,7 @@ public class NewsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Failed to delete news article.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     #endregion

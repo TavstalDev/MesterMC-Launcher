@@ -92,7 +92,7 @@ public class UserCapesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error while selecting cape.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -132,7 +132,7 @@ public class UserCapesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error while clearing selected cape.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -205,7 +205,7 @@ public class UserCapesController : CustomControllerBase
         catch (Exception ex) 
         {
             Logger.LogCritical(ex, "Error while selecting cape for another user.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -264,7 +264,7 @@ public class UserCapesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error while clearing selected cape for another user.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     #endregion

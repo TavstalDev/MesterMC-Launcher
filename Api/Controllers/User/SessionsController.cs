@@ -62,7 +62,7 @@ public class SessionsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving user sessions.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -109,7 +109,7 @@ public class SessionsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while revoking the user session.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -140,7 +140,7 @@ public class SessionsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while revoking all user sessions.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -191,7 +191,7 @@ public class SessionsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving sessions for user with ID {UserId}.", userId);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -246,7 +246,7 @@ public class SessionsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while revoking session.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -296,7 +296,7 @@ public class SessionsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while revoking all sessions of the target user.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     #endregion

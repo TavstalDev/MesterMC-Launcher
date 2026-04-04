@@ -103,7 +103,7 @@ public class TexturesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error retrieving texture with hash {Hash}", hash);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 }

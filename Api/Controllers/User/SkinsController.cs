@@ -79,7 +79,7 @@ public class SkinsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while retrieving the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -177,7 +177,7 @@ public class SkinsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while uploading the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -216,7 +216,7 @@ public class SkinsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while deleting the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -279,7 +279,7 @@ public class SkinsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while retrieving the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -386,7 +386,7 @@ public class SkinsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while uploading the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -443,7 +443,7 @@ public class SkinsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while deleting the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 

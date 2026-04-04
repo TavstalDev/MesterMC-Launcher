@@ -73,7 +73,7 @@ public class ProfilesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error retrieving Minecraft profiles for usernames: {Usernames}", string.Join(", ", names));
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 }

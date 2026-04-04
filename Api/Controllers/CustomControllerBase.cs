@@ -114,6 +114,7 @@ public abstract class CustomControllerBase : Controller
     /// <returns>A string representing the computed ETag.</returns>
     protected static string ComputeETag(string json)
     {
+        // ETag is not security-sensitive, SHA1 is acceptable for performance reasons.
         using var sha1 = SHA1.Create();
         var bytes = Encoding.UTF8.GetBytes(json);
         var hash = sha1.ComputeHash(bytes);
@@ -131,9 +132,11 @@ public abstract class CustomControllerBase : Controller
     {
         var userAgent = Request.Headers.UserAgent.ToString();
         var ipAddress = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
+        if (string.IsNullOrEmpty(ipAddress))
+            ipAddress = "unknown";
     
         // Combine traits and hash them
-        var rawData = $"{userId}-{userAgent}-{ipAddress}";
+        var rawData = string.Concat(userId, "-", userAgent, "-", ipAddress);
         return StringChiper.GetEncryptedHash(rawData, Settings.EncryptionKey);
     }
 }

@@ -148,7 +148,7 @@ public class SessionServerController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Unknown error while processing join request for selectedProfile: {SelectedProfile}, serverId: {ServerId}.", request.selectedProfile, request.serverId);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -204,7 +204,7 @@ public class SessionServerController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Unknown error while processing hasJoined request for serverId: {ServerId}, username: {Username}.", serverId, username);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -255,7 +255,7 @@ public class SessionServerController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Unknown error while processing profile request for uuid: {Uuid}, unsigned: {Unsigned}. Error: {ErrorMessage}", uuid, unsigned, ex);
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -341,7 +341,7 @@ public class SessionServerController : CustomControllerBase
             };
             if (!unsigned)
             {
-                using var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, _settings.CertPassword);
+                using var cert = Program.GetCertificate(_settings.CertificateFingerprint, _settings.CertificatePassword);
                 using var rsa = cert.GetRSAPrivateKey();
 
                 if (rsa != null)

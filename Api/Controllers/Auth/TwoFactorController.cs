@@ -73,7 +73,7 @@ public class TwoFactorController : CustomControllerBase {
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to enable 2FA.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -119,7 +119,7 @@ public class TwoFactorController : CustomControllerBase {
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to disable 2FA.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -157,7 +157,7 @@ public class TwoFactorController : CustomControllerBase {
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to generate 2FA secret.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -195,7 +195,7 @@ public class TwoFactorController : CustomControllerBase {
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to regenerate recovery codes.");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 }

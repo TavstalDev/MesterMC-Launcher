@@ -45,7 +45,7 @@ public class StatusController : CustomControllerBase
     {
         try
         {
-            var cert = X509CertificateLoader.LoadPkcs12(_settings.Cert, _settings.CertPassword);
+            var cert = Program.GetCertificate(_settings.CertificateFingerprint, _settings.CertificatePassword);
             var rsa = cert.GetRSAPrivateKey();
             if (rsa == null)
                 return CodeResult(HttpStatusCode.InternalServerError,
@@ -68,7 +68,7 @@ public class StatusController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error retrieving yggdrasil status");
-            return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -101,7 +101,7 @@ public class StatusController : CustomControllerBase
         catch (Exception ex)
         {
            Logger.LogCritical(ex, "Error retrieving yggdrasil status counts");
-           return CodeResult(HttpStatusCode.InternalServerError, "An unknown error occurred while processing the request.");
+           return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
