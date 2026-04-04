@@ -164,31 +164,33 @@ public class CustomDbContext : DbContext
     /// Clears expired user logins and their associated tokens from the database asynchronously.
     /// </summary>
     /// <param name="shouldSave">Indicates whether to save changes to the database after clearing the expired logins and tokens.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task ClearExpiredUserLoginsAsync(bool shouldSave = false)
+    public async Task ClearExpiredUserLoginsAsync(bool shouldSave = false, CancellationToken cancellationToken = default)
     {
-        var expiredLogins = await UserLogins.Where(l => l.ExpireDate <= DateTimeOffset.UtcNow).ToListAsync();
+        var expiredLogins = await UserLogins.Where(l => l.ExpireDate <= DateTimeOffset.UtcNow).ToListAsync(cancellationToken: cancellationToken);
         foreach (var login in expiredLogins)
         {
-            var token = UserTokens.FirstOrDefault(x => x.Id == login.ProviderKey);
+            var token = await UserTokens.FirstOrDefaultAsync(x => x.Id == login.ProviderKey, cancellationToken: cancellationToken);
             if (token != null)
                 UserTokens.Remove(token);
         }
         
         UserLogins.RemoveRange(expiredLogins);
-        if (shouldSave) await SaveChangesAsync();
+        if (shouldSave) await SaveChangesAsync(cancellationToken);
     }
     
     /// <summary>
     /// Clears expired user play sessions from the database asynchronously.
     /// </summary>
     /// <param name="shouldSave">Indicates whether to save changes to the database after clearing the expired sessions.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task ClearExpiredUserPlaySessionsAsync(bool shouldSave = false)
+    public async Task ClearExpiredUserPlaySessionsAsync(bool shouldSave = false, CancellationToken cancellationToken = default)
     {
-        var expiredSessions = await UserPlaySessions.Where(s => s.ExpiresAt <= DateTimeOffset.UtcNow).ToListAsync();
+        var expiredSessions = await UserPlaySessions.Where(s => s.ExpiresAt <= DateTimeOffset.UtcNow).ToListAsync(cancellationToken: cancellationToken);
         UserPlaySessions.RemoveRange(expiredSessions);
-        if (shouldSave) await SaveChangesAsync();
+        if (shouldSave) await SaveChangesAsync(cancellationToken);
     }
     
     /// <summary>
@@ -196,28 +198,30 @@ public class CustomDbContext : DbContext
     /// </summary>
     /// <param name="userId">The ID of the user whose logins and tokens are to be cleared.</param>
     /// <param name="shouldSave">Indicates whether to save changes to the database after clearing the logins and tokens.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task ClearUserLoginsAsync(string userId, bool shouldSave = false)
+    public async Task ClearUserLoginsAsync(string userId, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
-        var logins = await UserLogins.Where(x => x.UserId == userId).ToListAsync();
-        var tokens = await UserTokens.Where(x => x.UserId == userId).ToListAsync();
+        var logins = await UserLogins.Where(x => x.UserId == userId).ToListAsync(cancellationToken: cancellationToken);
+        var tokens = await UserTokens.Where(x => x.UserId == userId).ToListAsync(cancellationToken: cancellationToken);
 
         UserLogins.RemoveRange(logins);
         UserTokens.RemoveRange(tokens);
         
         if (shouldSave)
-            await SaveChangesAsync();
+            await SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
     /// Clears expired server join records from the database asynchronously.
     /// </summary>
     /// <param name="shouldSave">Indicates whether to save changes to the database after clearing the expired records.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task ClearExpiredServerJoinsAsync(bool shouldSave = false)
+    public async Task ClearExpiredServerJoinsAsync(bool shouldSave = false, CancellationToken cancellationToken = default)
     {
-        var expiredJoins = await ServerJoins.Where(sj => sj.ExpiresAt <= DateTimeOffset.UtcNow).ToListAsync();
+        var expiredJoins = await ServerJoins.Where(sj => sj.ExpiresAt <= DateTimeOffset.UtcNow).ToListAsync(cancellationToken: cancellationToken);
         ServerJoins.RemoveRange(expiredJoins);
-        if (shouldSave) await SaveChangesAsync();
+        if (shouldSave) await SaveChangesAsync(cancellationToken);
     }
 }
