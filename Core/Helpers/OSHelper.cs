@@ -22,8 +22,15 @@ namespace Tavstal.KonkordLauncher.Core.Helpers;
 /// </summary>
 public static class OSHelper
 {
-    private static CoreLogger _logger = CoreLogger.WithModuleType(typeof(OSHelper));
+    private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(OSHelper));
+    private static readonly HardwareInfo _hardwareInfo = new HardwareInfo();
     private static string _deviceId = string.Empty;
+    private const int Windows11MajorVersion = 10;
+    private const int Windows11MinimumBuild = 22000;
+    private static readonly string[] NvidiaKeywords = ["nvidia", "geforce", "quadro", "gtx", "rtx", "mx", "tesla", "h100"];
+    private static readonly string[] AmdKeywords = ["amd", "radeon", "vega", "rx", "r9", "r7", "r5"];
+    private static readonly string[] IntelKeywords = ["intel", "arc", "battlemage"];
+    private static readonly string[] AppleKeywords = ["apple", "m1", "m2", "m3"];
     
     /// <summary>
     /// Determines the operating system type.
@@ -56,13 +63,13 @@ public static class OSHelper
     /// <returns>
     /// A boolean value indicating whether the operating system is Windows 11.
     /// </returns>
-    public static bool IsWIndows11()
+    public static bool IsWindows11()
     {
         if (GetOperatingSystem() != EOperatingSystem.Windows)
             return false;
 
         Version osVersion = Environment.OSVersion.Version;
-        return (osVersion.Major > 10) || osVersion is { Major: 10, Build: >= 22000 };
+        return (osVersion.Major > Windows11MajorVersion) || osVersion is { Major: Windows11MajorVersion, Build: >= Windows11MinimumBuild };
     }
 
     /// <summary>
@@ -96,25 +103,20 @@ public static class OSHelper
     /// </returns>
     public static (string, string)? GetDedicatedGpuType()
     {
-        var hardwareInfo = new HardwareInfo();
-        hardwareInfo.RefreshVideoControllerList();
-        foreach (var gpu in hardwareInfo.VideoControllerList)
+        _hardwareInfo.RefreshVideoControllerList();
+        foreach (var gpu in _hardwareInfo.VideoControllerList)
         {
             var lowerName = gpu.Description.ToLowerInvariant();
-            if (lowerName.Contains("nvidia") && (lowerName.Contains("geforce") || 
-                                                 lowerName.Contains("quadro") || 
-                                                 lowerName.Contains("gtx") || 
-                                                 lowerName.Contains("rtx") || 
-                                                 lowerName.Contains("mx")))
+            if (NvidiaKeywords.Any(lowerName.Contains))
                 return ("nvidia", gpu.Description);
             
-            if (lowerName.Contains("radeon rx") || lowerName.Contains("radeon r9") || lowerName.Contains("radeon r7") || lowerName.Contains("radeon r5"))
+            if (AmdKeywords.Any(lowerName.Contains))
                 return ("amd", gpu.Description);
             
-            if (lowerName.Contains("intel arc") || lowerName.Contains("intel battlemage"))
+            if (IntelKeywords.Any(lowerName.Contains))
                 return ("intel", gpu.Description);
             
-            if (lowerName.Contains("apple"))
+            if (AppleKeywords.Any(lowerName.Contains))
                 return ("apple", gpu.Description);
         }
         
@@ -129,10 +131,8 @@ public static class OSHelper
     /// </returns>
     public static ulong GetRamInBytes()
     {
-        HardwareInfo hardwareInfo = new HardwareInfo();
-        hardwareInfo.RefreshMemoryStatus();
-
-        return hardwareInfo.MemoryStatus.TotalPhysical;
+        _hardwareInfo.RefreshMemoryStatus();
+        return _hardwareInfo.MemoryStatus.TotalPhysical;
     }
     
     /// <summary>
@@ -261,7 +261,7 @@ public static class OSHelper
     /// Opens the specified URL in the default web browser based on the operating system.
     /// </summary>
     /// <param name="url">The URL to be opened.</param>
-    public static void OpenUrl(string url)
+    public static bool OpenUrl(string url)
     {
         try
         {
@@ -295,16 +295,18 @@ public static class OSHelper
                 default:
                 {
                     _logger.Warn("Unsupported operating system for opening URLs.");
-                    return;
+                    return false;
                 }
             }
         
             // Start the process
             Process.Start(startInfo);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.Error($"Failed to open the website after installation: {ex}");
+            return false;
         }
     }
 
