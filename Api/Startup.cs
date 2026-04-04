@@ -35,14 +35,16 @@ public class Startup
 {
     private static Startup _instance;
     private readonly IConfiguration _configuration;
+    private readonly ILogger _logger;
     private readonly string _uploadDirectory;
+    
     /// <summary>
     /// Gets the configured upload directory path used by the application.
     /// This value is initialized in the <see cref="Startup(IConfiguration)"/> constructor and provides
     /// a globally accessible path to the directory where uploaded files are stored.
     /// </summary>
     public static string UploadDirectory => _instance._uploadDirectory;
-    
+
     /// <summary>
     /// Creates a new <see cref="Startup"/> instance.
     /// 
@@ -62,8 +64,14 @@ public class Startup
         _uploadDirectory = Path.Combine(basePath, _configuration.GetValue<string>(Constants.ConfigurationKeys.RuntimeUploadDir) ?? "uploads");
         if (!Directory.Exists(_uploadDirectory))
             Directory.CreateDirectory(_uploadDirectory);
+        
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();                
+        });
+        _logger = loggerFactory.CreateLogger<Startup>();
     }
-    
+
     /// <summary>
     /// Configures services for dependency injection.
     /// 
@@ -258,6 +266,13 @@ public class Startup
         // Retrieve the CORS configuration section from the application configuration
         var corsDefault = _configuration.GetSection("CORS:Default");
         // Add distributed memory cache services
+
+        var allowAnyOrigin = corsDefault.GetValue<bool>("AllowAnyOrigin");
+        var allowAnyMethod = corsDefault.GetValue<bool>("AllowAnyMethod");
+        var allowAnyHeader = corsDefault.GetValue<bool>("AllowAnyHeader");
+        if (allowAnyOrigin && allowAnyHeader)
+            _logger.LogWarning("CORS configuration allows any origin and any header, which may have security implications. Ensure this is intentional.");
+        
         services.AddDistributedMemoryCache()
             // Add session services with specified options
             .AddSession(options =>
@@ -282,13 +297,13 @@ public class Startup
                         policy.WithMethods(corsDefault.GetSection("Methods").Get<string[]>() ?? []);
                         policy.SetPreflightMaxAge(TimeSpan.FromSeconds(corsDefault.GetValue("MaxAge", 3600)));
                         // Allow any origin if specified in the CORS configuration
-                        if (corsDefault.GetValue<bool>("AllowAnyOrigin"))
+                        if (allowAnyOrigin)
                             policy.AllowAnyOrigin();
                         // Allow any header if specified in the CORS configuration
-                        if (corsDefault.GetValue<bool>("AllowAnyHeader"))
+                        if (allowAnyHeader)
                             policy.AllowAnyHeader();
                         // Allow any method if specified in the CORS configuration
-                        if (corsDefault.GetValue<bool>("AllowAnyMethod"))
+                        if (allowAnyMethod)
                             policy.AllowAnyMethod();
                     });
             });
@@ -304,7 +319,11 @@ public class Startup
         // Configure IP rate limiting
         #region Rate Limiting
 
-        var rules = _configuration.GetValue(Constants.ConfigurationKeys.RateLimitingRules, new Dictionary<string, object>());
+        var rules = _configuration
+            .GetSection("RateLimiting:Rules")
+            .Get<Dictionary<string, RateLimitRule>>();
+        if (rules == null)
+            throw new InvalidOperationException("Rate limiting rules are missing from the configuration.");
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = _configuration.GetValue(Constants.ConfigurationKeys.RateLimitingStatusCode, 429);

@@ -30,9 +30,17 @@ public static class Program
     /// Application entry point. Builds and runs the configured host.
     /// </summary>
     /// <param name="args">Command-line arguments forwarded to the host builder.</param>
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
-        CreateHostBuilder(args).Build().Run();
+        try
+        {
+            using var cts = new CancellationTokenSource();
+            await CreateHostBuilder(args).Build().RunAsync(cts.Token);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Host terminated unexpectedly: {ex}");
+        }
     }
     
     /// <summary>
