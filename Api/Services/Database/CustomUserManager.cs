@@ -25,6 +25,7 @@ public class CustomUserManager(
     MemoryCacheService memoryCacheService,
     Settings settings)
 {
+    private static readonly HttpClient _client = new();
     private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler = new();
     private readonly TokenValidationParameters _tokenValidationParameters = new()
     {
@@ -333,8 +334,7 @@ public class CustomUserManager(
         string cacheKey = $"pwned:{prefix}";
         if (!memoryCacheService.TryGetValue(cacheKey, out string? response))
         {
-            using var client = new HttpClient();
-            response = await client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
+            response = await _client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
             if (!string.IsNullOrEmpty(cacheKey))
                 memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
         }
