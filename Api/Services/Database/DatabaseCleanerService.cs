@@ -7,6 +7,8 @@ public class DatabaseCleanerService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger _logger;
+    private readonly TimeSpan _cleanupInterval = TimeSpan.FromHours(1);
+    private int _cleanupFails = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DatabaseCleanerService"/> class.
@@ -30,18 +32,26 @@ public class DatabaseCleanerService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            await CleanupExpiredContent();
+            await CleanupExpiredContentAsync(stoppingToken);
 
+            // If cleanup fails too many times, stop the service to prevent further issues.
+            if (_cleanupFails > 3)
+            {
+                _logger.LogWarning("Cleanup has failed more than 3 times. Stopping the DatabaseCleanerService to prevent further issues.");
+                break;
+            }
+            
             // run every hour
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+            await Task.Delay(_cleanupInterval, stoppingToken);
         }
     }
 
     /// <summary>
     /// Cleans up expired content from the database, including user logins, play sessions, and server joins.
     /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task that represents the cleanup operation.</returns>
-    private async Task CleanupExpiredContent()
+    private async Task CleanupExpiredContentAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -49,19 +59,20 @@ public class DatabaseCleanerService : BackgroundService
             var db = scope.ServiceProvider.GetRequiredService<CustomDbContext>();
             
             // User Logins
-            await db.ClearExpiredUserLoginsAsync();
+            await db.ClearExpiredUserLoginsAsync(cancellationToken: cancellationToken);
             
             // User Play Sessions
-            await db.ClearExpiredUserPlaySessionsAsync();
+            await db.ClearExpiredUserPlaySessionsAsync(cancellationToken: cancellationToken);
             
             // Server joins
-            await db.ClearExpiredServerJoinsAsync();
+            await db.ClearExpiredServerJoinsAsync(cancellationToken: cancellationToken);
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Cleanup failed");
+            _cleanupFails++;
         }
     }
 }
