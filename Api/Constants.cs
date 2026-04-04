@@ -27,6 +27,12 @@ public static class Constants
     public static class ConfigurationKeys
     {
         /// <summary>
+        /// Configuration key for the port number on which the application's Kestrel server will listen.
+        /// Example: 5001 (for HTTP) or 443 (for HTTPS)
+        /// </summary>
+        public const string ApplicationPort = "Application:Port";
+        
+        /// <summary>
         /// The configuration key for the public-facing website URL of hosted game servers.
         /// Example: "https://example.com"
         /// </summary>
@@ -46,11 +52,17 @@ public static class Constants
         public const string RuntimeUploadDir = "Runtime:UploadDir";
         
         /// <summary>
+        /// Configuration key for the CORS (Cross-Origin Resource Sharing) idle timeout duration.
+        /// Example: 3600 (represents 1 hour of idle timeout for CORS sessions)
+        /// </summary>
+        public const string CorsIdleTimeout = "Cors:IdleTimeout";
+        
+        /// <summary>
         /// Configuration key for the HTTP status code returned when rate limiting is triggered.
         /// Example: 429 (Too Many Requests)
         /// </summary>
         public const string RateLimitingStatusCode = "RateLimiting:StatusCode";
-
+        
         /// <summary>
         /// Configuration key for the maximum file upload size limit in megabytes.
         /// Example: 100 (allows uploads up to 100 MB)
@@ -83,22 +95,6 @@ public static class Constants
         /// Used to configure database-specific behavior and compatibility options.
         /// </summary>
         public const string DatabaseVersion = "Database:Version";
-        
-        /// <summary>
-        /// Environment/config key for the database username (used to build the DB connection string).
-        /// </summary>
-        public const string DatabaseUser = "DB_USER";
-
-        /// <summary>
-        /// Environment/config key for the database password (used to build the DB connection string).
-        /// </summary>
-        public const string DatabasePassword = "DB_PASSWORD";
-
-        /// <summary>
-        /// Environment/config key for the symmetric key used to sign/encrypt JWTs.
-        /// This value must be kept secret.
-        /// </summary>
-        public const string JwtEncryptionKey = "JWT_ENCRYPTION_KEY";
 
         /// <summary>
         /// Configuration key for the JWT token issuer value.
@@ -140,26 +136,10 @@ public static class Constants
         public const string EmailPort = "Email:Port";
 
         /// <summary>
-        /// Environment/config key for the email sender address used by the app.
-        /// Example: "noreply@example.com"
-        /// </summary>
-        public const string EmailAddress = "EMAIL_ADDRESS";
-
-        /// <summary>
-        /// Environment/config key for the email sender account password / app secret.
-        /// </summary>
-        public const string EmailPassword = "EMAIL_PASSWORD";
-
-        /// <summary>
         /// Configuration key containing an array/list of allowed skin domains for Yggdrasil
         /// (used when validating or serving player skins).
         /// </summary>
         public const string YggdrasilSkinDomains = "Yggdrasil:SkinDomains";
-
-        /// <summary>
-        /// Environment/config key for the certificate (PFX) password, if a PFX is used.
-        /// </summary>
-        public const string CertPassword = "CERT_PASSWORD";
 
         /// <summary>
         /// Configuration key for the Yggdrasil-compatible server display name.
@@ -175,5 +155,53 @@ public static class Constants
         /// Configuration key for the Yggdrasil implementation version string (metadata returned to clients).
         /// </summary>
         public const string YggdrasilImplementationVersion = "Yggdrasil:ImplementationVersion";
+    }
+
+    /// <summary>
+    /// Environment variable key names.
+    /// Contains constants for keys that should be loaded from environment variables.
+    /// These keys represent sensitive values (credentials, secrets) that are typically injected at runtime 
+    /// from .env files or environment variables rather than stored directly in appsettings.json.
+    /// </summary>
+    public static class EnvironmentKeys
+    {
+        /// <summary>
+        /// Environment/config key for the database username (used to build the DB connection string).
+        /// </summary>
+        public const string DatabaseUser = "DB_USER";
+
+        /// <summary>
+        /// Environment/config key for the database password (used to build the DB connection string).
+        /// </summary>
+        public const string DatabasePassword = "DB_PASSWORD";
+
+        /// <summary>
+        /// Environment/config key for the symmetric key used to sign/encrypt JWTs.
+        /// This value must be kept secret.
+        /// </summary>
+        public const string JwtEncryptionKey = "JWT_ENCRYPTION_KEY";
+        
+        /// <summary>
+        /// Environment/config key for the email sender address used by the app.
+        /// Example: "noreply@example.com"
+        /// </summary>
+        public const string EmailAddress = "EMAIL_ADDRESS";
+
+        /// <summary>
+        /// Environment/config key for the email sender account password / app secret.
+        /// </summary>
+        public const string EmailPassword = "EMAIL_PASSWORD";
+        
+        /// <summary>
+        /// Configuration key for the SSL/TLS certificate fingerprint.
+        /// This value is used to verify the identity of the server certificate during secure connections.
+        /// </summary>
+        public const string CertificateFingerprint = "CERTIFICATE_FINGERPRINT";
+        
+        /// <summary>
+        /// Environment/config key for the SSL/TLS certificate password or passphrase.
+        /// This value is required when loading certificates from encrypted PFX/PKCS#12 files.
+        /// </summary>
+        public const string CertificatePassword = "CERTIFICATE_PASSWORD";
     }
 }
