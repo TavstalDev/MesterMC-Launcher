@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.MesterMC.Api.Controllers.Yggdrasil;
-using Tavstal.MesterMC.Api.Services.Database;
 using Xunit;
 using Xunit.Abstractions;
 

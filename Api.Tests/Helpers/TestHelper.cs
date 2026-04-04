@@ -10,7 +10,6 @@ using Tavstal.MesterMC.Api.Models;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
-using Tavstal.MesterMC.Api.Services.Database.Interfaces;
 using Tavstal.MesterMC.Api.Tests.Services;
 using Tavstal.MesterMC.Api.Utils.Helpers;
 

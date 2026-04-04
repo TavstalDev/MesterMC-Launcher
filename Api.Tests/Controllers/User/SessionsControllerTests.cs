@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.MesterMC.Api.Controllers.User;
 using Tavstal.MesterMC.Api.Models.Database.User;
-using Tavstal.MesterMC.Api.Services.Database;
 using Xunit;
 using Xunit.Abstractions;
 

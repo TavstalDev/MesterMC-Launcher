@@ -11,7 +11,6 @@ using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services;
 using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Tests.Helpers;
-using Tavstal.MesterMC.Api.Utils.Helpers;
 using Xunit.Abstractions;
 
 namespace Tavstal.MesterMC.Api.Tests.Controllers;

@@ -13,7 +13,6 @@ using Tavstal.MesterMC.Api.Models.Common;
 using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Services.Database.Interfaces;
-using Tavstal.MesterMC.Api.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 

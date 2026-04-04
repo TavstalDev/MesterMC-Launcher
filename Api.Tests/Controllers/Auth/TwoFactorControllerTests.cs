@@ -5,9 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using OtpNet;
 using Tavstal.MesterMC.Api.Controllers.Auth;
-using Tavstal.MesterMC.Api.Services.Database;
 using Tavstal.MesterMC.Api.Tests.Helpers;
-using Tavstal.MesterMC.Api.Utils.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
