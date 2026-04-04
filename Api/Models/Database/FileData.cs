@@ -75,7 +75,7 @@ public class FileData
     /// <returns>True if the file exists; otherwise, false.</returns>
     public bool Exists()
     {
-        string dirPath = Startup.UploadDirectory;
+        string dirPath = Program.UploadDir;
         if (!Directory.Exists(dirPath))
             return false;
         string filePath = Path.Combine(dirPath, GetContainingDirectoryName(), FileName);
@@ -90,7 +90,7 @@ public class FileData
     {
         if (!Exists())
             return null;
-        string dirPath = Startup.UploadDirectory;
+        string dirPath = Program.UploadDir;
         string filePath = Path.Combine(dirPath, GetContainingDirectoryName(), FileName);
         return File.ReadAllBytes(filePath);
     }
@@ -101,7 +101,7 @@ public class FileData
     /// <param name="stream">The stream containing the file data to save.</param>
     public void SaveFile(Stream stream)
     {
-        string dirPath = Startup.UploadDirectory;
+        string dirPath = Program.UploadDir;
         if (!Directory.Exists(dirPath))
             Directory.CreateDirectory(dirPath);
         string containingDir = GetContainingDirectoryName();
@@ -120,7 +120,7 @@ public class FileData
     {
         if (!Exists())
             return;
-        string dirPath = Startup.UploadDirectory;
+        string dirPath = Program.UploadDir;
         string filePath = Path.Combine(dirPath, GetContainingDirectoryName(), FileName);
         File.Delete(filePath);
     }
@@ -149,7 +149,7 @@ public class FileData
     {
         if (!Exists())
             return Stream.Null;
-        string dirPath = Startup.UploadDirectory;
+        string dirPath = Program.UploadDir;
         string filePath = Path.Combine(dirPath, GetContainingDirectoryName(), FileName);
         return new FileStream(filePath, FileMode.Open, FileAccess.Read);
     }

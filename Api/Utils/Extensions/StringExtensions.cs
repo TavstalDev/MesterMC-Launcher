@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.Net;
 
 namespace Tavstal.MesterMC.Api.Utils.Extensions;
 
