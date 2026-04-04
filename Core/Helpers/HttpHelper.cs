@@ -33,7 +33,7 @@ public static class HttpHelper
     public static HttpClient CreateHttpClient()
     {
         HttpClient client;
-        if (OSHelper.IsWIndows11())
+        if (OSHelper.IsWindows11())
         {
             var handler = new SocketsHttpHandler
             {
@@ -50,6 +50,7 @@ public static class HttpHelper
         else
         {
             #if DEBUG
+            _logger.Warn("SSL certificate validation DISABLED in DEBUG mode - DO NOT USE IN PRODUCTION");
             var handler = new HttpClientHandler
             {
                 // This callback bypasses the SSL check
