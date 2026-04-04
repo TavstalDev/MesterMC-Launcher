@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database.Interfaces;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace Tavstal.MesterMC.Api.Services.Database;
 
@@ -72,6 +73,10 @@ public class CustomUserStore
     /// </summary>
     public IRepository<UserPlaySession> UserPlaySessions { get; }
     
+    /// <summary>
+    /// Repository for user capes (<see cref="UserCape"/>).
+    /// Stores cosmetic cape items/customizations associated with users (for example player cosmetic decorations or skins).
+    /// </summary>
     public IRepository<UserCape> UserCapes { get; }
 
     /// <summary>
@@ -87,6 +92,7 @@ public class CustomUserStore
     /// <param name="userBackupCodes">Repository for <see cref="UserBackupCode"/> entities.</param>
     /// <param name="userBillingInformations">Repository for <see cref="UserBillingInformation"/> entities.</param>
     /// <param name="userPlaySessions">Repository for <see cref="UserPlaySession"/> entities.</param>
+    /// <param name="userCapes">Repository for <see cref="UserCape"/> entities.</param>
     /// <remarks>
     /// All repositories are intended to be provided by the dependency injection container. The store itself is a simple
     /// holder for these dependencies and does not perform additional validation. Consumers should handle null checks if required
@@ -118,41 +124,75 @@ public class CustomUserStore
         UserCapes = userCapes;
     }
     
-    public async Task<CustomUser> AddUserAsync(CustomUser value, bool shouldSave = false)
+    /// <summary>
+    /// Adds a new user to the store.
+    /// Automatically generates a new security stamp and concurrency stamp for the user to ensure secure identity and optimistic concurrency control.
+    /// </summary>
+    /// <param name="value">The <see cref="CustomUser"/> entity to add.</param>
+    /// <param name="shouldSave">If true, immediately persists changes to the database.</param>
+    /// <param name="cancellationToken">Optional cancellation token for task cancellation.</param>
+    /// <returns>The added <see cref="CustomUser"/> with generated security and concurrency stamps.</returns>
+
+    public async Task<CustomUser> AddUserAsync(CustomUser value, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
         value.SecurityStamp = Guid.NewGuid().ToString();
         value.ConcurrencyStamp = Guid.NewGuid().ToString();
-        return await Users.AddAsync(value, shouldSave);
+        return await Users.AddAsync(value, shouldSave, cancellationToken);
     }
     
-    public async Task<CustomUser> UpdateUserAsync(CustomUser value, bool shouldSave = false)
+    /// <summary>
+    /// Updates an existing user in the store.
+    /// Automatically regenerates the concurrency stamp to track modifications and prevent concurrent update conflicts.
+    /// </summary>
+    /// <param name="value">The <see cref="CustomUser"/> entity to update with new values.</param>
+    /// <param name="shouldSave">If true, immediately persists changes to the database.</param>
+    /// <param name="cancellationToken">Optional cancellation token for task cancellation.</param>
+    public async Task<CustomUser> UpdateUserAsync(CustomUser value, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
         value.ConcurrencyStamp = Guid.NewGuid().ToString();
-        return await Users.UpdateAsync(value, shouldSave);
+        return await Users.UpdateAsync(value, shouldSave, cancellationToken);
     }
     
-    public async Task RemoveUserAsync(CustomUser value, bool shouldSave = false)
-    {
-        await Users.RemoveAsync(value, shouldSave);
-    }
+    /// <summary>
+    /// Removes (deletes) a user from the store.
+    /// </summary>
+    /// <param name="value">The <see cref="CustomUser"/> entity to remove.</param>
+    /// <param name="shouldSave">If true, immediately persists the deletion to the database.</param>
+    /// <param name="cancellationToken">Optional cancellation token for task cancellation.</param>
+    /// <returns>A completed task representing the asynchronous removal operation.</returns>
+    public async Task RemoveUserAsync(CustomUser value, bool shouldSave = false, CancellationToken cancellationToken = default) => await Users.RemoveAsync(value, shouldSave, cancellationToken);
     
-    public async Task<IEnumerable<CustomUser>> QueryUserAsync(Expression<Func<CustomUser, bool>>? predicate)
-    {
-        return await Users.QueryAsync(predicate);
-    }
+    /// <summary>
+    /// Queries users from the store using a LINQ expression predicate.
+    /// Returns all users matching the provided filter condition.
+    /// </summary>
+    /// <param name="predicate">Optional LINQ expression to filter users. If null, returns all users.</param>
+    /// <param name="cancellationToken">Optional cancellation token for task cancellation.</param>
+    /// <returns>An enumerable collection of <see cref="CustomUser"/> entities matching the predicate.</returns>
+    public async Task<IEnumerable<CustomUser>> QueryUserAsync(Expression<Func<CustomUser, bool>>? predicate, CancellationToken cancellationToken = default) => await Users.QueryAsync(predicate, cancellationToken);
     
-    public async Task<CustomUser?> FindUserAsync(Expression<Func<CustomUser, bool>>? predicate)
-    {
-        return await Users.FindAsync(predicate);
-    }
+    /// <summary>
+    /// Finds a single user matching the provided predicate expression.
+    /// Returns the first match or null if no user matches the condition.
+    /// </summary>
+    /// <param name="predicate">Optional LINQ expression to filter for a specific user. If null, returns the first user.</param>
+    /// <param name="cancellationToken">Optional cancellation token for task cancellation.</param>
+    /// <returns>The first <see cref="CustomUser"/> matching the predicate, or null if no match is found.</returns>
+    public async Task<CustomUser?> FindUserAsync(Expression<Func<CustomUser, bool>>? predicate, CancellationToken cancellationToken = default) => await Users.FindAsync(predicate, cancellationToken);
     
-    public async Task<bool> ExistsUserAsync(Expression<Func<CustomUser, bool>> predicate)
-    {
-        return await Users.ExistsAsync(predicate);
-    }
+    /// <summary>
+    /// Determines whether any user exists in the store matching the provided predicate.
+    /// </summary>
+    /// <param name="predicate">LINQ expression to filter users.</param>
+    /// <param name="cancellationToken">Optional cancellation token for task cancellation.</param>
+    /// <returns>True if at least one user matches the predicate; false otherwise.</returns>
+    public async Task<bool> ExistsUserAsync(Expression<Func<CustomUser, bool>> predicate, CancellationToken cancellationToken = default) => await Users.ExistsAsync(predicate, cancellationToken);
 
-    public async Task<CustomUser?> FindUserByIdAsync(object id)
-    {
-        return await Users.FindByIdAsync(id);
-    }
+    /// <summary>
+    /// Finds a user by their primary key (ID).
+    /// </summary>
+    /// <param name="id">The unique identifier of the user to retrieve. Typically a GUID or integer string.</param>
+    /// <param name="cancellationToken">Optional cancellation token for task cancellation.</param>
+    /// <returns>The <see cref="CustomUser"/> with the specified ID, or null if not found.</returns>
+    public async Task<CustomUser?> FindUserByIdAsync(object id, CancellationToken cancellationToken = default) => await Users.FindByIdAsync(id, cancellationToken);
 }
