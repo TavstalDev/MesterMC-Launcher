@@ -346,8 +346,7 @@ public class MinecraftInstance
     private (string?, string?) BuildArguments(string gameDir, string mainClass, string nativesDir, string? modVersion = null)
     {
         string classpath;
-        // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
-        // It is more readable this way
+        // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression - This is more readable in this case, and the logic is more complex than a simple ternary.
         if (OSHelper.GetOperatingSystem() == EOperatingSystem.Windows)
             classpath = string.Join(";", _classPath).Replace(@"\", @"\\");
         else

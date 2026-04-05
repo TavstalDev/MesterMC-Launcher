@@ -17,6 +17,8 @@ using Tavstal.KonkordLauncher.Core.Models.MojangApi.Meta.Library;
 
 namespace Tavstal.KonkordLauncher.Core.Models.MojangApi.Meta;
 
+// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract - The properties in this class can be null based on the JSON structure, so we disable the warning for conditions that may always be true or false according to nullable reference types.
+
 /// <summary>
 /// Represents metadata for game and JVM arguments used in Minecraft.
 /// </summary>
@@ -56,7 +58,6 @@ public class ArgumentMeta
     /// <returns>A list of game arguments.</returns>
     public List<string> GetGameArgs()
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (Game == null)
             return [];
 
@@ -83,7 +84,6 @@ public class ArgumentMeta
     /// <returns>A string containing the game arguments.</returns>
     public string GetGameArgString()
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (Game == null)
             return string.Empty;
 
@@ -109,7 +109,6 @@ public class ArgumentMeta
     /// <returns>A list of JVM arguments.</returns>
     public List<string> GetJvmArgs()
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (Jvm == null)
             return [];
 
@@ -141,7 +140,6 @@ public class ArgumentMeta
     /// <returns>A string containing the JVM arguments.</returns>
     public string GetJvmArgString()
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (Jvm == null)
             return string.Empty;
 
@@ -194,14 +192,12 @@ public class ArgumentMeta
         var operatingSystem = OSHelper.GetOperatingSystem();
         foreach (Rule rule in rules)
         {
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (rule.Os == null)
             {
                 localResult = rule.Action == "allow";
                 continue;
             }
             
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (rule.Os.Name == null)
             {
                 localResult = rule.Action == "allow";

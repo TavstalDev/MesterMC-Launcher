@@ -69,6 +69,7 @@ public class MinecraftVersion
     /// <param name="id">The unique identifier of the Minecraft version.</param>
     /// <param name="type">The type of the Minecraft version.</param>
     /// <param name="url">The URL for the version's metadata or resources.</param>
+    /// <param name="sha1">The SHA-1 hash of the version's metadata or resources.</param>
     /// <param name="time">The time the version was created or last updated.</param>
     /// <param name="releaseTime">The release time of the Minecraft version.</param>
     public MinecraftVersion(string id, string type, string url, string sha1, DateTime time, DateTime releaseTime)

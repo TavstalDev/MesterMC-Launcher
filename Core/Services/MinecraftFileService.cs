@@ -147,7 +147,7 @@ public static class MinecraftFileService
             progressReporter);
 
         // Create default JavaVersionMeta if null
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract - The JavaVersionMeta property can be null based on the JSON structure, so we disable the warning for conditions that may always be true or false according to nullable reference types.
         if (versionResult.JavaVersionMeta == null)
             versionResult.JavaVersionMeta = new JavaVersionMeta()
             {

@@ -74,7 +74,7 @@ public static class HttpHelper
     /// <returns>The shared <see cref="HttpClient"/> instance.</returns>
     public static HttpClient GetHttpClient()
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract - This check is in place to handle cases where the HttpClient might not be initialized due to unforeseen issues, ensuring that a new instance is created if necessary.
         if (_httpClient == null)
         {
             _logger.Exc("HttpClient is not initialized. Returning a new instance.");

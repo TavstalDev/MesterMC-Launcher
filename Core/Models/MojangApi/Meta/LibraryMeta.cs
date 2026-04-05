@@ -16,6 +16,8 @@ using Tavstal.KonkordLauncher.Core.Models.MojangApi.Meta.Library;
 
 namespace Tavstal.KonkordLauncher.Core.Models.MojangApi.Meta;
 
+// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract - The properties in this class can be null based on the JSON structure, so we disable the warning for conditions that may always be true or false according to nullable reference types.
+
 /// <summary>
 /// Represents metadata for a library, including its name, downloads, rules, and native configurations.
 /// </summary>
@@ -73,7 +75,6 @@ public class LibraryMeta
     {
         bool localResult = false;
 
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (Rules == null)
             return true;
 
@@ -83,14 +84,12 @@ public class LibraryMeta
         var operatingSystem = OSHelper.GetOperatingSystem();
         foreach (Rule rule in Rules)
         {
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (rule.Os == null)
             {
                 localResult = rule.Action == "allow";
                 continue;
             }
             
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (rule.Os.Name == null)
             {
                 localResult = rule.Action == "allow";
