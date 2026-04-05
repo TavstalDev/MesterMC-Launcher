@@ -20,7 +20,7 @@ using Tavstal.MesterMC.Launcher.Views;
 
 namespace Tavstal.MesterMC.Launcher;
 
-// ReSharper disable once PartialTypeWithSinglePart
+// ReSharper disable once PartialTypeWithSinglePart - AvaloniaUI requires the App class to be partial.
 
 /// <summary>
 /// Main Avalonia application class for the MesterMC launcher.

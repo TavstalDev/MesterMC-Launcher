@@ -8,7 +8,7 @@ using Tavstal.MesterMC.Updater.Views;
 
 namespace Tavstal.MesterMC.Updater;
 
-// ReSharper disable once PartialTypeWithSinglePart
+// ReSharper disable once PartialTypeWithSinglePart - AvaloniaUI requires the App class to be partial.
 
 /// <summary>
 /// Represents the main application class for the MMC-Updater.

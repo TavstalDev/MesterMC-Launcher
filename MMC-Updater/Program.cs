@@ -10,7 +10,7 @@ using Tavstal.KonkordLauncher.Core.Helpers;
 
 namespace Tavstal.MesterMC.Updater;
 
-// ReSharper disable once ClassNeverInstantiated.Global
+// ReSharper disable once ClassNeverInstantiated.Global - This class is instantiated by the Avalonia framework as the entry point of the application.
 
 /// <summary>
 /// The entry point of the MMC-Updater application.
