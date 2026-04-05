@@ -5,7 +5,6 @@ namespace Tavstal.MesterMC.Api.Models.Claims;
 
 public static class CustomRoleUserClaims
 {
-    // ReSharper disable once InconsistentNaming
     private static readonly Dictionary<string, List<UserClaim>> _claims = new()
     {
         { "Default", [] },

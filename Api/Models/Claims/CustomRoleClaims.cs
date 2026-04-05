@@ -6,7 +6,6 @@ namespace Tavstal.MesterMC.Api.Models.Claims;
 // The default role claims, this class is used to generate the claims during database creation.
 public static class CustomRoleClaims
 {
-    // ReSharper disable once InconsistentNaming
     private static readonly Dictionary<string, List<RoleClaim>> _claims = new()
     {
         { "Default", [

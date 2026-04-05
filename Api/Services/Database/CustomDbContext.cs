@@ -4,9 +4,8 @@ using Tavstal.MesterMC.Api.Models.Database;
 using Tavstal.MesterMC.Api.Models.Database.Launcher;
 using Tavstal.MesterMC.Api.Models.Database.Server;
 using Tavstal.MesterMC.Api.Models.Database.User;
-// ReSharper disable UnusedMember.Local
-// ReSharper disable UnusedAutoPropertyAccessor.Local
-// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable UnusedMember.Local - DbContext has private DbSet properties that are used by EF Core but not directly accessed in code, so we disable the warning for unused members.
+// ReSharper disable UnusedAutoPropertyAccessor.Local - The DbSet properties in the CustomDbContext are used by Entity Framework Core for database operations, but they are not accessed directly in the code. Therefore, we disable the warning for unused auto property accessors.
 
 namespace Tavstal.MesterMC.Api.Services.Database;
 

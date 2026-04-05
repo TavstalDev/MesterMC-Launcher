@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity;
 using Tavstal.MesterMC.Api.Models.Database.User;
 using Tavstal.MesterMC.Api.Services.Database.Interfaces;
-// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global - The properties in this class are intended to be accessed by higher-level services and controllers.
 
 namespace Tavstal.MesterMC.Api.Services.Database;
 

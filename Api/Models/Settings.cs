@@ -5,6 +5,13 @@ namespace Tavstal.MesterMC.Api.Models;
 /// <summary>
 /// Represents the application settings loaded from the configuration.
 /// </summary>
+/// <remarks>
+/// ABOUT SECURITY:<br/>
+/// The settings include sensitive information such as the JWT encryption key and email credentials.
+/// These values can be retrieved by memory dumping or via reflection.
+/// Since this project will not hit production I am not implementing additional security measures to protect these values in memory,
+/// but in a production environment you should consider using secure vaults or encrypted configuration providers to safeguard sensitive settings.
+/// </remarks>
 public class Settings
 {
     /// <summary>
@@ -115,7 +122,7 @@ public class Settings
 
         Issuer = GetString(configuration, Constants.ConfigurationKeys.JwtIssuer);
         Audience = GetString(configuration, Constants.ConfigurationKeys.JwtAudience);
-        ClockSkew = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtClockSkew, 5));
+        ClockSkew = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtClockSkew, 60));
         LockoutMaxAttempts = configuration.GetValue(Constants.ConfigurationKeys.JwtLockoutMaxAttempts, 5);
         LockoutDuration = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtLockoutDuration, 900));
 

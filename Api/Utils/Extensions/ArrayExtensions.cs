@@ -12,12 +12,10 @@ public static class ArrayExtensions
     /// <param name="list">The list to check the index against.</param>
     /// <param name="index">The index to validate.</param>
     /// <returns>True if the index is valid; otherwise, false.</returns>
-    public static bool IsValidIndex<T>(this List<T> list, int index)
+    public static bool IsValidIndex<T>(this List<T>? list, int index)
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (list == null)
             return false;
-
         return list.Count - 1 >= index;
     }
     
@@ -28,12 +26,10 @@ public static class ArrayExtensions
     /// <param name="list">The array to check the index against.</param>
     /// <param name="index">The index to validate.</param>
     /// <returns>True if the index is valid; otherwise, false.</returns>
-    public static bool IsValidIndex<T>(this T[] list, int index)
+    public static bool IsValidIndex<T>(this T[]? list, int index)
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (list == null)
             return false;
-
         return list.Length - 1 >= index;
     }
     

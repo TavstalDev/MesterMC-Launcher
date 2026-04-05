@@ -73,7 +73,7 @@ public class TextResponseAttribute : Attribute, IApiResponseTypeMetadataProvider
     internal bool IsResponseTypeSetByDefault;
 
     // Internal for testing
-    // ReSharper disable once UnusedAutoPropertyAccessor.Global
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global - This property is used by API explorer to determine the content types for this response type, but it is not accessed directly in code.
     internal MediaTypeCollection? ContentTypes { get; }
 
 
