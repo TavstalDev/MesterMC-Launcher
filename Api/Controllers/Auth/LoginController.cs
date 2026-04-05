@@ -98,13 +98,19 @@ public class LoginController : CustomControllerBase
                     SameSite = SameSiteMode.None, // required for cross-origin
                     Expires = expiry
                 });
+                
+                var uriBuilder = new UriBuilder(new Uri(Settings.WebsiteUrl))
+                {
+                    Path = "/2fa",
+                    Query = $"rememberMe={Uri.EscapeDataString(request.RememberMe.ToString())}"
+                };
                     
                 return JsonResult(new
                 {
                     statusCode = HttpStatusCode.Redirect,
                     message = "Redirect to 2FA page",
                     email = user.Email,
-                    url = $"{Settings.WebsiteUrl}/2fa?rememberMe={request.RememberMe}"
+                    url = uriBuilder.ToString()
                 });
             }
             

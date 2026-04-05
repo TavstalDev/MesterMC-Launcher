@@ -92,7 +92,13 @@ public class RecoveryController : CustomControllerBase
             _memoryCacheService.SetValue(recoveryTokenKey, recoveryToken, TimeSpan.FromMinutes(15));
             _memoryCacheService.SetValue(recoveryAttemptKey, 0, TimeSpan.FromMinutes(15));
             
-            string recoveryLink = $"{_settings.WebsiteUrl}/reset-password?recoveryToken={recoveryToken}";
+            
+            var uriBuilder = new UriBuilder(new Uri(Settings.WebsiteUrl))
+            {
+                Path = "/reset-password",
+                Query = $"recoveryToken={Uri.EscapeDataString(recoveryToken)}"
+            };
+            string recoveryLink = uriBuilder.ToString();
             await _emailService.SendEmailAsync(user.Email, user.UserName, "Account Recovery", 
                 $"Click the button below or copy and paste the following link into your browser to recover your account: {recoveryLink}" +
                 "<br><br>The link is valid for 15 minutes." +
@@ -224,7 +230,12 @@ public class RecoveryController : CustomControllerBase
             _memoryCacheService.SetValue(recoveryTokenKey, recoveryToken, TimeSpan.FromMinutes(15));
             _memoryCacheService.SetValue(recoveryAttemptKey, 0, TimeSpan.FromMinutes(15));
             
-            string recoveryLink = $"{_settings.WebsiteUrl}/reset-password?recoveryToken={recoveryToken}";
+            var uriBuilder = new UriBuilder(new Uri(Settings.WebsiteUrl))
+            {
+                Path = "/reset-tfa",
+                Query = $"recoveryToken={Uri.EscapeDataString(recoveryToken)}"
+            };
+            string recoveryLink = uriBuilder.ToString();
             await _emailService.SendEmailAsync(user.Email, user.UserName, "Account Recovery", 
                 $"Click the button below or copy and paste the following link into your browser to recover your account: {recoveryLink}" +
                 "<br><br>The link is valid for 15 minutes." +

@@ -263,7 +263,12 @@ public class RegisterController : CustomControllerBase
             UserId = user.Id
         }, true);
         
-        string confirmationLink = $"{_settings.WebsiteUrl}/register/confirm?userId={user.Id}&token={Uri.EscapeDataString(confirmationToken.Value)}";
+        var uriBuilder = new UriBuilder(new Uri(Settings.WebsiteUrl))
+        {
+            Path = "/register/confirm",
+            Query = $"userId={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(confirmationToken.Value)}"
+        };
+        string confirmationLink = uriBuilder.ToString();
         await _emailService.SendEmailAsync(user.Email, user.UserName, "Registration Confirmation",
             $"Confirm your account by clicking the button below, or by copying and pasting the following link into your browser: {confirmationLink}<br/><br/>", 
             confirmationLink, 
