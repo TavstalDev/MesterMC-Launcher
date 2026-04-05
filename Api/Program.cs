@@ -552,7 +552,7 @@ public static class Program
     }
     
     /// <summary>
-    /// Retrieves an X509 certificate from the Windows local machine's certificate store using its thumbprint.
+    /// Retrieves an X509 certificate from the current user's certificate store using its thumbprint.
     /// </summary>
     /// <param name="thumbprint">
     /// The thumbprint (SHA-1 hash) of the certificate to retrieve in hexadecimal format.
@@ -562,7 +562,7 @@ public static class Program
     /// <exception cref="Exception">Thrown when no certificate with the specified thumbprint is found in the certificate store. </exception>
     private static X509Certificate2 GetCertificateFromStore(string thumbprint)
     {
-        using var store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+        using var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
         store.Open(OpenFlags.ReadOnly);
     
         var certs = store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, validOnly: false);
