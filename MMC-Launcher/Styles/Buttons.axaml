@@ -379,10 +379,11 @@
     <!-- #region ErrorBack Button Style -->
     <Style Selector="Button.ErrorBackButton">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Margin" Value="0" />
+        <Setter Property="Margin" Value="20, 0" />
         <Setter Property="Padding" Value="0" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="Cursor" Value="Hand" />
     </Style>
     
@@ -392,19 +393,30 @@
     </Style>
     
     <!-- Apply normal image -->
-    <Style Selector="Button.ErrorBackButton > Image">
+    <Style Selector="Button.ErrorBackButton > Grid > Image">
         <Setter Property="Margin" Value="0" />
-        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/back-btn-normal.png" />
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/blank-btn-normal.png" />
     </Style>
 
     <!-- Apply hover image -->
-    <Style Selector="Button.ErrorBackButton:pointerover > Image">
-        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/back-btn-hover.png" />
+    <Style Selector="Button.ErrorBackButton:pointerover > Grid > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/blank-btn-hover.png" />
     </Style>
 
     <!-- Apply pressed image -->
-    <Style Selector="Button.ErrorBackButton:pressed > Image">
-        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/back-btn-active.png" />
+    <Style Selector="Button.ErrorBackButton:pressed > Grid > Image">
+        <Setter Property="Source" Value="avares://MMC-Launcher/Assets/buttons/blank-btn-active.png" />
+    </Style>
+    
+    <Style Selector="TextBlock.ErrorBackButton">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="600" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Effect">
+            <DropShadowEffect Color="Black" OffsetX="1" OffsetY="1" BlurRadius="6" Opacity="0.85"/>
+        </Setter>
     </Style>
     <!-- #endregion ErrorBack Button Style -->
     

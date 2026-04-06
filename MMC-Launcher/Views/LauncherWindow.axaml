@@ -346,11 +346,13 @@
                         <!--  Back Button  -->
                         <Button
                             Grid.Row="2"
-                            Height="72"
-                            Margin="26,-15,26,0"
+                            Height="38"
                             Classes="ErrorBackButton"
                             Command="{Binding BackCommand}">
-                            <Image />
+                            <Grid>
+                                <Image Stretch="Fill" />
+                                <TextBlock Classes="ErrorBackButton" Text="VISSZA" />
+                            </Grid>
                         </Button>
                     </Grid>
                     <!--#endregion-->
@@ -374,7 +376,7 @@
                         <!--  Error Background Image  -->
                         <Image
                             Grid.Row="0"
-                            Margin="20,-10,20,0"
+                            Margin="22.5,-10,20,0"
                             IsVisible="{Binding isError}"
                             Source="avares://MMC-Launcher/Assets/zone/zone-error.png" />
 
@@ -393,12 +395,14 @@
                         <!--  Back Button  -->
                         <Button
                             Grid.Row="1"
-                            Height="72"
-                            Margin="20,-15,20,0"
+                            Height="38"
                             Classes="ErrorBackButton"
                             Command="{Binding BackCommand}"
                             IsVisible="{Binding isError}">
-                            <Image />
+                            <Grid>
+                                <Image Stretch="Fill" />
+                                <TextBlock Classes="ErrorBackButton" Text="VISSZA" />
+                            </Grid>
                         </Button>
                     </Grid>
                     <!--#endregion-->
