@@ -342,6 +342,12 @@ public class CustomUserManager(
         return !string.IsNullOrEmpty(response) && response.Contains(suffix);
     }
 
+    /// <summary>
+    /// Create a signed JWT access token for a user with the specified duration and optional claims.
+    /// </summary>
+    /// <param name="duration">The lifetime of the token (how long it will be valid).</param>
+    /// <param name="claims">Optional <see cref="ClaimsIdentity"/> to include additional claims in the token payload.</param>
+    /// <returns>A serialized JWT as a string.</returns>
     public string CreateJwtToken(TimeSpan duration, ClaimsIdentity? claims = null)
     {
         var handler = new JwtSecurityTokenHandler();
@@ -359,6 +365,14 @@ public class CustomUserManager(
         return handler.WriteToken(token);
     }
 
+    /// <summary>
+    /// Verify the username (email or username) + password combination and return the <see cref="CustomUser"/> if valid.
+    /// </summary>
+    /// <param name="username">Username or email provided by the client (will be normalized internally).</param>
+    /// <param name="password">Plaintext password to verify.</param>
+    /// <returns>
+    /// The matched <see cref="CustomUser"/> on success; otherwise <c>null</c> when verification failed.
+    /// </returns>
     public async Task<CustomUser?> VerifyPasswordAsync(string username, string password)
     {
         string normalizedUsername = username.Normalize();
@@ -389,6 +403,12 @@ public class CustomUserManager(
         return user;
     }
 
+    /// <summary>
+    /// Verify a JWT-based login: validate the JWT, ensure the token exists in the user token store,
+    /// and confirm an associated, unexpired login record exists.
+    /// </summary>
+    /// <param name="token">The JWT token value received from the client.</param>
+    /// <returns>The associated <see cref="CustomUser"/> if verification succeeds; otherwise <c>null</c>.</returns>
     public async Task<CustomUser?> VerifyTokenLoginAsync(string token)
     {
         if (!await VerifyJwtTokenAsync(token))
@@ -405,6 +425,11 @@ public class CustomUserManager(
         return await userStore.FindUserByIdAsync(userToken.UserId);
     }
     
+    /// <summary>
+    /// Validate a JWT token's signature, lifetime and configured claims (issuer, audience).
+    /// </summary>
+    /// <param name="token">The serialized JWT token.</param>
+    /// <returns><c>true</c> if token is valid according to the configured <c>TokenValidationParameters</c>; otherwise <c>false</c>.</returns>
     public async Task<bool> VerifyJwtTokenAsync(string token)
     {
         try
@@ -421,19 +446,33 @@ public class CustomUserManager(
         }
     }
     
+    /// <summary>
+    /// Produce a machine-specific fingerprint for tying short-lived sessions (e.g. TFA flows) to a client.
+    /// </summary>
+    /// <param name="httpRequest">The current <see cref="HttpRequest"/> to inspect client headers and connection info.</param>
+    /// <param name="userId">The user id used as part of the fingerprint seed.</param>
+    /// <returns>A keyed hash of client traits that can be used as a fingerprint string.</returns>
     public string GetMachineFingerprint(HttpRequest httpRequest, string userId)
     {
         var userAgent = httpRequest.Headers.UserAgent.ToString();
         var ipAddress = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString();
+        if (string.IsNullOrEmpty(ipAddress))
+            ipAddress = "unknown";
     
         // Combine traits and hash them
-        var rawData = $"{userId}-{userAgent}-{ipAddress}";
+        var rawData = string.Concat(userId, "-", userAgent, "-", ipAddress);
         return StringChiper.GetEncryptedHash(rawData, settings.EncryptionKey);
     }
     #endregion
 
     #region TwoFactor Authentication
-
+    /// <summary>
+    /// Generate and persist a new two-factor secret for the user.
+    /// </summary>
+    /// <param name="user">The user who will receive the TOTP secret.</param>
+    /// <returns>
+    /// The generated (plaintext) secret token (caller must present this to the user's authenticator app as a QR or manual code).
+    /// </returns>
     public async Task<string> GenerateTwoFactorTokenAsync(CustomUser user)
     {
         var key = KeyGeneration.GenerateRandomKey(20);
@@ -444,6 +483,12 @@ public class CustomUserManager(
         return token;
     }
     
+    /// <summary>
+    /// Verify a TOTP code against the stored (encrypted) TOTP secret for a user.
+    /// </summary>
+    /// <param name="user">The user whose TOTP secret is stored.</param>
+    /// <param name="code">The TOTP code provided by the user to verify.</param>
+    /// <returns><c>true</c> if the code is valid within the allowed verification window; otherwise <c>false</c>.</returns>
     public bool VerifyTwoFactorCode(CustomUser user, string code)
     {
         if (string.IsNullOrEmpty(user.TwoFactorSecret))
@@ -454,6 +499,12 @@ public class CustomUserManager(
         return totp.VerifyTotp(code, out _, new VerificationWindow(2, 2));
     }
     
+    /// <summary>
+    /// Generate a fresh set of one-time recovery codes for the user and persist them as hashed values.
+    /// </summary>
+    /// <param name="user">The user for whom to create recovery codes.</param>
+    /// <param name="number">The number of recovery codes to generate.</param>
+    /// <returns>A collection of plaintext recovery codes (display these to the user once); or <c>null</c> on failure.</returns>
     public async Task<IEnumerable<string>?> GenerateNewTwoFactorRecoveryCodesAsync(CustomUser user, int number)
     {
         var existingCodes = await userStore.UserBackupCodes.QueryAsync(x => x.UserId == user.Id);

@@ -9,6 +9,9 @@ using SignInResult = Tavstal.MesterMC.Api.Models.Database.SignInResult;
 
 namespace Tavstal.MesterMC.Api.Services.Database;
 
+/// <summary>
+/// Responsible for handling sign-in related flows for users.
+/// </summary>
 public class CustomSignInManager
 {
     private readonly CustomUserStore _userStore;
@@ -19,6 +22,14 @@ public class CustomSignInManager
     private readonly TimeSpan _regularLogin = TimeSpan.FromHours(1);
     private readonly TimeSpan _rememberMeLogin = TimeSpan.FromDays(7);
     
+    /// <summary>
+    /// Creates a new instance of <see cref="CustomSignInManager"/>.
+    /// </summary>
+    /// <param name="userStore">Data store for user and related entities.</param>
+    /// <param name="userManager">Helper manager for user-specific operations.</param>
+    /// <param name="passwordHasher">Password hasher used to verify and rehash passwords.</param>
+    /// <param name="memoryCacheService">In-memory cache for temporary values (TFA tokens, attempts, etc).</param>
+    /// <param name="settings">Application settings (lockout thresholds, durations).</param>
     public CustomSignInManager(CustomUserStore userStore, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, MemoryCacheService memoryCacheService, Settings settings)
     {
          _userStore = userStore; 
@@ -28,6 +39,14 @@ public class CustomSignInManager
          _settings = settings;
     }
 
+    /// <summary>
+    /// Sign-in using a username and password.
+    /// </summary>
+    /// <param name="username">Plain username provided by the client.</param>
+    /// <param name="password">Plain password provided by the client.</param>
+    /// <param name="rememberMe">If true, issue a longer-lived token.</param>
+    /// <param name="httpContext">HttpContext to extract client metadata (IP, UA) for login records.</param>
+    /// <returns>A <see cref="SignInResult"/> describing the outcome.</returns>
     public async Task<SignInResult> UsernameSignInAsync(string username, string password, bool rememberMe, HttpContext httpContext)
     {
         string normalizedUsername = username.Normalize();
@@ -42,6 +61,14 @@ public class CustomSignInManager
         return await SignInAsync(user, password, rememberMe, httpContext);
     }
 
+    /// <summary>
+    /// Sign-in using an email address and password.
+    /// </summary>
+    /// <param name="email">Plain email provided by the client.</param>
+    /// <param name="password">Plain password provided by the client.</param>
+    /// <param name="rememberMe">If true, issue a longer-lived token.</param>
+    /// <param name="httpContext">HttpContext to extract client metadata (IP, UA) for login records.</param>
+    /// <returns>A <see cref="SignInResult"/> describing the outcome.</returns>
     public async Task<SignInResult> EmailSignInAsync(string email, string password, bool rememberMe,
         HttpContext httpContext)
     {
@@ -57,6 +84,21 @@ public class CustomSignInManager
         return await SignInAsync(user, password, rememberMe, httpContext);
     }
 
+    /// <summary>
+    /// Common sign-in flow shared by username and email sign-ins.
+    /// <br/>Steps:
+    /// <br/>- Check lockout state and return if locked.
+    /// <br/>- Verify password using the configured hasher.
+    /// <br/>- On failure: increment failed counter, possibly lock the account.
+    /// <br/>- On success with rehash needed: rehash password and update SecurityStamp.
+    /// <br/>- If Two-Factor is enabled on the account: generate a short TFA session token and store TFA attempt counter in memory cache.
+    /// <br/>- Otherwise: create a user access token, record a user login entry with client metadata (IP, UA), reset failed counters and return success.
+    /// </summary>
+    /// <param name="user">The user to sign in.</param>
+    /// <param name="password">The candidate plain password.</param>
+    /// <param name="rememberMe">If true, issues a longer-lived token.</param>
+    /// <param name="httpContext">HttpContext for metadata and connection info.</param>
+    /// <returns>A <see cref="SignInResult"/> describing the outcome.</returns>
     private async Task<SignInResult> SignInAsync(CustomUser user, string password, bool rememberMe, HttpContext httpContext)
     {
         if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
@@ -142,6 +184,14 @@ public class CustomSignInManager
         };
     }
     
+    /// <summary>
+    /// Complete a two-factor sign-in flow for a user that previously initiated TFA.
+    /// </summary>
+    /// <param name="user">The user who is attempting to complete TFA.</param>
+    /// <param name="code">The TOTP/verification code submitted by the user.</param>
+    /// <param name="rememberMe">If true, issue a longer-lived token on success.</param>
+    /// <param name="httpContext">HttpContext for metadata and connection info.</param>
+    /// <returns>A <see cref="SignInResult"/> describing the outcome.</returns>
     public async Task<SignInResult> TwoFactorSignInAsync(CustomUser user, string code, bool rememberMe, HttpContext httpContext)
     {
         if (!user.TwoFactorEnabled)
@@ -227,6 +277,16 @@ public class CustomSignInManager
         };
     }
     
+    
+    /// <summary>
+    /// Sign in specifically for the desktop launcher flow (returns a play session token).
+    /// This flow is similar to <see cref="SignInAsync"/> but creates a shorter-lived play session record
+    /// used by the native launcher to start a game session.
+    /// </summary>
+    /// <param name="username">Username provided by the launcher.</param>
+    /// <param name="password">Password provided by the launcher.</param>
+    /// <param name="httpContext">HttpContext used to extract host for play session recording.</param>
+    /// <returns>A <see cref="LauncherSignInResult"/> indicating success/failure and containing the play session record.</returns>
     public async Task<LauncherSignInResult> LauncherSignInAsync(string username, string password, HttpContext httpContext)
     {
         string normalizedUsername = username.Normalize();
@@ -309,6 +369,14 @@ public class CustomSignInManager
         };
     }
     
+    /// <summary>
+    /// Complete two-factor authentication for the launcher play session flow.
+    /// This mirrors <see cref="TwoFactorSignInAsync"/> but uses the launcher-specific cache keys and returns a launcher result type.
+    /// </summary>
+    /// <param name="user">The user who is completing TFA.</param>
+    /// <param name="code">The verification code supplied by the client.</param>
+    /// <param name="httpContext">HttpContext for host extraction.</param>
+    /// <returns>A <see cref="LauncherSignInResult"/>.</returns>
     public async Task<LauncherSignInResult> LauncherTwoFactorSignInAsync(CustomUser user, string code, HttpContext httpContext)
     {
         if (!user.TwoFactorEnabled)
@@ -381,6 +449,11 @@ public class CustomSignInManager
         };
     }
 
+    /// <summary>
+    /// Remove an access token and its associated login record.
+    /// </summary>
+    /// <param name="token">The access token value to revoke.</param>
+    /// <returns>True if token was found and removed, false otherwise.</returns>
     public async Task<bool> SignOutAsync(string token)
     {
         CustomUserToken? userToken = await _userStore.UserTokens.FindAsync(x => x.Value == token);
@@ -394,6 +467,11 @@ public class CustomSignInManager
         return true;
     }
     
+    /// <summary>
+    /// Remove a launcher play session based on the play session token.
+    /// </summary>
+    /// <param name="playSessionToken">The play session token to revoke.</param>
+    /// <returns>True if the session was found and removed, false otherwise.</returns>
     public async Task<bool> LauncherSignOutAsync(string playSessionToken)
     {
         UserPlaySession? playSession = await _userStore.UserPlaySessions.FindAsync(x => x.Token == playSessionToken);
