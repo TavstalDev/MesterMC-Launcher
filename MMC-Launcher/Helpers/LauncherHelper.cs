@@ -28,7 +28,26 @@ public static class LauncherHelper
     /// If the file does not exist or is invalid, a new configuration is created and saved.
     /// </summary>
     /// <returns>The launcher settings as a <see cref="CoreConfigDto"/> object.</returns>
-    public static CoreConfigDto GetLauncherSettings() => GetLauncherSettingsAsync().GetAwaiter().GetResult();
+    public static CoreConfigDto GetLauncherSettings()
+    {
+        if (!File.Exists(PathHelper.LauncherConfigPath))
+        {
+            CoreConfigDto result = new CoreConfigDto();
+            JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, result, CustomJsonContext.Default.CoreConfigDto);
+            return result;
+        }
+
+        var readResult = JsonHelper.ReadJsonFile<CoreConfigDto>(PathHelper.LauncherConfigPath, CustomJsonContext.Default.CoreConfigDto);
+        if (readResult == null)
+        {
+            CoreConfigDto result = new CoreConfigDto();
+            File.Move(PathHelper.LauncherConfigPath, PathHelper.LauncherConfigPath + ".bak", true);
+            JsonHelper.WriteJsonFile(PathHelper.LauncherConfigPath, result, CustomJsonContext.Default.CoreConfigDto);
+            return result;
+        }
+
+        return readResult;
+    }
 
     /// <summary>
     /// Asynchronously retrieves the launcher settings from the configuration file.
@@ -55,14 +74,6 @@ public static class LauncherHelper
 
         return readResult;
     }
-    
-    /// <summary>
-    /// Retrieves the news data from the specified cache directory.
-    /// If the file does not exist or is invalid, a new empty list is created and saved.
-    /// </summary>
-    /// <param name="cacheDir">The directory where the news data is cached.</param>
-    /// <returns>A list of <see cref="NewsDto"/> objects representing the news data.</returns>
-    public static List<NewsDto> GetNews(string cacheDir) =>  GetNewsAsync(cacheDir).GetAwaiter().GetResult();
     
     /// <summary>
     /// Asynchronously retrieves the news data from the specified cache directory.
