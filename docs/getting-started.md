@@ -77,11 +77,16 @@ nano .env  # or use your preferred editor
 - **Type**: String
 - **Note**: This is the password for your email provider account, not the application password
 
-#### `CERT_PASSWORD`
-- **Purpose**: Password for the localhost SSL certificate (localhost.pfx)
+### `CERTIFICATE_FINGERPRINT`
+- **Purpose**: SHA-1 fingerprint of the SSL certificate used for secure communication
 - **Type**: String
-- **Default (dev)**: `changeit`
-- **Note**: Only needed for HTTPS, development certificate included in repo
+- **Example**: `ABCDEF1234567890ABCDEF1234567890ABCDEF`
+- **Note**: On Linux and macOS, this field is used as path to the certificate, so it should be the full path to the certificate file (e.g., `/path/to/certificate.pfx`)
+
+#### `CERTIFICATE_PASSWORD`
+- **Purpose**: Password for the SSL certificate
+- **Type**: String
+- **Default**: `replace_certificate_password`
 
 ## Development Setup
 
@@ -99,7 +104,6 @@ docker run -d -p 1025:1025 -p 8025:8025 mailhog/mailhog
 
 2. **Set environment variables**:
 ```
-EMAIL_PROVIDER=localhost
 EMAIL_ADDRESS=test@example.com
 EMAIL_PASSWORD=anything
 ```
