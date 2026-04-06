@@ -152,7 +152,6 @@ public class MinecraftInstance
 
             _logger.Debug("Building arguments...");
             var args = BuildArguments(versionDetails.GameDir, mainClass, versionDetails.NativesDir, customVersion);
-            _progressReporter?.Hide();
 
             // Copy custom natives if specified
             _logger.Debug("Copying custom native files if specified...");

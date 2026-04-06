@@ -33,14 +33,4 @@ public interface IProgressReporter
     /// <param name="status">The status message format string.</param>
     /// <param name="args">Optional arguments to format the status message.</param>
     void SetStatus(string status, params object[]? args);
-
-    /// <summary>
-    /// Displays the progress reporter.
-    /// </summary>
-    void Show();
-
-    /// <summary>
-    /// Hides the progress reporter.
-    /// </summary>
-    void Hide();
 }
