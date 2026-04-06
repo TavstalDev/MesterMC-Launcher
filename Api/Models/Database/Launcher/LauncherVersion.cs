@@ -21,23 +21,23 @@ public class LauncherVersion
     /// </summary>
     [StringLength(15)]
     [RegularExpression("^(?:(\\d+)\\.)?(?:(\\d+)\\.)?(\\*|\\d+)$\n")]
-    public string Version { get; set; }
+    public required string Version { get; set; }
     
     /// <summary>
     /// Gets or sets the type of the launcher version (e.g., Alpha, Beta, Release).
     /// </summary>
-    public EVersionType VersionType { get; set; }
+    public required EVersionType VersionType { get; set; }
     
     /// <summary>
     /// Gets or sets the changelog describing the updates or changes in this version.
     /// </summary>
     [StringLength(500)]
-    public string Changelog { get; set; }
+    public required string Changelog { get; set; }
     
     /// <summary>
     /// Gets or sets the timestamp indicating when the launcher version was created.
     /// </summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public required DateTimeOffset CreatedAt { get; set; }
     
     /// <summary>
     /// Gets or sets the timestamp indicating when the launcher version was last updated.

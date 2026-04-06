@@ -21,24 +21,24 @@ public class News
     /// The title has a maximum length of 128 characters.
     /// </summary>
     [StringLength(128)]
-    public string Title { get; set; }
+    public required string Title { get; set; }
     
     /// <summary>
     /// Gets or sets the content of the news entry.
     /// The content has a maximum length of 512 characters.
     /// </summary>
     [StringLength(512)]
-    public string Content { get; set; }
+    public required string Content { get; set; }
     
     /// <summary>
     /// Gets or sets the unique identifier of the banner associated with the news entry.
     /// </summary>
-    public ulong BannerId { get; set; }
+    public required ulong BannerId { get; set; }
     
     /// <summary>
     /// Gets or sets the timestamp indicating when the news entry was created.
     /// </summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public required DateTimeOffset CreatedAt { get; set; }
     
     /* ######################################################################
      *                         NAVIGATION PROPERTIES

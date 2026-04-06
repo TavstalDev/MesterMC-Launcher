@@ -27,6 +27,10 @@ public class SignInResult
     /// </summary>
     public string? SessionToken { get; set; }
     
+    /// <summary>
+    /// The UTC date/time when the <see cref="SessionToken"/> (or any other temporary token represented
+    /// in this result) expires. If null, no explicit expiry is provided with this result.
+    /// </summary>
     public DateTimeOffset? TokenExpiresAt { get; set; }
     
     /// <summary>

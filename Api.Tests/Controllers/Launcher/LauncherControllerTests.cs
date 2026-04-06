@@ -60,6 +60,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             }, true);
@@ -102,6 +103,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             }, true);
@@ -144,6 +146,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             }, true);
@@ -210,6 +213,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             }, true);
@@ -270,6 +274,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "Initial release",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             }, true);
@@ -320,6 +325,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "Initial",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true);
@@ -393,6 +399,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "Initial",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true);
@@ -439,6 +446,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "v1",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true);
@@ -447,6 +455,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.1",
                 Changelog = "Patch",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true);
@@ -471,6 +480,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "v1",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true);
@@ -497,6 +507,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.0",
                 Changelog = "v1",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true);
@@ -531,6 +542,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "8.0.0",
                 Changelog = "to delete",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true);
@@ -592,6 +604,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "9.0.0",
                 Changelog = "with data",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true);
@@ -718,6 +731,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "10.0.0",
                 Changelog = "to delete data",
+                VersionType = EVersionType.RELEASE,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true);

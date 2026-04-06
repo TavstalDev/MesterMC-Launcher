@@ -23,24 +23,24 @@ public class FileData
     /// Gets or sets the hash of the file, used for identifying its content.
     /// </summary>
     [StringLength(64)]
-    public string Hash { get; set; }
+    public required string Hash { get; set; }
     
     /// <summary>
     /// Gets or sets the name of the file.
     /// </summary>
     [StringLength(255)]
-    public string FileName { get; set; }
+    public required string FileName { get; set; }
     
     /// <summary>
     /// Gets or sets the MIME type of the file content.
     /// </summary>
     [StringLength(100)]
-    public string ContentType { get; set; }
+    public required string ContentType { get; set; }
     
     /// <summary>
     /// Gets or sets the type of the file, indicating its purpose.
     /// </summary>
-    public EFileDataType Type { get; set; }
+    public required EFileDataType Type { get; set; }
     
     /// <summary>
     /// Gets or sets the unique identifier of the file's owner, if any.
