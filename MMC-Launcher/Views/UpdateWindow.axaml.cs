@@ -228,19 +228,28 @@ public partial class UpdateWindow : KonkordWindow<UpdateViewModel>, IProgressRep
             // 9. Start Main Window
             Dispatcher.UIThread.Post(() =>
             {
-                if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+                try
                 {
-                    SetStatus("Nem sikerült elindítani a fő ablakot.");
-                    _logger.Error("Failed to start main window: Application lifetime is not IClassicDesktopStyleApplicationLifetime");
-                    return;
+                    if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+                    {
+                        SetStatus("Nem sikerült elindítani a fő ablakot.");
+                        _logger.Error(
+                            "Failed to start main window: Application lifetime is not IClassicDesktopStyleApplicationLifetime");
+                        return;
+                    }
+
+                    desktop.MainWindow = new LauncherWindow
+                    {
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen
+                    };
+                    desktop.MainWindow.Show();
+                    Close();
                 }
-            
-                desktop.MainWindow =  new LauncherWindow
+                catch (Exception ex)
                 {
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen
-                };
-                desktop.MainWindow.Show();
-                Close();
+                    SetStatus("Váratlan hiba történt a fő ablak elindítása közben.");
+                    _logger.Error("Error while starting main window: \n" + ex);
+                }
             });
         }
         catch (Exception ex)
