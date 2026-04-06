@@ -60,6 +60,10 @@ public class CoreLogger
         return new CoreLogger(moduleType.Name);
     }
     
+    /// <summary>
+    /// Continuously processes queued log entries and writes them to the log file.
+    /// </summary>
+    /// <param name="token">Cancellation token used to stop the processing loop.</param>
     private static async Task ProcessLogQueueAsync(CancellationToken token)
     {
         while (!token.IsCancellationRequested)
