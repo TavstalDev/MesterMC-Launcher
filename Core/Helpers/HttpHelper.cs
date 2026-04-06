@@ -24,8 +24,16 @@ namespace Tavstal.KonkordLauncher.Core.Helpers;
 public static class HttpHelper
 {
     private static readonly HttpClient _httpClient = CreateHttpClient();
-    private static readonly CoreLogger _logger = CoreLogger.WithModuleType(typeof(HttpHelper));
+    private static CoreLogger? _logger;
 
+    private static CoreLogger? Logger()
+    {
+        if (_logger != null)
+            return _logger;
+        _logger = CoreLogger.WithModuleType(typeof(HttpHelper));
+        return _logger;
+    }
+    
     /// <summary>
     /// Creates and configures an instance of <see cref="HttpClient"/> with default headers.
     /// </summary>
@@ -50,7 +58,7 @@ public static class HttpHelper
         else
         {
             #if DEBUG
-            _logger.Warn("SSL certificate validation DISABLED in DEBUG mode - DO NOT USE IN PRODUCTION");
+            Logger()?.Warn("SSL certificate validation DISABLED in DEBUG mode - DO NOT USE IN PRODUCTION");
             var handler = new HttpClientHandler
             {
                 // This callback bypasses the SSL check
@@ -77,7 +85,7 @@ public static class HttpHelper
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract - This check is in place to handle cases where the HttpClient might not be initialized due to unforeseen issues, ensuring that a new instance is created if necessary.
         if (_httpClient == null)
         {
-            _logger.Exc("HttpClient is not initialized. Returning a new instance.");
+            Logger()?.Exc("HttpClient is not initialized. Returning a new instance.");
             return CreateHttpClient();
         }
         return _httpClient;
@@ -96,8 +104,8 @@ public static class HttpHelper
         }
         catch (Exception ex)
         {
-            _logger.Exc("Error while making GET request:");
-            _logger.Error(ex.ToString());
+            Logger()?.Exc("Error while making GET request:");
+            Logger()?.Error(ex.Message);
             return null;
         }
     }
@@ -144,10 +152,10 @@ public static class HttpHelper
         }
         catch (Exception ex)
         {
-            _logger.Exc("Error while downloading file with progress:");
-            _logger.Exc($"Url: {url}");
-            _logger.Exc($"File path: {filePath}");
-            _logger.Error(ex.ToString());
+            Logger()?.Exc("Error while downloading file with progress:");
+            Logger()?.Exc($"Url: {url}");
+            Logger()?.Exc($"File path: {filePath}");
+            Logger()?.Error(ex.Message);
             return null;
         }
     }
@@ -165,8 +173,8 @@ public static class HttpHelper
         }
         catch (Exception ex)
         {
-            _logger.Exc("Error while making GET request for string:");
-            _logger.Error(ex.ToString());
+            Logger()?.Exc("Error while making GET request for string:");
+            Logger()?.Error(ex.Message);
             return null;
         }
     }
@@ -208,9 +216,9 @@ public static class HttpHelper
         }
         catch (Exception ex)
         {
-            _logger.Exc("Error while making GET request for string with progress:");
-            _logger.Exc($"Url: {url}");
-            _logger.Error(ex.ToString());
+            Logger()?.Exc("Error while making GET request for string with progress:");
+            Logger()?.Exc($"Url: {url}");
+            Logger()?.Error(ex.Message);
             return null;
         }
     }
@@ -228,8 +236,8 @@ public static class HttpHelper
         }
         catch (Exception ex)
         {
-            _logger.Exc("Error while making GET request for stream:");
-            _logger.Error(ex.ToString());
+            Logger()?.Exc("Error while making GET request for stream:");
+            Logger()?.Error(ex.Message);
             return null;
         }
     }
@@ -249,8 +257,8 @@ public static class HttpHelper
         }
         catch (Exception ex)
         {
-            _logger.Exc("Error while deserializing JSON from GET request:");
-            _logger.Error(ex.ToString());
+            Logger()?.Exc("Error while deserializing JSON from GET request:");
+            Logger()?.Error(ex.Message);
             return default;
         }
     }
@@ -269,8 +277,8 @@ public static class HttpHelper
         }
         catch (Exception ex)
         {
-            _logger.Exc("Error while making POST request:");
-            _logger.Error(ex.ToString());
+            Logger()?.Exc("Error while making POST request:");
+            Logger()?.Error(ex.Message);
             return null;
         }
     }
@@ -291,8 +299,8 @@ public static class HttpHelper
         }
         catch (Exception ex)
         {
-            _logger.Exc("Error while making POST request with JSON:");
-            _logger.Error(ex.ToString());
+            Logger()?.Exc("Error while making POST request with JSON:");
+            Logger()?.Error(ex.Message);
             return null;
         }
     }
