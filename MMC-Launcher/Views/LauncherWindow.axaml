@@ -348,6 +348,7 @@
                             Grid.Row="2"
                             Height="38"
                             Classes="ErrorBackButton"
+                            Margin="24, 0"
                             Command="{Binding BackCommand}">
                             <Grid>
                                 <Image Stretch="Fill" />
